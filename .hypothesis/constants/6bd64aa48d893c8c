@@ -1,0 +1,4 @@
+# file: /home/brooketogo98/Sorce/backend/services/captcha_detector.py
+# hypothesis_version: 6.150.3
+
+[200, 'CAPTCHA_API_KEY', 'ENABLE_HUMAN_CAPTCHA', 'HITL_QUEUE_URL', 'automated', 'base64', 'body', 'captcha', 'error', 'false', 'human', 'json', 'key', 'method', 'pending', 'reCAPTCHA', 'request', 'request_id', 'security check', 'site_url', 'solution', 'solved', 'status', 'task_id', 'true', 'type', 'utf-8', 'verify you are human']

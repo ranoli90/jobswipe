@@ -1,0 +1,32 @@
+# llms.txt v0.1
+
+ABOUT
+- Title: Sorce-like Job Search App — Full Build Specification
+- Owner: Your Team
+- Updated: 2026-01-25
+- Purpose: Single-file, LLM-ready build spec for implementing an iOS swipe-to-apply job search app with backend ingestion, matching, and automation agents.
+
+PRIMARY
+- /README.md
+- /status.md
+- /project_analysis.md
+
+GUIDANCE
+- Use tool-using agent pattern for Application Agent [umbrex.com].
+- Keep LLM settings deterministic where possible and log provenance [llm.datasette.io].
+- Ensure inputs are LLM-ready: clean, structured, minimal PII [scrape.do].
+- Treat LLMs in pipelines as non-deterministic; validate and log [dataengineeringcentral.substack.com].
+
+CHANGES FROM ORIGINAL PLAN
+- **Job Sources:** Replaced Greenhouse and Lever APIs with 6 RSS feeds + 7 company career page scrapers
+- **Ingestion System:** Added Kafka for real-time job processing
+- **Resume Parsing:** Enhanced with spaCy NER for improved entity extraction
+- **Matching System:** Fixed scoring consistency issues
+- **Testing:** Comprehensive test coverage with 59 tests passing
+
+JOB SOURCES CONFIGURATION
+- RSS feeds: Indeed, LinkedIn, GitHub, Stack Overflow, WeWorkRemotely, RemoteOK
+- Company scrapers: Airbnb, Uber, Stripe, Spotify, GitHub, Slack, Dropbox
+
+LICENSE
+- Internal use. Do not use to violate any site’s ToS.

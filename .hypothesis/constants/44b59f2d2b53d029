@@ -1,0 +1,4 @@
+# file: /home/brooketogo98/Sorce/backend/api/routers/auth.py
+# hypothesis_version: 6.150.3
+
+['/login', '/me', '/register', '/v1/auth/login', 'Bearer', 'HS256', 'SECRET_KEY', 'WWW-Authenticate', 'access_token', 'argon2', 'auto', 'bearer', 'created_at', 'email', 'exp', 'id', 'pbkdf2-sha256', 'sub', 'token_type']

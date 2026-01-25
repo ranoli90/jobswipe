@@ -1,0 +1,4 @@
+# file: /home/brooketogo98/Sorce/backend/services/domain_service.py
+# hypothesis_version: 6.150.3
+
+[0.0, 100, 500, 3600, 86400, 'active', 'ats_type', 'captcha_type', 'concurrency', 'custom', 'last_status', 'none', 'rate_limit_policy', 'requests_per_day', 'requests_per_hour', 'requests_per_minute']

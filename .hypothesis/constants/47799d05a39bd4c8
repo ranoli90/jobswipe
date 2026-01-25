@@ -1,0 +1,4 @@
+# file: /home/brooketogo98/Sorce/backend/api/routers/jobs.py
+# hypothesis_version: 6.150.3
+
+[0.0, 0.85, 1.0, 100, 200, 300, 6379, '...', '/feed', '/matches', '/{job_id}', '/{job_id}/swipe', 'Job not found', 'REDIS_HOST', 'bm25_score', 'has_location_match', 'has_skill_match', 'job', 'job_id', 'left', 'message', 'metadata', 'redis', 'right', 'score', 'success']

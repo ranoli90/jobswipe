@@ -1,0 +1,4 @@
+# file: /home/brooketogo98/Sorce/backend/services/application_automation.py
+# hypothesis_version: 6.150.3
+
+[500, 1000, 2000, 3000, 5000, 10000, 30000, 60000, ',', ', ', '--no-sandbox', '.application-success', '.error-message', 'HEADLESS', 'John Doe', 'Popup modal closed', "button[id*='cookie']", 'city', 'degree', 'email', 'failed', 'first_name', 'full_name', 'github_url', 'highest_degree', 'in_progress', 'input', "input[name*='city']", "input[name*='first']", "input[name*='last']", "input[name*='name']", "input[name*='phone']", "input[name*='years']", "input[type='email']", "input[type='file']", "input[type='tel']", 'last_name', 'linkedin_url', 'location', 'message', 'networkidle', 'phone', 'screenshot', 'select', 'skills', 'status', 'submitted', 'success', "text='Error'", "text='Success'", "text='Thank you'", 'textarea', 'timestamp', 'true', 'years_experience']

@@ -9,9 +9,30 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.types import TypeDecorator
 import uuid
 from datetime import datetime
 from backend.db.database import Base
+from backend.encryption import encrypt_pii, decrypt_pii
+
+
+class EncryptedString(TypeDecorator):
+    """SQLAlchemy type decorator for encrypting PII strings"""
+
+    impl = String
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        """Encrypt value before storing in database"""
+        if value is not None:
+            return encrypt_pii(value)
+        return value
+
+    def process_result_value(self, value, dialect):
+        """Decrypt value when retrieving from database"""
+        if value is not None:
+            return decrypt_pii(value)
+        return value
 
 
 class User(Base):
@@ -26,6 +47,11 @@ class User(Base):
     password_hash = Column(String, nullable=False)
     status = Column(String, default="active")
     created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # MFA fields
+    mfa_enabled = Column(Boolean, default=False)
+    mfa_secret = Column(String)
+    mfa_backup_codes = Column(JSON)
     
     # Relationships
     profile = relationship("backend.db.models.CandidateProfile", uselist=False)
@@ -42,8 +68,8 @@ class CandidateProfile(Base):
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    full_name = Column(String)
-    phone = Column(String)
+    full_name = Column(EncryptedString)
+    phone = Column(EncryptedString)
     location = Column(String)
     headline = Column(String)
     work_experience = Column(JSON)

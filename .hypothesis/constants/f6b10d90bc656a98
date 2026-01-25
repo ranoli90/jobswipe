@@ -1,0 +1,4 @@
+# file: /home/brooketogo98/Sorce/backend/services/matching.py
+# hypothesis_version: 6.150.3
+
+[0.0, 0.05, 0.1, 0.25, 0.3, 0.5, 0.75, 1.0, 1.5, 100, 200, '%', '[\\x00-\\x1f\\x7f-\\x9f]', 'and', 'are', 'at', 'bm25_score', 'company', 'degree', 'education', 'for', 'full_name', 'has_location_match', 'has_skill_match', 'headline', 'in', 'is', 'job', 'metadata', 'of', 'on', 'our', 'position', 'school', 'score', 'skills', 'the', 'to', 'we', 'with', 'work_experience', 'you', 'your']

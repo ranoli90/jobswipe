@@ -1,0 +1,4 @@
+# file: /home/brooketogo98/Sorce/backend/api/main.py
+# hypothesis_version: 6.150.3
+
+['*', '/', '/health', '/v1/analytics', '/v1/applications', '/v1/auth', '/v1/ingestion', '/v1/jobs', '/v1/profile', '1.0.0', '2026-01-25T00:00:00Z', 'JobSwipe API', 'analytics', 'applications', 'auth', 'categorization', 'deduplication', 'healthy', 'ingestion', 'jobs', 'profile', 'service', 'status', 'timestamp', 'version']

@@ -6,12 +6,12 @@ Provides job deduplication using fuzzy matching techniques.
 
 import logging
 from typing import List, Dict, Tuple
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 from backend.db.models import Job
-from db.database import get_db
+from backend.db.database import get_db
 
 logger = logging.getLogger(__name__)
 
@@ -184,7 +184,7 @@ def find_duplicates_in_db() -> List[List[Tuple[Job, float]]]:
     
     try:
         # Get all jobs from the last 30 days
-        cutoff_date = datetime.utcnow() - datetime.timedelta(days=MAX_DUPLICATE_WINDOW_DAYS)
+        cutoff_date = datetime.utcnow() - timedelta(days=MAX_DUPLICATE_WINDOW_DAYS)
         jobs = db.query(Job).filter(Job.created_at >= cutoff_date).all()
         
         logger.info(f"Checking {len(jobs)} jobs for duplicates (last {MAX_DUPLICATE_WINDOW_DAYS} days)")

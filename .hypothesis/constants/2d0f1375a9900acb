@@ -1,0 +1,4 @@
+# file: /home/brooketogo98/Sorce/backend/services/oauth2_service.py
+# hypothesis_version: 6.150.3
+
+['OAUTH2_REDIRECT_URI', 'access_token_url', 'authorize_url', 'client_id', 'client_secret', 'email', 'emailAddress', 'email_verified', 'en_US', 'family_name', 'firstName', 'first_name', 'full_name', 'given_name', 'google', 'id', 'lastName', 'last_name', 'linkedin', 'localized', 'name', 'openid email profile', 'picture', 'provider', 'provider_id', 'redirect_uri', 'scope', 'userinfo_url', 'verified_email']

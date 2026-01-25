@@ -1,0 +1,131 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "JobSwipe Overview",
+    "tags": ["jobswipe"],
+    "timezone": "UTC",
+    "panels": [
+      {
+        "id": 1,
+        "title": "API Request Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(api_requests_total[5m])",
+            "legendFormat": "{{method}} {{endpoint}} {{status_code}}"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": 2,
+        "title": "API Response Time (95th percentile)",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(api_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "{{method}} {{endpoint}}"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 0
+        }
+      },
+      {
+        "id": 3,
+        "title": "Job Matching Performance",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(job_matching_requests_total[5m])",
+            "legendFormat": "Requests - {{result}}"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(job_matching_duration_seconds_bucket[5m]))",
+            "legendFormat": "Duration 95th percentile"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        }
+      },
+      {
+        "id": 4,
+        "title": "Job Match Score Distribution",
+        "type": "bargauge",
+        "targets": [
+          {
+            "expr": "rate(jobs_matched_total[5m])",
+            "legendFormat": "{{score_range}}"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        }
+      },
+      {
+        "id": 5,
+        "title": "Application Automation Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rate(application_tasks_total{status='success'}[5m]) / rate(application_tasks_total[5m]) * 100",
+            "legendFormat": "Success Rate %"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 0,
+          "y": 16
+        }
+      },
+      {
+        "id": 6,
+        "title": "Job Ingestion Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(jobs_ingested_total[5m])",
+            "legendFormat": "{{source}} - {{status}}"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 6,
+          "y": 16
+        }
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "timepicker": {},
+    "templating": {
+      "list": []
+    },
+    "annotations": {
+      "list": []
+    },
+    "refresh": "30s",
+    "schemaVersion": 27,
+    "version": 0,
+    "links": []
+  }
+}

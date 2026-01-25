@@ -1,0 +1,4 @@
+# file: /home/brooketogo98/Sorce/backend/services/job_ingestion_service.py
+# hypothesis_version: 6.150.3
+
+[100, 500, 3600, 'Data Scientist', 'Designer', 'KAFKA_BROKER_URL', 'KAFKA_CONSUMER_GROUP', 'KAFKA_JOB_TOPIC', 'Product Manager', 'Remote', 'Software Engineer', 'absolute_url', 'airbnb', 'api_url', 'categories', 'companies', 'company', 'compensationRange', 'content', 'created_at', 'data', 'description', 'dropbox', 'earliest', 'github', 'greenhouse', 'hostedUrl', 'id', 'job_ingestion', 'job_processor_group', 'jobs', 'label', 'lever', 'localhost:9092', 'location', 'metadata', 'name', 'position', 'salary_range', 'slack', 'source', 'spotify', 'stripe', 'text', 'title', 'type', 'uber', 'url', 'utf-8']

@@ -1,0 +1,4 @@
+# file: /home/brooketogo98/Sorce/backend/api/routers/jobs_ingestion.py
+# hypothesis_version: 6.150.3
+
+[1234, 3600, '/ingest', '/sources', '/sources/lever/sync', '/sources/rss/sync', '/start-periodic', '/status', '/stop-periodic', '2026-01-25T10:30:00Z', '2026-01-25T11:30:00Z', 'Greenhouse', 'INGESTION_API_KEY', 'Lever', 'default-api-key', 'greenhouse', 'https://api.lever.co', 'jobs_synced', 'lever', 'message', 'name', 'sources', 'success', 'type', 'url']

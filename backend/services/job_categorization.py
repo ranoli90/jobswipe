@@ -8,7 +8,7 @@ import logging
 from typing import List, Dict, Tuple
 import spacy
 from backend.db.models import Job
-from db.database import get_db
+from backend.db.database import get_db
 
 logger = logging.getLogger(__name__)
 
@@ -166,7 +166,7 @@ def categorize_jobs(jobs: List[Job]) -> List[Dict[str, any]]:
     for job in jobs:
         category_info = categorize_job(job)
         results.append({
-            "job_id": str(job.id),
+            "job_id": job.id,
             "title": job.title,
             "company": job.company,
             "category": category_info["category"],

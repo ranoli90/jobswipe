@@ -1,0 +1,4 @@
+# file: /home/brooketogo98/Sorce/backend/api/routers/application_automation.py
+# hypothesis_version: 6.150.3
+
+[100, '/auto-apply', '/auto-apply-all', '/stats', '/tasks/history', '/tasks/pending', 'AUTOMATION_API_KEY', 'HEADLESS', 'cancelled', 'created_at', 'error', 'failed', 'id', 'in_progress', 'job_id', 'last_error', 'message', 'pending', 'processed', 'queued', 'results', 'stats', 'status', 'submitted', 'success', 'success_rate', 'task_id', 'tasks', 'timestamp', 'total', 'updated_at']

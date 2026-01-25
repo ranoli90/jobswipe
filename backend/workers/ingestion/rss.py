@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional, List
 from backend.db.models import Job
-from db.database import get_db
+from backend.db.database import get_db
 import logging
 import json
 import feedparser

@@ -1,0 +1,4 @@
+# file: /home/brooketogo98/Sorce/backend/services/cover_letter_service.py
+# hypothesis_version: 6.150.3
+
+[0.3, 300, 1497, 1500, ', ', '...', '[address]', '[email]', '[phone]', 'company', 'full_name', 'gpt-3.5-turbo', 'position', 'skills', 'work_experience', '{company}', '{job_title}', '{name}']

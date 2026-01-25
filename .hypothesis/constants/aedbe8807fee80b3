@@ -1,0 +1,4 @@
+# file: /home/brooketogo98/Sorce/backend/api/routers/profile.py
+# hypothesis_version: 6.150.3
+
+['/', '/resume', 'application/pdf', 'education', 'full_name', 'headline', 'location', 'parsed_at', 'phone', 'skills', 'work_experience']

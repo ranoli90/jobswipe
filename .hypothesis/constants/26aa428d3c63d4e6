@@ -1,0 +1,4 @@
+# file: /home/brooketogo98/Sorce/backend/api/routers/job_categorization.py
+# hypothesis_version: 6.150.3
+
+['/all', '/api/categorize', '/distribution', '/run', 'categorization', 'category', 'category_counts', 'distribution', 'jobs_categorized', 'message', 'success']

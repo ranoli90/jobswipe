@@ -1,0 +1,303 @@
+version: '3.8'
+
+services:
+  # Database
+  postgres:
+    image: postgres:15
+    container_name: jobswipe-postgres
+    environment:
+      POSTGRES_DB: jobswipe
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching and Celery broker
+  redis:
+    image: redis:7-alpine
+    container_name: jobswipe-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # RabbitMQ for Celery message broker
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: jobswipe-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+
+  # MinIO for storage
+  minio:
+    image: minio/minio:latest
+    container_name: jobswipe-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # Backend API
+  backend:
+    build: ./backend
+    container_name: jobswipe-backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres/jobswipe
+      CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: jobswipe
+      MINIO_SECURE: "False"
+      SECRET_KEY: "dev-secret-key-change-in-production"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: >
+      sh -c "
+        # Wait for PostgreSQL
+        while ! nc -z postgres 5432; do
+          echo 'PostgreSQL is unavailable - sleeping'
+          sleep 1
+        done
+        echo 'PostgreSQL is up - continuing'
+
+        # Wait for Vault
+        while ! nc -z vault 8200; do
+          echo 'Vault is unavailable - sleeping'
+          sleep 1
+        done
+        echo 'Vault is up - continuing'
+
+        # Initialize Vault with default secrets
+        python /app/tools/init_vault.py
+
+        # Initialize database
+        python -c 'from db.database import init_db; init_db()'
+
+        # Start API
+        uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+
+  # Celery worker for application automation
+  celery-worker:
+    build: ./backend
+    container_name: jobswipe-celery-worker
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres/jobswipe
+      CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: jobswipe
+      MINIO_SECURE: "False"
+      SECRET_KEY: "dev-secret-key-change-in-production"
+      ENCRYPTION_PASSWORD: "dev-encryption-password-change-in-production"
+      ENCRYPTION_SALT: "dev-salt-change-in-production"
+      VAULT_URL: "http://vault:8200"
+      VAULT_TOKEN: "dev-token-change-in-production"
+      VAULT_URL: "http://vault:8200"
+      VAULT_TOKEN: "dev-token-change-in-production"
+      OAUTH2_REDIRECT_URI: "http://localhost:8000/v1/auth/oauth2/callback"
+      ENCRYPTION_PASSWORD: "dev-encryption-password-change-in-production"
+      ENCRYPTION_SALT: "dev-salt-change-in-production"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - ./tools:/app/tools
+    command: >
+      sh -c "
+        # Wait for services
+        while ! nc -z rabbitmq 5672; do
+          echo 'RabbitMQ is unavailable - sleeping'
+          sleep 1
+        done
+        
+        # Start worker
+        celery -A workers.app_agent_worker worker --loglevel=info --concurrency=4
+      "
+
+  # Flower for Celery monitoring
+  celery-flower:
+    build: ./backend
+    container_name: jobswipe-celery-flower
+    ports:
+      - "5555:5555"
+    environment:
+      CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    command: >
+      sh -c "
+        while ! nc -z rabbitmq 5672; do
+          echo 'RabbitMQ is unavailable - sleeping'
+          sleep 1
+        done
+        
+        celery -A workers.app_agent_worker flower --port=5555 --broker=amqp://guest:guest@rabbitmq:5672//
+      "
+
+  # OpenSearch for search and analytics
+  opensearch:
+    image: opensearchproject/opensearch:2.11.0
+    container_name: jobswipe-opensearch
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - discovery.type=single-node
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "DISABLE_INSTALL_DEMO_CONFIG=true"
+      - "DISABLE_SECURITY_PLUGIN=true"
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # OpenSearch Dashboards for visualization
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:2.11.0
+    container_name: jobswipe-opensearch-dashboards
+    ports:
+      - "5601:5601"
+    environment:
+      OPENSEARCH_HOSTS: '["http://opensearch:9200"]'
+    depends_on:
+      opensearch:
+        condition: service_healthy
+
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: jobswipe-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./tools/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Grafana for dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: jobswipe-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_INSTALL_PLUGINS: "grafana-piechart-panel"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./tools/grafana/provisioning:/etc/grafana/provisioning
+      - ./tools/grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Jaeger for distributed tracing
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jobswipe-jaeger
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:16686"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # HashiCorp Vault for secrets management
+  vault:
+    image: hashicorp/vault:latest
+    container_name: jobswipe-vault
+    ports:
+      - "8200:8200"
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: "dev-token-change-in-production"
+      VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
+    cap_add:
+      - IPC_LOCK
+    command: server -dev
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8200/v1/sys/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres_data:
+  minio_data:
+  opensearch_data:
+  grafana_data:

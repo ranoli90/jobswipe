@@ -1,0 +1,4 @@
+# file: /home/brooketogo98/Sorce/backend/services/job_ingestion_service.py
+# hypothesis_version: 6.150.3
+
+[100, 500, 3600, '(\\d{4,5})-(\\d{4,5})', '.', 'Data Scientist', 'Designer', 'KAFKA_BROKER_URL', 'KAFKA_CONSUMER_GROUP', 'KAFKA_JOB_TOPIC', 'London', 'New York', 'Product Manager', 'Remote', 'San Francisco', 'Software Engineer', 'Unknown', '\\$(\\d{4,5})\\+', "a[href*='/careers/']", "a[href*='/jobs/']", 'airbnb', 'all', 'category', 'companies', 'company', 'company_careers', 'created_at', 'description', 'dropbox', 'earliest', 'github', 'href', 'html.parser', 'http', 'id', 'job_ingestion', 'job_processor_group', 'job_selector', 'link', 'localhost:9092', 'location', 'name', 'published', 'rss', 'rss_github', 'rss_indeed', 'rss_linkedin', 'rss_remoteok', 'rss_stackoverflow', 'rss_weworkremotely', 'salary_range', 'scrape', 'scraped', 'slack', 'software', 'source', 'spotify', 'stripe', 'summary', 'title', 'type', 'uber', 'url', 'utf-8']
