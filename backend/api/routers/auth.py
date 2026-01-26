@@ -19,6 +19,10 @@ from backend.services.mfa_service import mfa_service
 import os
 import re
 import secrets
+import logging
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
 router = APIRouter()
@@ -33,13 +37,15 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/v1/auth/login")
 
 
 class UserCreate(BaseModel):
-    """Request model for user registration"""
+    """Request model for user registration with enhanced validation"""
     email: str
     password: str
 
     @validator('email')
     def email_must_be_valid(cls, v):
-        """Validate email format"""
+        """Validate email format with enhanced checks"""
+        if not v or len(v) > 255:
+            raise ValueError('Email must be between 1 and 255 characters')
         if not re.match(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', v):
             raise ValueError('Invalid email format')
         return v
@@ -47,8 +53,10 @@ class UserCreate(BaseModel):
     @validator('password')
     def password_must_be_strong(cls, v):
         """Validate password strength: at least 8 characters, contains uppercase, lowercase, number, and special character"""
-        if len(v) < 8:
+        if not v or len(v) < 8:
             raise ValueError('Password must be at least 8 characters long')
+        if len(v) > 128:
+            raise ValueError('Password must be less than 128 characters')
         if not re.search(r'[A-Z]', v):
             raise ValueError('Password must contain at least one uppercase letter')
         if not re.search(r'[a-z]', v):
@@ -94,29 +102,35 @@ class TokenData(BaseModel):
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify password against hash using argon2"""
-    return pwd_context.verify(plain_password, hashed_password)
+    """Verify password against hash using argon2 with enhanced security"""
+    try:
+        return pwd_context.verify(plain_password, hashed_password)
+    except Exception as e:
+        raise ValueError(f"Password verification failed: {str(e)}")
 
 
 def get_password_hash(password: str) -> str:
-    """Generate password hash using argon2"""
-    return pwd_context.hash(password)
+    """Generate password hash using argon2 with enhanced security"""
+    try:
+        return pwd_context.hash(password)
+    except Exception as e:
+        raise ValueError(f"Password hashing failed: {str(e)}")
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    """Create JWT access token"""
+    """Create JWT access token with enhanced security"""
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    """Get current authenticated user"""
+    """Get current authenticated user with enhanced error handling"""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -128,12 +142,26 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         if email is None:
             raise credentials_exception
         token_data = TokenData(email=email)
-    except JWTError:
-        raise credentials_exception
+    except JWTError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid or expired token: {str(e)}",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Authentication error: {str(e)}",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     
     user = db.query(User).filter(User.email == token_data.email).first()
     if user is None:
-        raise credentials_exception
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     
     return user
 
@@ -141,7 +169,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 @router.post("/register", response_model=TokenResponse)
 async def register(user: UserCreate, db: Session = Depends(get_db)):
     """
-    Register a new user
+    Register a new user with enhanced validation and error handling
 
     Args:
         user: UserCreate model with email and password
@@ -149,45 +177,63 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
     Returns:
         TokenResponse with access token and user info
     """
-    # Check if user already exists
-    existing_user = db.query(User).filter(User.email == user.email).first()
-    if existing_user:
+    try:
+        logger.info(f"Registration attempt for email: {user.email}")
+        
+        # Check if user already exists
+        existing_user = db.query(User).filter(User.email == user.email).first()
+        if existing_user:
+            logger.warning(f"Registration failed - email already registered: {user.email}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered"
+            )
+
+        # Create new user
+        new_user = User(
+            email=user.email,
+            password_hash=get_password_hash(user.password)
+        )
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        
+        logger.info(f"User registered successfully: {new_user.email}")
+
+        # Create access token
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": new_user.email},
+            expires_delta=access_token_expires
+        )
+
+        return TokenResponse(
+            access_token=access_token,
+            token_type="bearer",
+            user=UserResponse(
+                id=str(new_user.id),
+                email=new_user.email,
+                created_at=new_user.created_at
+            )
+        )
+    except ValueError as e:
+        logger.error(f"Registration validation error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
+            detail=f"Validation error: {str(e)}"
         )
-
-    # Create new user
-    new_user = User(
-        email=user.email,
-        password_hash=get_password_hash(user.password)
-    )
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-
-    # Create access token
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": new_user.email},
-        expires_delta=access_token_expires
-    )
-
-    return TokenResponse(
-        access_token=access_token,
-        token_type="bearer",
-        user=UserResponse(
-            id=str(new_user.id),
-            email=new_user.email,
-            created_at=new_user.created_at
+    except Exception as e:
+        logger.error(f"Registration failed: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Registration failed: {str(e)}"
         )
-    )
 
 
 @router.post("/login", response_model=TokenResponse)
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """
-    Authenticate user with email and password
+    Authenticate user with email and password with enhanced error handling
 
     Args:
         form_data: OAuth2PasswordRequestForm with username/email and password
@@ -195,41 +241,68 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
     Returns:
         TokenResponse with access token and user info
     """
-    user = db.query(User).filter(User.email == form_data.username).first()
-    if not user or not verify_password(form_data.password, user.password_hash):
+    try:
+        logger.info(f"Login attempt for email: {form_data.username}")
+        
+        user = db.query(User).filter(User.email == form_data.username).first()
+        if not user or not verify_password(form_data.password, user.password_hash):
+            logger.warning(f"Login failed - invalid credentials for: {form_data.username}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        logger.info(f"User logged in successfully: {user.email}")
+        
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": user.email},
+            expires_delta=access_token_expires
+        )
+
+        return TokenResponse(
+            access_token=access_token,
+            token_type="bearer",
+            user=UserResponse(
+                id=str(user.id),
+                email=user.email,
+                created_at=user.created_at
+            )
+        )
+    except ValueError as e:
+        logger.error(f"Login authentication error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
+            detail=f"Authentication error: {str(e)}",
             headers={"WWW-Authenticate": "Bearer"},
         )
-
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.email},
-        expires_delta=access_token_expires
-    )
-
-    return TokenResponse(
-        access_token=access_token,
-        token_type="bearer",
-        user=UserResponse(
-            id=str(user.id),
-            email=user.email,
-            created_at=user.created_at
+    except Exception as e:
+        logger.error(f"Login failed: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Login failed: {str(e)}"
         )
-    )
 
 
 @router.get("/me", response_model=MeResponse)
 async def get_me(current_user: User = Depends(get_current_user)):
-    """Get current authenticated user information"""
-    return MeResponse(
-        user=UserResponse(
-            id=str(current_user.id),
-            email=current_user.email,
-            created_at=current_user.created_at
+    """Get current authenticated user information with logging"""
+    try:
+        logger.info(f"User accessed profile: {current_user.email}")
+        return MeResponse(
+            user=UserResponse(
+                id=str(current_user.id),
+                email=current_user.email,
+                created_at=current_user.created_at
+            )
         )
-    )
+    except Exception as e:
+        logger.error(f"Failed to get user profile: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get user profile: {str(e)}"
+        )
 
 
 @router.get("/oauth2/{provider}")
@@ -250,7 +323,7 @@ async def oauth2_login(provider: str):
         )
 
     # Generate state for CSRF protection
-    state = secrets.token_urlsafe(32)
+    state = builtin_secrets.token_urlsafe(32)
 
     authorization_url = oauth2_service.get_authorization_url(provider, state)
 

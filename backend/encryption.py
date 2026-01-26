@@ -8,7 +8,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import base64
 import os
 from typing import Optional
-from backend.secrets import get_encryption_key
+from backend.vault_secrets import get_encryption_key
 
 
 class PIIEncryptor:

@@ -5,7 +5,7 @@ OAuth2 service for social login (Google, LinkedIn)
 import os
 from typing import Optional, Dict, Any
 from authlib.integrations.httpx_client import AsyncOAuth2Client
-from backend.secrets import get_secret
+from backend.vault_secrets import get_secret
 
 
 class OAuth2Service:
