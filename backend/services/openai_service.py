@@ -13,7 +13,7 @@ from openai import OpenAI
 logger = logging.getLogger(__name__)
 
 # Configuration
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "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")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")
 OPENAI_TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE", "0.1"))
 OPENAI_MAX_TOKENS = int(os.getenv("OPENAI_MAX_TOKENS", "2000"))
