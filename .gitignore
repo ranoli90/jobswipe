@@ -65,3 +65,10 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+# Local virtual env
+venv/
+# Secrets backup
+../Sorce_secrets_backup/
+github_credentials/*.txt
+github_credentials/github_ssh_key
+github_credentials/github_ssh_key.pub
