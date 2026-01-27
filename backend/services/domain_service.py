@@ -13,6 +13,17 @@ from backend.db.models import Domain
 class DomainRateLimiter:
     """Handles domain-specific rate limiting"""
 
+    # Default rate limit constants
+    DEFAULT_RPM = 10
+    DEFAULT_RPH = 100
+    DEFAULT_RPD = 500
+    DEFAULT_CONCURRENCY = 5
+    
+    # Time window constants in seconds
+    MINUTE = 60
+    HOUR = 3600
+    DAY = 86400
+
     def __init__(self):
         self.domain_limits: Dict[str, Dict[str, Any]] = {}
         self.request_timestamps: Dict[str, list] = {}
@@ -47,10 +58,10 @@ class DomainRateLimiter:
     def _default_rate_limit(self):
         """Default rate limit policy"""
         return {
-            "requests_per_minute": 10,
-            "requests_per_hour": 100,
-            "requests_per_day": 500,
-            "concurrency": 5,
+            "requests_per_minute": self.DEFAULT_RPM,
+            "requests_per_hour": self.DEFAULT_RPH,
+            "requests_per_day": self.DEFAULT_RPD,
+            "concurrency": self.DEFAULT_CONCURRENCY,
         }
 
     def get_rate_limit(self, domain: str) -> Dict[str, Any]:
@@ -77,13 +88,13 @@ class DomainRateLimiter:
         self.request_timestamps[domain] = [
             ts
             for ts in self.request_timestamps[domain]
-            if now - ts <= 86400  # Keep last 24 hours
+            if now - ts <= self.DAY  # Keep last 24 hours
         ]
 
         # Check rate limits
-        minute_ago = now - 60
-        hour_ago = now - 3600
-        day_ago = now - 86400
+        minute_ago = now - self.MINUTE
+        hour_ago = now - self.HOUR
+        day_ago = now - self.DAY
 
         requests_last_minute = sum(
             1 for ts in self.request_timestamps[domain] if ts >= minute_ago
@@ -116,7 +127,7 @@ class DomainRateLimiter:
         self.request_timestamps[domain] = [
             ts
             for ts in self.request_timestamps[domain]
-            if now - ts <= 86400  # Keep last 24 hours
+            if now - ts <= self.DAY  # Keep last 24 hours
         ]
 
     def get_wait_time(self, domain: str) -> float:
@@ -128,7 +139,7 @@ class DomainRateLimiter:
             return 0.0
 
         # Calculate time until rate limit resets
-        minute_ago = now - 60
+        minute_ago = now - self.MINUTE
         requests_last_minute = sum(
             1 for ts in self.request_timestamps[domain] if ts >= minute_ago
         )
@@ -140,7 +151,7 @@ class DomainRateLimiter:
         earliest_request = min(
             ts for ts in self.request_timestamps[domain] if ts >= minute_ago
         )
-        time_until_reset = earliest_request + 60 - now
+        time_until_reset = earliest_request + self.MINUTE - now
 
         return max(time_until_reset, 0.0)
 

@@ -43,12 +43,8 @@ class ApiKeyService:
             - display_key: Full key to show to user (e.g., "jobswipe_sk_abc123...")
             - stored_key: Hashed version for storage
         """
-        # Generate random bytes for the key
-        random_bytes = secrets.token_bytes(self.FULL_KEY_LENGTH)
         # Generate a URL-safe base64 encoded key
         full_key = f"jobswipe_sk_{secrets.token_urlsafe(self.FULL_KEY_LENGTH)}"
-        # Get prefix for identification (first KEY_PREFIX_LENGTH chars after prefix)
-        prefix = full_key[: self.KEY_PREFIX_LENGTH]
 
         # Hash the key for storage
         key_hash = self._hash_key(full_key)

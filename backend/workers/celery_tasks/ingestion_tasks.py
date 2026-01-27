@@ -240,8 +240,10 @@ def sync_all_sources():
     Returns:
         Summary of ingestion results
     """
+    # Define ingestion sources as a constant
+    INGESTION_SOURCES = ["greenhouse", "lever", "rss"]
     results = {}
-    sources = ["greenhouse", "lever", "rss"]
+    sources = INGESTION_SOURCES
 
     for source in sources:
         task = ingest_jobs_from_source.delay(source)

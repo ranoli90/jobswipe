@@ -15,25 +15,34 @@ security_logger = logging.getLogger("security")
 
 class InputSanitizationMiddleware(BaseHTTPMiddleware):
     """Middleware to sanitize user inputs to prevent injection attacks"""
+    
+    # Default maximum file size: 10MB
+    DEFAULT_MAX_FILE_SIZE = 10 * 1024 * 1024
+    
+    # Default allowed MIME types for file uploads
+    DEFAULT_ALLOWED_MIME_TYPES = [
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+        "application/pdf",
+        "text/plain",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ]
+    
+    # Dangerous HTML tags to remove
+    DANGEROUS_HTML_TAGS = ["script", "iframe", "object", "embed"]
 
     def __init__(
         self,
         app: Callable,
         allowed_mime_types: list = None,
-        max_file_size: int = 10 * 1024 * 1024,
+        max_file_size: int = None,
     ):
         super().__init__(app)
-        self.allowed_mime_types = allowed_mime_types or [
-            "image/jpeg",
-            "image/png",
-            "image/gif",
-            "image/webp",
-            "application/pdf",
-            "text/plain",
-            "application/msword",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        ]
-        self.max_file_size = max_file_size
+        self.allowed_mime_types = allowed_mime_types or self.DEFAULT_ALLOWED_MIME_TYPES
+        self.max_file_size = max_file_size or self.DEFAULT_MAX_FILE_SIZE
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         try:
@@ -118,19 +127,10 @@ class InputSanitizationMiddleware(BaseHTTPMiddleware):
         if not isinstance(text, str):
             return text
 
-        # Remove script tags and other dangerous elements
-        text = re.sub(
-            r"<script[^>]*>.*?</script>", "", text, flags=re.IGNORECASE | re.DOTALL
-        )
-        text = re.sub(
-            r"<iframe[^>]*>.*?</iframe>", "", text, flags=re.IGNORECASE | re.DOTALL
-        )
-        text = re.sub(
-            r"<object[^>]*>.*?</object>", "", text, flags=re.IGNORECASE | re.DOTALL
-        )
-        text = re.sub(
-            r"<embed[^>]*>.*?</embed>", "", text, flags=re.IGNORECASE | re.DOTALL
-        )
+        # Remove dangerous HTML tags
+        for tag in self.DANGEROUS_HTML_TAGS:
+            pattern = rf"<{tag}[^>]*>.*?</{tag}>"
+            text = re.sub(pattern, "", text, flags=re.IGNORECASE | re.DOTALL)
 
         # Encode HTML entities
         text = html.escape(text, quote=True)
@@ -140,8 +140,6 @@ class InputSanitizationMiddleware(BaseHTTPMiddleware):
     async def _validate_file_uploads(self, request: Request):
         """Validate file uploads for MIME type and size"""
         try:
-            # Read the body to check files
-            body = await request.body()
             # For simplicity, we'll check in the endpoint where files are processed
             # This is a placeholder for file validation logic
             pass

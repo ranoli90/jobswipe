@@ -236,11 +236,11 @@ class FileValidationMiddleware(BaseHTTPMiddleware):
             # We'll validate when the file is actually accessed
             # For now, just pass through
             return await call_next(request)
-        except HTTPException as e:
+        except HTTPException:
             # Re-raise HTTP exceptions
             raise
-        except Exception as e:
-            logger.error(f"File validation error: {e}")
+        except Exception:
+            logger.error("File validation error")
             raise
 
 
@@ -318,6 +318,16 @@ def validate_file(
     return True, ""
 
 
+# Resume file validation constants
+RESUME_ALLOWED_EXTENSIONS = {".pdf", ".doc", ".docx", ".txt"}
+RESUME_ALLOWED_TYPES = {
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/plain",
+}
+RESUME_MAX_SIZE = 5 * 1024 * 1024  # 5MB
+
 def validate_resume_file(filename: str, content: bytes) -> Tuple[bool, str]:
     """
     Validate a resume file specifically.
@@ -329,18 +339,10 @@ def validate_resume_file(filename: str, content: bytes) -> Tuple[bool, str]:
     Returns:
         Tuple of (is_valid, error_message)
     """
-    allowed_extensions = {".pdf", ".doc", ".docx", ".txt"}
-    allowed_types = {
-        "application/pdf",
-        "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "text/plain",
-    }
-
     return validate_file(
         filename=filename,
         content=content,
-        allowed_extensions=allowed_extensions,
-        allowed_file_types=allowed_types,
-        max_size=5 * 1024 * 1024,  # 5MB for resumes
+        allowed_extensions=RESUME_ALLOWED_EXTENSIONS,
+        allowed_file_types=RESUME_ALLOWED_TYPES,
+        max_size=RESUME_MAX_SIZE,
     )
