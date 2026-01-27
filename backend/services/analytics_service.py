@@ -103,7 +103,7 @@ class AnalyticsService:
                     matches_by_score_range["very_high"] += 1
 
                     # Count accurate matches (score > 0.7 for 'like' or 'apply' actions)
-                    if interaction.action in ["like", "apply"] and score > 0.7:
+                    if interaction.action in {"like", "apply"} and score > 0.7:
                         accurate_matches += 1
 
                 except Exception as e:
@@ -148,7 +148,7 @@ class AnalyticsService:
         finally:
             db.close()
 
-    async def get_user_behavior_report(self, user_id: str) -> Dict:
+    async def get_user_behavior_report(self, user_id: str = None) -> Dict:
         """
         Generate a user behavior report.
 
@@ -161,11 +161,19 @@ class AnalyticsService:
         db = next(get_db())
 
         try:
-            user = db.query(User).filter(User.id == user_id).first()
-            if not user:
-                return {"error": "User not found"}
-
-            # Get all user interactions
+            if user_id:
+                user = db.query(User).filter(User.id == user_id).first()
+                if not user:
+                    return {"error": "User not found"}
+                # Get user interactions
+                interactions = (
+                    db.query(UserJobInteraction)
+                    .filter(UserJobInteraction.user_id == user_id)
+                    .all()
+                )
+            else:
+                # Get all interactions for aggregate report
+                interactions = db.query(UserJobInteraction).all()
             interactions = (
                 db.query(UserJobInteraction)
                 .filter(UserJobInteraction.user_id == user_id)
