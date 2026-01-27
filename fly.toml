@@ -10,7 +10,7 @@ primary_region = 'iad'
   # Use larger builder for faster builds
   [build.builder]
     cpus = 4
-    memory = 4gb
+    memory = "4gb"
 
 [http_service]
   internal_port = 8080
