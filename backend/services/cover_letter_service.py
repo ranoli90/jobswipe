@@ -7,6 +7,16 @@ from typing import Optional
 
 from backend.services.openai_service import OLLAMA_MODEL, OpenAIService
 
+# Constants for cover letter generation
+MAX_SKILLS_TO_INCLUDE = 8
+MAX_EXPERIENCE_ENTRIES = 3
+MAX_WORDS = 180
+MAX_CHARACTERS = 1500
+TRUNCATION_SUFFIX = "..."
+TRUNCATED_CHARACTER_LIMIT = MAX_CHARACTERS - len(TRUNCATION_SUFFIX)
+LLM_TEMPERATURE = 0.3
+LLM_MAX_TOKENS = 300
+
 # Initialize OpenAI service (now using Ollama for cost-free operation)
 openai_service = OpenAIService()
 
@@ -22,14 +32,14 @@ def create_cover_letter_prompt(job_desc: str, profile: dict) -> str:
     Returns:
         Structured prompt for LLM
     """
-    skills_text = ", ".join(profile.get("skills", [])[:8])
+    skills_text = ", ".join(profile.get("skills", [])[:MAX_SKILLS_TO_INCLUDE])
     experience_text = []
-    for exp in profile.get("work_experience", [])[:3]:
+    for exp in profile.get("work_experience", [])[:MAX_EXPERIENCE_ENTRIES]:
         if exp.get("position") and exp.get("company"):
             experience_text.append(f"{exp['position']} at {exp['company']}")
 
     return (
-        "Write a concise cover letter (<= 180 words). "
+        f"Write a concise cover letter (<= {MAX_WORDS} words). "
         "Use the candidate's experience and top skills; avoid extra PII. "
         "Focus on relevant qualifications for the specific job. "
         "Keep it professional and tailored to the position. "
@@ -41,7 +51,7 @@ def create_cover_letter_prompt(job_desc: str, profile: dict) -> str:
         f"Job Description:\n{job_desc}\n"
         "\n"
         "Requirements:\n"
-        "- Max 180 words\n"
+        f"- Max {MAX_WORDS} words\n"
         "- No personal identifiable information beyond what's provided\n"
         "- Professional tone\n"
         "- Tailored to the specific job\n"
@@ -62,9 +72,9 @@ def validate_cover_letter(text: str) -> str:
     # Strip whitespace
     text = text.strip()
 
-    # Hard cap at 1500 characters (approximately 180 words)
-    if len(text) > 1500:
-        text = text[:1497] + "..."
+    # Hard cap at maximum characters
+    if len(text) > MAX_CHARACTERS:
+        text = text[:TRUNCATED_CHARACTER_LIMIT] + TRUNCATION_SUFFIX
 
     # Remove any potential PII patterns (email, phone, address)
     import re
@@ -96,8 +106,8 @@ def generate_cover_letter(job_desc: str, profile: dict) -> Optional[str]:
         prompt = create_cover_letter_prompt(job_desc, profile)
         raw_response = openai_service.complete(
             prompt,
-            temperature=0.3,  # Low temperature for deterministic output
-            max_tokens=300,  # Strict token limit
+            temperature=LLM_TEMPERATURE,  # Low temperature for deterministic output
+            max_tokens=LLM_MAX_TOKENS,  # Strict token limit
             model=OLLAMA_MODEL,  # Using free Ollama model instead of paid gpt-3.5-turbo
         )
 
