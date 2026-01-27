@@ -132,6 +132,7 @@ def extract_keywords(text: str) -> List[str]:
         token.text for token in doc
         if token.pos_ in {"NOUN", "PROPN"} and len(token.text) > 2
     ]
+    return keywords
 
 
 def determine_category(title: str, description: str) -> Tuple[str, float]:
@@ -154,7 +155,6 @@ def determine_category(title: str, description: str) -> Tuple[str, float]:
 
     # Calculate category scores using set for membership test
     category_scores = {category: 0 for category in JOB_CATEGORIES}
-    category_keywords_set = {kw.lower() for kws in JOB_CATEGORIES.values() for kw in kws}
     title_lower = title.lower()
     combined_lower = combined_text.lower()
 

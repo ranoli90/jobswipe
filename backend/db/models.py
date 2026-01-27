@@ -16,6 +16,10 @@ from sqlalchemy.types import TypeDecorator
 from backend.db.database import Base
 from backend.encryption import decrypt_pii, encrypt_pii
 
+# Table name constants to avoid duplication
+USERS_TABLE = "users.id"
+JOBS_TABLE = "jobs.id"
+
 
 class EncryptedString(TypeDecorator):
     """SQLAlchemy type decorator for encrypting PII strings"""
@@ -139,7 +143,7 @@ class JobIndex(Base):
     __tablename__ = "job_index"
     __table_args__ = ({"extend_existing": True},)
 
-    job_id = Column(UUID(as_uuid=True), ForeignKey("jobs.id"), primary_key=True)
+    job_id = Column(UUID(as_uuid=True), ForeignKey(JOBS_TABLE), primary_key=True)
     search_vector = Column(JSON)
     facets = Column(JSON)
     indexed_at = Column(DateTime, default=datetime.utcnow)
@@ -175,7 +179,7 @@ class ApplicationTask(Base):
     __table_args__ = ({"extend_existing": True},)
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey(USERS_TABLE), nullable=False)
     job_id = Column(UUID(as_uuid=True), ForeignKey("jobs.id"), nullable=False)
     status = Column(String, default="queued")
     attempt_count = Column(Integer, default=0)
