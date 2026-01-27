@@ -91,7 +91,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
               ),
             ),
-            ),
 
             // Page view
             Expanded(

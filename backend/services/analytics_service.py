@@ -496,10 +496,9 @@ class AnalyticsService:
                     if isinstance(item, dict):
                         item_html = ", ".join([f"{k}: {v}" for k, v in item.items()])
                         html += f"<li>{item_html}</li>"
-                    
-
-                    html += f"<li>{item}</li>"
-            html += "</ul>"
+                    else:
+                        html += f"<li>{item}</li>"
+                html += "</ul>"
             else:
                 html += f"""
                 <div class="metric">

@@ -13,6 +13,9 @@ import numpy as np
 import redis
 from sklearn.metrics.pairwise import cosine_similarity
 
+# Constants
+EMBEDDING_SERVICE_UNAVAILABLE_MSG = "Embedding service not available"
+
 logger = logging.getLogger(__name__)
 
 # Configuration
@@ -64,7 +67,7 @@ class EmbeddingService:
             List of floating point numbers representing the embedding
         """
         if not EmbeddingService.is_available():
-            logger.warning("Embedding service not available")
+            logger.warning(EMBEDDING_SERVICE_UNAVAILABLE_MSG)
             return []
 
         # Create cache key
@@ -106,7 +109,7 @@ class EmbeddingService:
             List of floating point numbers representing the embedding
         """
         if not EmbeddingService.is_available():
-            logger.warning("Embedding service not available")
+            logger.warning(EMBEDDING_SERVICE_UNAVAILABLE_MSG)
             return []
 
         profile_text = EmbeddingService._profile_to_text(profile)
@@ -219,10 +222,10 @@ class EmbeddingService:
             Dictionary with match analysis and score
         """
         if not EmbeddingService.is_available():
-            logger.warning("Embedding service not available")
+            logger.warning(EMBEDDING_SERVICE_UNAVAILABLE_MSG)
             return {
                 "score": 0.5,
-                "analysis": "Embedding service not available",
+                "analysis": EMBEDDING_SERVICE_UNAVAILABLE_MSG,
                 "missing_skills": [],
                 "matched_skills": [],
                 "recommendations": [],

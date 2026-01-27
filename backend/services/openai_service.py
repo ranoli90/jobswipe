@@ -45,7 +45,7 @@ def get_client():
             logger.info("Ollama service initialized successfully")
             return ollama_client
         except Exception as e:
-            logger.warning(f"Ollama not available: {e}. Falling back to rule-based matching.")
+            logger.warning("Ollama not available: %s. Falling back to rule-based matching.", e)
             ollama_client = None
 
     return ollama_client

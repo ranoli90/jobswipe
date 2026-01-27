@@ -551,11 +551,10 @@ class ApplicationAutomationService:
                 logger.info("Application completed successfully")
                 # Record successful request
                 domain_service.record_request(job.apply_url, success=True)
-            
-
-            result["status"] = "failed"
-            result["message"] = "Form validation failed"
-            logger.warning("Application failed validation")
+            else:
+                result["status"] = "failed"
+                result["message"] = "Form validation failed"
+                logger.warning("Application failed validation")
                 # Record failed request
                 domain_service.record_request(job.apply_url, success=False)
 
