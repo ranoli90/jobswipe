@@ -81,7 +81,7 @@ class RequestDeduplicationMiddleware(BaseHTTPMiddleware):
         ]
 
         # Add body hash for mutation methods
-        if body and request.method in ("POST", "PUT", "PATCH"):
+        if body and request.method in {"POST", "PUT", "PATCH"}:
             body_hash = hashlib.sha256(body).hexdigest()
             components.append(body_hash)
 
@@ -105,7 +105,7 @@ class RequestDeduplicationMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         # Skip GET and DELETE requests (idempotent operations)
-        if request.method in ("GET", "DELETE", "HEAD", "OPTIONS"):
+        if request.method in {"GET", "DELETE", "HEAD", "OPTIONS"}:
             return await call_next(request)
 
         # Read request body
