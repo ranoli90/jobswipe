@@ -1,0 +1,107 @@
+# Git
+.git
+.gitignore
+.github
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist
+build
+.pytest_cache
+.coverage
+htmlcov
+.tox
+.hypothesis
+.mypy_cache
+
+# Virtual environments
+venv
+env
+ENV
+.venv
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+*.md
+LICENSE
+README.md
+AUDIT_METHODOLOGY.md
+*_report.md
+*_SUMMARY.md
+*_PLAN.md
+*_GUIDE.md
+*_RUNBOOK.md
+*_STRATEGY.md
+
+# Flutter and mobile apps
+flutter/
+mobile-app/
+packages/
+plans/
+
+# Backup and monitoring
+backup/
+monitoring/
+security/
+tools/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Docker
+docker-compose*.yml
+Dockerfile
+fly.toml
+flyctl
+
+# Test files
+*_test.py
+test_*.py
+conftest.py
+locustfile.py
+check_db.py
+list_tables.py
+migrate_db.py
+run_single_test.py
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+
+# Node modules
+node_modules/
+
+# Exclude most backend except essential files
+backend/tests/
+backend/docs/
+backend/alembic/versions/*.py
+!backend/alembic/versions/initial_migration.py
+!backend/alembic/versions/006_add_email_verified_field.py
+backend/alembic/versions/README
+backend/*.pyc
+backend/__pycache__
+backend/workers/
