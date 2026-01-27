@@ -19,7 +19,7 @@ RUN npm install -g playwright@1.40.0 && \
     playwright install --with-deps chromium
 
 # Copy requirements and install Python dependencies
-COPY requirements.txt .
+COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
