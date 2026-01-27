@@ -127,14 +127,11 @@ def extract_keywords(text: str) -> List[str]:
         return []
 
     doc = nlp(text.lower())
-    keywords = []
-
-    # Extract nouns and proper nouns
-    for token in doc:
-        if token.pos_ in ["NOUN", "PROPN"] and len(token.text) > 2:
-            keywords.append(token.text)
-
-    return list(set(keywords))
+    # Extract nouns and proper nouns using set for faster membership testing
+    keywords = [
+        token.text for token in doc
+        if token.pos_ in {"NOUN", "PROPN"} and len(token.text) > 2
+    ]
 
 
 def determine_category(title: str, description: str) -> Tuple[str, float]:
@@ -152,20 +149,21 @@ def determine_category(title: str, description: str) -> Tuple[str, float]:
     combined_text = f"{title} {description}"
 
     # Extract keywords
-    keywords = extract_keywords(combined_text)
+    # Extract keywords
+    keywords = extract_keywords(combined_text)  # noqa: F841 - Available for future scoring enhancements
 
-    # Calculate category scores
+    # Calculate category scores using set for membership test
     category_scores = {category: 0 for category in JOB_CATEGORIES}
+    category_keywords_set = {kw.lower() for kws in JOB_CATEGORIES.values() for kw in kws}
+    title_lower = title.lower()
+    combined_lower = combined_text.lower()
 
     for category, category_keywords in JOB_CATEGORIES.items():
         for keyword in category_keywords:
-            if keyword.lower() in combined_text.lower():
+            keyword_lower = keyword.lower()
+            if keyword_lower in combined_lower:
                 # Give higher weight to keywords in title
-                if keyword.lower() in title.lower():
-                    category_scores[category] += 2
-                
-
-                category_scores[category] += 1
+                category_scores[category] += 2 if keyword_lower in title_lower else 1
 
     # Find category with highest score
     max_score = max(category_scores.values())
@@ -303,7 +301,8 @@ class JobCategorizationService:
     """Service for job categorization"""
 
     def __init__(self):
-        pass
+        """Initialize the job categorization service."""
+        pass  # No initialization needed - service is stateless
 
     def categorize_job(self, job: Job) -> Dict[str, any]:
         """Categorize a single job"""

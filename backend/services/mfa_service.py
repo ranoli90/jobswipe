@@ -81,10 +81,7 @@ class MFAService:
         Returns:
             List of backup codes
         """
-        codes = []
-        for _ in range(count):
-            codes.append(secrets.token_hex(4).upper())
-        return codes
+        return [secrets.token_hex(4).upper() for _ in range(count)]
 
     def verify_backup_code(self, user: User, backup_code: str) -> bool:
         """

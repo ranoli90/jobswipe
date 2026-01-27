@@ -106,14 +106,11 @@ class DomainRateLimiter:
             1 for ts in self.request_timestamps[domain] if ts >= day_ago
         )
 
-        if (
+        return (
             requests_last_minute >= rate_limit["requests_per_minute"]
             or requests_last_hour >= rate_limit["requests_per_hour"]
             or requests_last_day >= rate_limit["requests_per_day"]
-        ):
-            return True
-
-        return False
+        )
 
     def record_request(self, domain: str):
         """Record a request to the domain"""

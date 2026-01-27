@@ -155,18 +155,20 @@ class EmbeddingService:
             parts.append(f"Skills: {skills_text}")
 
         if profile.get("work_experience"):
-            experience_text = []
-            for exp in profile["work_experience"]:
-                if exp.get("position") and exp.get("company"):
-                    experience_text.append(f"{exp['position']} at {exp['company']}")
+            experience_text = [
+                f"{exp['position']} at {exp['company']}"
+                for exp in profile["work_experience"]
+                if exp.get("position") and exp.get("company")
+            ]
             if experience_text:
                 parts.append(f"Experience: {', '.join(experience_text)}")
 
         if profile.get("education"):
-            education_text = []
-            for edu in profile["education"]:
-                if edu.get("degree") and edu.get("school"):
-                    education_text.append(f"{edu['degree']} from {edu['school']}")
+            education_text = [
+                f"{edu['degree']} from {edu['school']}"
+                for edu in profile["education"]
+                if edu.get("degree") and edu.get("school")
+            ]
             if education_text:
                 parts.append(f"Education: {', '.join(education_text)}")
 

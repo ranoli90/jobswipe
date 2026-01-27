@@ -31,7 +31,7 @@ ollama_client = None
 
 def get_client():
     """Get or create client instance using Ollama (OpenAI removed as paid service)"""
-    global ollama_client
+    global ollama_client  # noqa: F401 - Intentional singleton pattern for module-level client
 
     # Try Ollama
     if not ollama_client:
@@ -45,8 +45,7 @@ def get_client():
             logger.info("Ollama service initialized successfully")
             return ollama_client
         except Exception as e:
-            logger.warning("Ollama not available: %s. Falling back to rule-based matching." % (str(e))
-            )
+            logger.warning(f"Ollama not available: {e}. Falling back to rule-based matching.")
             ollama_client = None
 
     return ollama_client
@@ -86,15 +85,15 @@ class OpenAIService:
             return []
 
         try:
-            client = get_client()
+            _client = get_client()
             # Use Ollama's embedding model
             model = OLLAMA_EMBEDDING_MODEL
-            response = client.embeddings.create(input=job_description, model=model)
+            response = _client.embeddings.create(input=job_description, model=model)
 
             return response.data[0].embedding
 
         except Exception as e:
-            logger.error("Error generating job embedding: %s", str(e))
+            logger.error(f"Error generating job embedding: {e}")
             return []
 
     @staticmethod
@@ -116,15 +115,15 @@ class OpenAIService:
             # Convert profile to text for embedding
             profile_text = OpenAIService._profile_to_text(profile)
 
-            client = get_client()
+            _client = get_client()
             # Use Ollama's embedding model
             model = OLLAMA_EMBEDDING_MODEL
-            response = client.embeddings.create(input=profile_text, model=model)
+            response = _client.embeddings.create(input=profile_text, model=model)
 
             return response.data[0].embedding
 
         except Exception as e:
-            logger.error("Error generating profile embedding: %s", str(e))
+            logger.error(f"Error generating profile embedding: {e}")
             return []
 
     @staticmethod
@@ -143,18 +142,20 @@ class OpenAIService:
             parts.append(f"Skills: {skills_text}")
 
         if profile.get("work_experience"):
-            experience_text = []
-            for exp in profile["work_experience"]:
-                if exp.get("position") and exp.get("company"):
-                    experience_text.append(f"{exp['position']} at {exp['company']}")
+            experience_text = [
+                f"{exp['position']} at {exp['company']}"
+                for exp in profile["work_experience"]
+                if exp.get("position") and exp.get("company")
+            ]
             if experience_text:
                 parts.append(f"Experience: {', '.join(experience_text)}")
 
         if profile.get("education"):
-            education_text = []
-            for edu in profile["education"]:
-                if edu.get("degree") and edu.get("school"):
-                    education_text.append(f"{edu['degree']} from {edu['school']}")
+            education_text = [
+                f"{edu['degree']} from {edu['school']}"
+                for edu in profile["education"]
+                if edu.get("degree") and edu.get("school")
+            ]
             if education_text:
                 parts.append(f"Education: {', '.join(education_text)}")
 
@@ -225,8 +226,8 @@ class OpenAIService:
                 profile, job_description
             )
 
-            client = get_client()
-            response = client.chat.completions.create(
+            _client = get_client()
+            response = _client.chat.completions.create(
                 model=OLLAMA_MODEL,
                 messages=[
                     {
@@ -393,7 +394,7 @@ class OpenAIService:
             return ""
 
         try:
-            client = get_client()
+            _client = get_client()
             # Use Ollama model for cost-free operation, with optional overrides
             effective_model = model if model else OLLAMA_MODEL
             effective_temp = (
@@ -401,7 +402,7 @@ class OpenAIService:
             )
             effective_max_tokens = max_tokens if max_tokens else OLLAMA_MAX_TOKENS
 
-            response = client.chat.completions.create(
+            response = _client.chat.completions.create(
                 model=effective_model,
                 messages=[
                     {

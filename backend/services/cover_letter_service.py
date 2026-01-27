@@ -33,10 +33,11 @@ def create_cover_letter_prompt(job_desc: str, profile: dict) -> str:
         Structured prompt for LLM
     """
     skills_text = ", ".join(profile.get("skills", [])[:MAX_SKILLS_TO_INCLUDE])
-    experience_text = []
-    for exp in profile.get("work_experience", [])[:MAX_EXPERIENCE_ENTRIES]:
-        if exp.get("position") and exp.get("company"):
-            experience_text.append(f"{exp['position']} at {exp['company']}")
+    experience_text = [
+        f"{exp['position']} at {exp['company']}"
+        for exp in profile.get("work_experience", [])[:MAX_EXPERIENCE_ENTRIES]
+        if exp.get("position") and exp.get("company")
+    ]
 
     return (
         f"Write a concise cover letter (<= {MAX_WORDS} words). "

@@ -4,6 +4,10 @@ from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
 
 
+# Default Redis URL constant to avoid duplication
+DEFAULT_REDIS_URL = "redis://localhost:6379/0"
+
+
 class Settings(BaseSettings):
     # Environment
     environment: str = Field(default="development", env="ENVIRONMENT")
@@ -13,14 +17,14 @@ class Settings(BaseSettings):
     database_url: str = Field(env="DATABASE_URL")
 
     # Redis
-    redis_url: str = Field(default="redis://localhost:6379/0", env="REDIS_URL")
+    redis_url: str = Field(default=DEFAULT_REDIS_URL, env="REDIS_URL")
 
     # Celery (using Redis for both broker and result backend in production)
     celery_broker_url: str = Field(
-        default="redis://localhost:6379/0", env="CELERY_BROKER_URL"
+        default=DEFAULT_REDIS_URL, env="CELERY_BROKER_URL"
     )
     celery_result_backend: str = Field(
-        default="redis://localhost:6379/0", env="CELERY_RESULT_BACKEND"
+        default=DEFAULT_REDIS_URL, env="CELERY_RESULT_BACKEND"
     )
 
     # JWT
