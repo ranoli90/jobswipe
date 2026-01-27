@@ -11,6 +11,11 @@ import uuid
 from locust import HttpUser, between, constant, task
 
 
+# API endpoint constants to avoid duplication
+PERSONALIZED_JOBS_ENDPOINT = "/api/jobs/personalized"
+PROFILE_ENDPOINT = "/api/profile/"
+
+
 class JobSwipeUser(HttpUser):
     """Simulates a JobSwipe user performing typical actions"""
 
@@ -108,7 +113,7 @@ class JobSwipeUser(HttpUser):
                 ],
             }
 
-            response = self.client.put("/api/profile/", json=profile_data)
+            response = self.client.put(PROFILE_ENDPOINT, json=profile_data)
             if response.status_code == 200:
                 self.profile_created = True
 
@@ -119,7 +124,7 @@ class JobSwipeUser(HttpUser):
             return
 
         # Get personalized jobs
-        response = self.client.get("/api/jobs/personalized", params={"limit": 10})
+        response = self.client.get(PERSONALIZED_JOBS_ENDPOINT, params={"limit": 10})
 
         if response.status_code == 200:
             jobs = response.json()
@@ -184,7 +189,7 @@ class JobSwipeUser(HttpUser):
             return
 
         # Get jobs and randomly apply to one
-        response = self.client.get("/api/jobs/personalized", params={"limit": 5})
+        response = self.client.get(PERSONALIZED_JOBS_ENDPOINT, params={"limit": 5})
         if response.status_code == 200:
             jobs = response.json()
             if jobs and random.random() < 0.1:  # 10% chance to apply
@@ -234,7 +239,7 @@ class JobSwipeUser(HttpUser):
             ]
         )
 
-        current_profile_response = self.client.get("/api/profile/")
+        current_profile_response = self.client.get(PROFILE_ENDPOINT)
         if current_profile_response.status_code == 200:
             current_profile = current_profile_response.json()
             skills = current_profile.get("skills", [])
@@ -246,7 +251,7 @@ class JobSwipeUser(HttpUser):
                     "headline": f"Experienced developer skilled in {', '.join(skills[:3])}",
                 }
 
-                self.client.put("/api/profile/", json=update_data)
+                self.client.put(PROFILE_ENDPOINT, json=update_data)
 
     @task(1)
     def view_analytics(self):
@@ -317,7 +322,7 @@ class MobileAppUser(HttpUser):
 
         # Mobile users often browse with location context
         response = self.client.get(
-            "/api/jobs/personalized",
+            PERSONALIZED_JOBS_ENDPOINT,
             params={
                 "limit": 5,  # Smaller batches on mobile
                 "include_location": "true",
@@ -339,7 +344,7 @@ class MobileAppUser(HttpUser):
         if not self.auth_token:
             return
 
-        response = self.client.get("/api/jobs/personalized", params={"limit": 3})
+        response = self.client.get(PERSONALIZED_JOBS_ENDPOINT, params={"limit": 3})
         if response.status_code == 200:
             jobs = response.json()
             for job_data in jobs:
@@ -361,8 +366,10 @@ class MobileAppUser(HttpUser):
 # Configuration for different load test scenarios
 def setup_test_environment():
     """Setup environment variables for load testing"""
+    db_user = os.getenv("BASIC_AUTH_USER", "test")
+    db_pass = os.getenv("BASIC_AUTH_PASS", "test")
     os.environ.setdefault(
-        "DATABASE_URL", "postgresql://test:test@localhost:5432/jobswipe_test"
+        "DATABASE_URL", f"postgresql://{db_user}:{db_pass}@localhost:5432/jobswipe_test"
     )
     os.environ.setdefault("REDIS_URL", "redis://localhost:6379/1")
     os.environ.setdefault("JWT_SECRET_KEY", "test_secret_key_for_load_testing")

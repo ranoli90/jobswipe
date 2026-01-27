@@ -377,7 +377,7 @@ class JobIngestionService:
 
                 domain = urlparse(entry.link).netloc
                 return domain.split(".")[-2]  # Get second-level domain
-            except:
+            except Exception:
                 pass
 
         return "Unknown"

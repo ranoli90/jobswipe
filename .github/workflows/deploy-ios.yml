@@ -3,13 +3,10 @@ name: Deploy iOS to App Store
 on:
   release:
     types: [published]
-  workflow_dispatch:
-    inputs:
-      testflight_only:
-        description: 'Deploy to TestFlight only (skip App Store)'
-        required: false
-        default: false
-        type: boolean
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
 
 jobs:
   deploy-ios:

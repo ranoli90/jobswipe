@@ -2,6 +2,6 @@ simhash>=2.1
 memory-profiler>=0.60
 pytest>=7.0
 pylint>=2.15
-black>=22.0
+black>=24.3.0  # Updated for vulnerability remediation on 2026-01-27
 autopep8>=2.0
 astroid>=2.13

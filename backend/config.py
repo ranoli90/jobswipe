@@ -1,6 +1,6 @@
 import os
 
-from pydantic import Field, validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -90,7 +90,7 @@ class Settings(BaseSettings):
         env_file = os.getenv("ENV_FILE", ".env")
         env_file_encoding = "utf-8"
 
-    @validator(
+    @field_validator(
         "secret_key",
         "encryption_password",
         "encryption_salt",
@@ -99,35 +99,35 @@ class Settings(BaseSettings):
         "deduplication_api_key",
         "categorization_api_key",
         "automation_api_key",
-        pre=True,
-        always=True,
+        mode="before",
     )
-    def validate_secrets(cls, v, field):
+    @classmethod
+    def validate_secrets(cls, v, info):
         if cls.environment == "production" and (
             v is None
-            or v.startswith("dev-")
-            or v.startswith("CHANGE_")
-            or len(v.strip()) == 0
+            or (isinstance(v, str) and (v.startswith("dev-") or v.startswith("CHANGE_") or len(v.strip()) == 0))
         ):
             raise ValueError(
-                f"{field.name} must be set to a secure value in production"
+                f"{info.field_name} must be set to a secure value in production"
             )
         return v
 
-    @validator(
-        "cors_allow_origins", "cors_allow_methods", "cors_allow_headers", pre=True
+    @field_validator(
+        "cors_allow_origins", "cors_allow_methods", "cors_allow_headers",
+        mode="before",
     )
-    def validate_cors_restrictions(cls, v, field):
+    @classmethod
+    def validate_cors_restrictions(cls, v, info):
         """Validate that CORS settings are not wildcard in production."""
         env = os.getenv("ENVIRONMENT", "development")
         if env == "production":
             if isinstance(v, str) and v.strip() == "*":
                 raise ValueError(
-                    f"{field.name} cannot be '*' in production - must specify allowed {field.name.replace('cors_allow_', '')}"
+                    f"{info.field_name} cannot be '*' in production - must specify allowed {info.field_name.replace('cors_allow_', '')}"
                 )
             if isinstance(v, list) and v == ["*"]:
                 raise ValueError(
-                    f"{field.name} cannot be ['*'] in production - must specify allowed {field.name.replace('cors_allow_', '')}"
+                    f"{info.field_name} cannot be ['*'] in production - must specify allowed {info.field_name.replace('cors_allow_', '')}"
                 )
         if isinstance(v, str):
             return [item.strip() for item in v.split(",") if item.strip()]

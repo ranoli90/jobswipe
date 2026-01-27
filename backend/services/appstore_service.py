@@ -228,8 +228,11 @@ if __name__ == "__main__":
         logging.error(f"Error: {result['error']}")
     else:
         logging.info(f"Changed: {result['changed']}")
-        app_info = result["appInfo"]
-        logging.info(f"Version: {app_info['version']}")
-        logging.info(f"Minimum OS: {app_info['minimumOsVersion']}")
-        logging.info(f"Seller: {app_info['sellerName']}")
-        logging.info(f"Bundle ID: {app_info['bundleId']}")
+        app_info = result.get("appInfo")
+        if app_info:
+            logging.info(f"Version: {app_info.get('version', 'N/A')}")
+            logging.info(f"Minimum OS: {app_info.get('minimumOsVersion', 'N/A')}")
+            logging.info(f"Seller: {app_info.get('sellerName', 'N/A')}")
+            logging.info(f"Bundle ID: {app_info.get('bundleId', 'N/A')}")
+        else:
+            logging.warning("No app info available")

@@ -8,7 +8,7 @@ services:
     environment:
       POSTGRES_DB: jobswipe
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
       - "5432:5432"
     volumes:
@@ -39,8 +39,8 @@ services:
       - "5672:5672"
       - "15672:15672"
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
     healthcheck:
       test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
       interval: 30s
@@ -54,10 +54,10 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres/jobswipe
-      CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres/jobswipe
+      CELERY_BROKER_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672//
       CELERY_RESULT_BACKEND: redis://redis:6379/0
-      SECRET_KEY: "dev-secret-key-change-in-production"
+      JWT_SECRET_KEY: "${JWT_SECRET_KEY:-dev-secret-key-change-in-production}"
     depends_on:
       postgres:
         condition: service_healthy
@@ -98,8 +98,8 @@ services:
     build: ./backend
     container_name: jobswipe-celery-worker
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres/jobswipe
-      CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres/jobswipe
+      CELERY_BROKER_URL: amqp://guest:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672//
       CELERY_RESULT_BACKEND: redis://redis:6379/0
       SECRET_KEY: "dev-secret-key-change-in-production"
       ENCRYPTION_PASSWORD: "dev-encryption-password-change-in-production"

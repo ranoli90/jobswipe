@@ -11,6 +11,10 @@ from fastapi.testclient import TestClient
 
 from backend.api.main import app
 
+# API endpoint constants to avoid duplication
+PROFILE_ENDPOINT = "/api/profile/"
+PERSONALIZED_JOBS_ENDPOINT = "/api/jobs/personalized"
+
 
 class TestUserFlowE2E:
     """E2E tests for complete user journey"""
@@ -44,7 +48,7 @@ class TestUserFlowE2E:
         headers = {"Authorization": f"Bearer {access_token}"}
 
         # Step 2: Verify user can access protected endpoints
-        profile_response = client.get("/api/profile/", headers=headers)
+        profile_response = client.get(PROFILE_ENDPOINT, headers=headers)
         assert profile_response.status_code == 404  # No profile yet
 
         # Step 3: Upload resume to create profile
@@ -89,7 +93,7 @@ class TestUserFlowE2E:
             assert "resume_file_url" in profile_data
 
         # Step 4: Verify profile was created
-        profile_response = client.get("/api/profile/", headers=headers)
+        profile_response = client.get(PROFILE_ENDPOINT, headers=headers)
         assert profile_response.status_code == 200
         profile = profile_response.json()
         assert profile["full_name"] == "Test User"
@@ -105,7 +109,7 @@ class TestUserFlowE2E:
 
         # Step 1: Get personalized jobs
         jobs_response = client.get(
-            "/api/jobs/personalized", params={"limit": 10}, headers=headers
+            PERSONALIZED_JOBS_ENDPOINT, params={"limit": 10}, headers=headers
         )
         assert jobs_response.status_code == 200
         jobs_data = jobs_response.json()
@@ -142,7 +146,7 @@ class TestUserFlowE2E:
 
             # Step 4: Get updated personalized jobs (should exclude liked job)
             updated_jobs_response = client.get(
-                "/api/jobs/personalized", params={"limit": 10}, headers=headers
+                PERSONALIZED_JOBS_ENDPOINT, params={"limit": 10}, headers=headers
             )
             assert updated_jobs_response.status_code == 200
 
@@ -155,7 +159,7 @@ class TestUserFlowE2E:
 
         # Step 1: Find a job to apply to
         jobs_response = client.get(
-            "/api/jobs/personalized", params={"limit": 5}, headers=headers
+            PERSONALIZED_JOBS_ENDPOINT, params={"limit": 5}, headers=headers
         )
         assert jobs_response.status_code == 200
         jobs_data = jobs_response.json()
@@ -256,7 +260,7 @@ class TestUserFlowE2E:
             },
         }
 
-        update_response = client.put("/api/profile/", json=update_data, headers=headers)
+        update_response = client.put(PROFILE_ENDPOINT, json=update_data, headers=headers)
         assert update_response.status_code == 200
 
         updated_profile = update_response.json()
@@ -272,7 +276,7 @@ class TestUserFlowE2E:
 
         # Step 2: Verify updated profile affects job matching
         jobs_response = client.get(
-            "/api/jobs/personalized", params={"limit": 5}, headers=headers
+            PERSONALIZED_JOBS_ENDPOINT, params={"limit": 5}, headers=headers
         )
         assert jobs_response.status_code == 200
         # The matching algorithm should now consider the updated skills and preferences
@@ -324,7 +328,7 @@ class TestUserFlowE2E:
 
         # Generate some activity first
         jobs_response = client.get(
-            "/api/jobs/personalized", params={"limit": 3}, headers=headers
+            PERSONALIZED_JOBS_ENDPOINT, params={"limit": 3}, headers=headers
         )
         if jobs_response.status_code == 200:
             jobs_data = jobs_response.json()
@@ -392,14 +396,14 @@ class TestUserFlowE2E:
         }
 
         update_response = client.put(
-            "/api/profile/", json=invalid_profile_update, headers=headers
+            PROFILE_ENDPOINT, json=invalid_profile_update, headers=headers
         )
         # Should validate and reject invalid data
         assert update_response.status_code in [200, 422]  # May accept or reject
 
         # Step 4: Verify system remains functional after errors
         # User should still be able to get profile
-        profile_response = client.get("/api/profile/", headers=headers)
+        profile_response = client.get(PROFILE_ENDPOINT, headers=headers)
         assert profile_response.status_code == 200
 
     def test_concurrent_user_sessions(self, client):
@@ -419,15 +423,15 @@ class TestUserFlowE2E:
         headers2 = {"Authorization": f"Bearer {access_token2}"}
 
         # Both sessions should work concurrently
-        profile1 = client.get("/api/profile/", headers=headers1)
-        profile2 = client.get("/api/profile/", headers=headers2)
+        profile1 = client.get(PROFILE_ENDPOINT, headers=headers1)
+        profile2 = client.get(PROFILE_ENDPOINT, headers=headers2)
 
         assert profile1.status_code == 200
         assert profile2.status_code == 200
 
         # Actions from both sessions should be consistent
-        jobs1 = client.get("/api/jobs/personalized", headers=headers1)
-        jobs2 = client.get("/api/jobs/personalized", headers=headers2)
+        jobs1 = client.get(PERSONALIZED_JOBS_ENDPOINT, headers=headers1)
+        jobs2 = client.get(PERSONALIZED_JOBS_ENDPOINT, headers=headers2)
 
         assert jobs1.status_code == jobs2.status_code == 200
 
@@ -439,19 +443,19 @@ class TestUserFlowE2E:
         )
 
         # Step 1: Create initial profile state
-        initial_profile = client.get("/api/profile/", headers=headers).json()
+        initial_profile = client.get(PROFILE_ENDPOINT, headers=headers).json()
 
         # Step 2: Perform various actions
         # Update profile
         client.put(
-            "/api/profile/",
+            PROFILE_ENDPOINT,
             json={"skills": ["Python", "New Skill"], "headline": "Updated Headline"},
             headers=headers,
         )
 
         # Interact with jobs
         jobs = client.get(
-            "/api/jobs/personalized", params={"limit": 2}, headers=headers
+            PERSONALIZED_JOBS_ENDPOINT, params={"limit": 2}, headers=headers
         )
         if jobs.status_code == 200 and jobs.json():
             job_id = jobs.json()[0]["job"]["id"]
@@ -463,7 +467,7 @@ class TestUserFlowE2E:
 
         # Step 3: Verify data consistency
         # Profile should reflect updates
-        updated_profile = client.get("/api/profile/", headers=headers)
+        updated_profile = client.get(PROFILE_ENDPOINT, headers=headers)
         assert updated_profile.status_code == 200
 
         profile_data = updated_profile.json()

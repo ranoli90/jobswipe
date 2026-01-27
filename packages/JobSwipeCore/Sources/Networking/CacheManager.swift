@@ -1,8 +1,10 @@
 import Foundation
 import GRDB
+import os.log
 
 class CacheManager {
     static let shared = CacheManager()
+    private let logger = Logger(subsystem: "com.jobswipe", category: "CacheManager")
 
     private var dbQueue: DatabaseQueue?
     private let maxCacheAge: TimeInterval = 3600 // 1 hour
@@ -33,7 +35,7 @@ class CacheManager {
                 }
             }
         } catch {
-            print("Error setting up database: \(error)")
+            logger.error("Error setting up database: \(error.localizedDescription)")
         }
     }
 
@@ -74,7 +76,7 @@ class CacheManager {
                 }
             }
         } catch {
-            print("Error caching jobs: \(error)")
+            logger.error("Error caching jobs: \(error.localizedDescription)")
         }
     }
     
@@ -106,7 +108,7 @@ class CacheManager {
                 )
             }
         } catch {
-            print("Error fetching cached jobs: \(error)")
+            logger.error("Error fetching cached jobs: \(error.localizedDescription)")
             return nil
         }
     }
@@ -117,7 +119,7 @@ class CacheManager {
                 try JobRecord.deleteAll(db)
             }
         } catch {
-            print("Error clearing cache: \(error)")
+            logger.error("Error clearing cache: \(error.localizedDescription)")
         }
     }
     
@@ -135,7 +137,7 @@ class CacheManager {
                 }
             }
         } catch {
-            print("Error caching pending swipes: \(error)")
+            logger.error("Error caching pending swipes: \(error.localizedDescription)")
         }
     }
 
@@ -150,7 +152,7 @@ class CacheManager {
                 return (jobId: record.jobId, direction: direction)
             }
         } catch {
-            print("Error fetching pending swipes: \(error)")
+            logger.error("Error fetching pending swipes: \(error.localizedDescription)")
             return []
         }
     }
@@ -161,7 +163,7 @@ class CacheManager {
                 try PendingSwipeRecord.deleteAll(db)
             }
         } catch {
-            print("Error clearing pending swipes: \(error)")
+            logger.error("Error clearing pending swipes: \(error.localizedDescription)")
         }
     }
 }

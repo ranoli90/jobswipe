@@ -24,21 +24,28 @@ def ingest_jobs_from_source(self, source_name: str):
     Args:
         source_name: Name of the source (e.g., 'greenhouse', 'lever', 'rss')
     """
+    import asyncio
     db = next(get_db())
     jobs_ingested = 0
 
     try:
         logger.info(f"Starting job ingestion from {source_name}")
 
-        if source_name == "greenhouse":
-            jobs = await job_ingestion_service.fetch_greenhouse_jobs()
-        elif source_name == "lever":
-            jobs = await job_ingestion_service.fetch_lever_jobs()
-        elif source_name == "rss":
-            jobs = await job_ingestion_service.fetch_rss_jobs()
-        else:
-            logger.error(f"Unknown source: {source_name}")
-            return {"status": "failed", "reason": "Unknown source"}
+        # Run async function in event loop
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            if source_name == "greenhouse":
+                jobs = loop.run_until_complete(job_ingestion_service.fetch_greenhouse_jobs())
+            elif source_name == "lever":
+                jobs = loop.run_until_complete(job_ingestion_service.fetch_lever_jobs())
+            elif source_name == "rss":
+                jobs = loop.run_until_complete(job_ingestion_service.fetch_rss_jobs())
+            else:
+                logger.error(f"Unknown source: {source_name}")
+                return {"status": "failed", "reason": "Unknown source"}
+        finally:
+            loop.close()
 
         for job_data in jobs:
             try:
@@ -99,6 +106,7 @@ def process_job_embedding(self, job_id: str):
     Args:
         job_id: Job ID to process
     """
+    import asyncio
     db = next(get_db())
 
     try:
@@ -110,16 +118,25 @@ def process_job_embedding(self, job_id: str):
         # Generate embedding
         if EmbeddingService.is_available():
             description = job.description or ""
-            embedding = await EmbeddingService.generate_job_embedding(description)
+            
+            # Run async function in event loop
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                embedding = loop.run_until_complete(
+                    EmbeddingService.generate_job_embedding(description)
+                )
 
-            # Store embedding in cache
-            from backend.services.embedding_cache import EmbeddingCache
+                # Store embedding in cache
+                from backend.services.embedding_cache import EmbeddingCache
 
-            cache = EmbeddingCache()
-            await cache.set_embedding(f"job:{job_id}", embedding)
+                cache = EmbeddingCache()
+                loop.run_until_complete(cache.set_embedding(f"job:{job_id}", embedding))
 
-            logger.info(f"Generated embedding for job {job_id}")
-            return {"status": "success", "job_id": job_id}
+                logger.info(f"Generated embedding for job {job_id}")
+                return {"status": "success", "job_id": job_id}
+            finally:
+                loop.close()
         else:
             logger.warning("Embedding service not available")
             return {"status": "skipped", "reason": "Service unavailable"}
@@ -172,6 +189,7 @@ def deduplicate_jobs(self, batch_size: int = 1000):
     Args:
         batch_size: Number of jobs to process per batch
     """
+    import asyncio
     db = next(get_db())
 
     try:
@@ -185,19 +203,27 @@ def deduplicate_jobs(self, batch_size: int = 1000):
 
         jobs = db.query(Job).filter(Job.created_at >= week_ago).limit(batch_size).all()
 
-        duplicates_found = 0
-        for job in jobs:
-            duplicates = await job_deduplication_service.find_duplicates(job)
-            if duplicates:
-                duplicates_found += len(duplicates)
-                # Mark duplicates for review
-                for dup in duplicates:
-                    dup.is_duplicate = True
-                    dup.duplicate_of = job.id
+        # Run async function in event loop
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            duplicates_found = 0
+            for job in jobs:
+                duplicates = loop.run_until_complete(
+                    job_deduplication_service.find_duplicates(job)
+                )
+                if duplicates:
+                    duplicates_found += len(duplicates)
+                    # Mark duplicates for review
+                    for dup in duplicates:
+                        dup.is_duplicate = True
+                        dup.duplicate_of = job.id
 
-        db.commit()
-        logger.info(f"Found {duplicates_found} potential duplicates")
-        return {"status": "success", "duplicates_found": duplicates_found}
+            db.commit()
+            logger.info(f"Found {duplicates_found} potential duplicates")
+            return {"status": "success", "duplicates_found": duplicates_found}
+        finally:
+            loop.close()
 
     except Exception as e:
         logger.error(f"Error during job deduplication: {e}")

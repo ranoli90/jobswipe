@@ -9,7 +9,7 @@ import io
 import json
 import logging
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 import docx  # python-docx for DOCX parsing
@@ -162,7 +162,7 @@ def extract_entities(text: str) -> dict:
             entities["people"].append(ent.text)
         elif ent.label_ == "ORG":
             entities["organizations"].append(ent.text)
-        elif ent.label_ == "GPE" or ent.label_ == "LOC":
+        elif ent.label_ in {"GPE", "LOC"}:
             entities["locations"].append(ent.text)
 
     return entities
@@ -496,7 +496,7 @@ def parse_resume(file_content: bytes, filename: str) -> dict:
             }
 
         # Add additional fields
-        ai_parsed_data["parsed_at"] = datetime.utcnow().isoformat()
+        ai_parsed_data["parsed_at"] = datetime.now(timezone.utc).isoformat()
         ai_parsed_data["raw_text"] = text[:1000]  # Truncate for storage
         ai_parsed_data["ai_enhanced"] = True
 

@@ -240,7 +240,7 @@ class ApplicationAutomationService:
                     await self.page.wait_for_selector(selector, timeout=3000)
                     await self.page.click(selector)
                     logger.debug("Cookie consent accepted")
-                except:
+                except Exception:
                     continue
 
             # Handle popup modals
@@ -255,7 +255,7 @@ class ApplicationAutomationService:
                     await self.page.wait_for_selector(selector, timeout=2000)
                     await self.page.click(selector)
                     logger.debug("Popup modal closed")
-                except:
+                except Exception:
                     continue
 
         except Exception as e:
@@ -387,7 +387,7 @@ class ApplicationAutomationService:
                     await self.page.wait_for_selector(selector, timeout=30000)
                     logger.info("Application submitted successfully")
                     return True
-                except:
+                except Exception:
                     continue
 
             # Check for error indicators
@@ -403,7 +403,7 @@ class ApplicationAutomationService:
                     await self.page.wait_for_selector(selector, timeout=5000)
                     logger.warning("Application has errors")
                     return False
-                except:
+                except Exception:
                     continue
 
             logger.warning("Application status unclear, assuming success")
@@ -572,7 +572,7 @@ class ApplicationAutomationService:
 
             try:
                 result["screenshot"] = await self.page.screenshot()
-            except:
+            except Exception:
                 pass
 
         finally:
