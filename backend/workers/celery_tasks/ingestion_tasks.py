@@ -29,7 +29,7 @@ def ingest_jobs_from_source(self, source_name: str):
     jobs_ingested = 0
 
     try:
-        logger.info(f"Starting job ingestion from {source_name}")
+        logger.info("Starting job ingestion from %s", source_name)
 
         # Run async function in event loop
         loop = asyncio.new_event_loop()
@@ -42,7 +42,7 @@ def ingest_jobs_from_source(self, source_name: str):
             elif source_name == "rss":
                 jobs = loop.run_until_complete(job_ingestion_service.fetch_rss_jobs())
             else:
-                logger.error(f"Unknown source: {source_name}")
+                logger.error("Unknown source: %s", source_name)
                 return {"status": "failed", "reason": "Unknown source"}
         finally:
             loop.close()
@@ -84,15 +84,15 @@ def ingest_jobs_from_source(self, source_name: str):
                 jobs_ingested += 1
 
             except Exception as e:
-                logger.error(f"Error processing job: {e}")
+                logger.error("Error processing job: %s", e)
                 continue
 
         db.commit()
-        logger.info(f"Ingested {jobs_ingested} jobs from {source_name}")
+        logger.info("Ingested %s jobs from %s", ('jobs_ingested', 'source_name'))
         return {"status": "success", "jobs_ingested": jobs_ingested}
 
     except Exception as e:
-        logger.error(f"Failed to ingest jobs from {source_name}: {e}")
+        logger.error("Failed to ingest jobs from %s: %s", ('source_name', 'e'))
         raise self.retry(exc=e)
     finally:
         db.close()
@@ -112,7 +112,7 @@ def process_job_embedding(self, job_id: str):
     try:
         job = db.query(Job).filter(Job.id == job_id).first()
         if not job:
-            logger.warning(f"Job {job_id} not found for embedding")
+            logger.warning("Job %s not found for embedding", job_id)
             return {"status": "failed", "reason": "Job not found"}
 
         # Generate embedding
@@ -133,7 +133,7 @@ def process_job_embedding(self, job_id: str):
                 cache = EmbeddingCache()
                 loop.run_until_complete(cache.set_embedding(f"job:{job_id}", embedding))
 
-                logger.info(f"Generated embedding for job {job_id}")
+                logger.info("Generated embedding for job %s", job_id)
                 return {"status": "success", "job_id": job_id}
             finally:
                 loop.close()
@@ -142,7 +142,7 @@ def process_job_embedding(self, job_id: str):
             return {"status": "skipped", "reason": "Service unavailable"}
 
     except Exception as e:
-        logger.error(f"Failed to process embedding for job {job_id}: {e}")
+        logger.error("Failed to process embedding for job %s: %s", ('job_id', 'e'))
         raise self.retry(exc=e)
     finally:
         db.close()
@@ -163,7 +163,7 @@ def refresh_job_embeddings():
         # Get jobs without embeddings (last 24 hours)
         from datetime import timedelta
 
-        yesterday = datetime.utcnow() - timedelta(days=1)
+        yesterday = datetime.now(timezone.utc) - timedelta(days=1)
 
         jobs = db.query(Job).filter(Job.created_at >= yesterday).all()
 
@@ -171,11 +171,11 @@ def refresh_job_embeddings():
             process_job_embedding.delay(job.id)
             processed += 1
 
-        logger.info(f"Queued {processed} jobs for embedding refresh")
+        logger.info("Queued %s jobs for embedding refresh", processed)
         return processed
 
     except Exception as e:
-        logger.error(f"Error refreshing job embeddings: {e}")
+        logger.error("Error refreshing job embeddings: %s", e)
         return 0
     finally:
         db.close()
@@ -199,7 +199,7 @@ def deduplicate_jobs(self, batch_size: int = 1000):
             job_deduplication_service
 
         # Get recent jobs for deduplication
-        week_ago = datetime.utcnow() - timedelta(days=7)
+        week_ago = datetime.now(timezone.utc) - timedelta(days=7)
 
         jobs = db.query(Job).filter(Job.created_at >= week_ago).limit(batch_size).all()
 
@@ -220,13 +220,13 @@ def deduplicate_jobs(self, batch_size: int = 1000):
                         dup.duplicate_of = job.id
 
             db.commit()
-            logger.info(f"Found {duplicates_found} potential duplicates")
+            logger.info("Found %s potential duplicates", duplicates_found)
             return {"status": "success", "duplicates_found": duplicates_found}
         finally:
             loop.close()
 
     except Exception as e:
-        logger.error(f"Error during job deduplication: {e}")
+        logger.error("Error during job deduplication: %s", e)
         raise self.retry(exc=e)
     finally:
         db.close()
@@ -249,7 +249,7 @@ def sync_all_sources():
         task = ingest_jobs_from_source.delay(source)
         results[source] = task.id
 
-    logger.info(f"Triggered ingestion for sources: {list(results.keys())}")
+    logger.info("Triggered ingestion for sources: %s", list(results.keys()))
     return {"status": "triggered", "tasks": results}
 
 
@@ -270,22 +270,22 @@ def cleanup_expired_jobs(days: int = 30):
     try:
         from datetime import timedelta
 
-        cutoff = datetime.utcnow() - timedelta(days=days)
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
 
         # Mark jobs as expired
         result = (
             db.query(Job)
-            .filter(Job.created_at < cutoff, Job.is_active == True)
+            .filter(Job.created_at < cutoff, Job.is_active is True)
             .update({"is_active": False})
         )
 
         db.commit()
         expired = result
-        logger.info(f"Marked {expired} jobs as expired")
+        logger.info("Marked %s jobs as expired", expired)
         return expired
 
     except Exception as e:
-        logger.error(f"Error marking expired jobs: {e}")
+        logger.error("Error marking expired jobs: %s", e)
         db.rollback()
         return 0
     finally:

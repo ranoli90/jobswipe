@@ -51,11 +51,11 @@ class StorageService:
                 # Ensure bucket exists (only when client is first initialized)
                 if not self.client.bucket_exists(MINIO_BUCKET):
                     self.client.make_bucket(MINIO_BUCKET)
-                    logger.info(f"Created bucket: {MINIO_BUCKET}")
+                    logger.info("Created bucket: %s", MINIO_BUCKET)
                 else:
-                    logger.info(f"Bucket exists: {MINIO_BUCKET}")
+                    logger.info("Bucket exists: %s", MINIO_BUCKET)
             except Exception as e:
-                logger.error(f"Failed to connect to MinIO: {str(e)}")
+                logger.error("Failed to connect to MinIO: %s", str(e))
                 raise
         return self.client
 
@@ -85,15 +85,15 @@ class StorageService:
                 content_type=content_type,
             )
 
-            logger.info(f"File uploaded successfully: {file_path}")
+            logger.info("File uploaded successfully: %s", file_path)
 
             return self.get_file_url(file_path)
 
         except S3Error as e:
-            logger.error(f"Error uploading file {file_path}: {str(e)}")
+            logger.error("Error uploading file %s: %s", ('file_path', 'str(e)'))
             raise
         except Exception as e:
-            logger.error(f"Unexpected error uploading file {file_path}: {str(e)}")
+            logger.error("Unexpected error uploading file %s: %s", ('file_path', 'str(e)'))
             raise
 
     def get_file_url(self, file_path: str) -> str:
@@ -111,7 +111,7 @@ class StorageService:
                 MINIO_BUCKET, file_path, expires=604800
             )
         except Exception as e:
-            logger.error(f"Error getting file URL for {file_path}: {str(e)}")
+            logger.error("Error getting file URL for %s: %s", ('file_path', 'str(e)'))
             raise
 
     def download_file(self, file_path: str) -> bytes:
@@ -130,18 +130,18 @@ class StorageService:
             response.close()
             response.release_conn()
 
-            logger.info(f"File downloaded successfully: {file_path}")
+            logger.info("File downloaded successfully: %s", file_path)
 
             return data
 
         except S3Error as e:
             if e.code == "NoSuchKey":
-                logger.warning(f"File not found: {file_path}")
+                logger.warning("File not found: %s", file_path)
                 return None
-            logger.error(f"Error downloading file {file_path}: {str(e)}")
+            logger.error("Error downloading file %s: %s", ('file_path', 'str(e)'))
             raise
         except Exception as e:
-            logger.error(f"Unexpected error downloading file {file_path}: {str(e)}")
+            logger.error("Unexpected error downloading file %s: %s", ('file_path', 'str(e)'))
             raise
 
     def delete_file(self, file_path: str) -> bool:
@@ -156,18 +156,18 @@ class StorageService:
         """
         try:
             self._get_client().remove_object(MINIO_BUCKET, file_path)
-            logger.info(f"File deleted successfully: {file_path}")
+            logger.info("File deleted successfully: %s", file_path)
 
             return True
 
         except S3Error as e:
             if e.code == "NoSuchKey":
-                logger.warning(f"File not found: {file_path}")
+                logger.warning("File not found: %s", file_path)
                 return False
-            logger.error(f"Error deleting file {file_path}: {str(e)}")
+            logger.error("Error deleting file %s: %s", ('file_path', 'str(e)'))
             raise
         except Exception as e:
-            logger.error(f"Unexpected error deleting file {file_path}: {str(e)}")
+            logger.error("Unexpected error deleting file %s: %s", ('file_path', 'str(e)'))
             raise
 
     def list_files(self, prefix: str = "") -> list:
@@ -187,7 +187,7 @@ class StorageService:
             return [obj.object_name for obj in objects]
 
         except Exception as e:
-            logger.error(f"Error listing files with prefix {prefix}: {str(e)}")
+            logger.error("Error listing files with prefix %s: %s", ('prefix', 'str(e)'))
             raise
 
 

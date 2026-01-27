@@ -58,7 +58,7 @@ async def fetch_greenhouse_board(board_token: str) -> List[GreenhouseJob]:
                     updated_at=(
                         datetime.fromisoformat(job["updated_at"].replace("Z", "+00:00"))
                         if job.get("updated_at")
-                        else datetime.utcnow()
+                        else datetime.now(timezone.utc)
                     ),
                     content=json.dumps(job),  # Store raw JSON
                 )
@@ -71,7 +71,7 @@ async def fetch_greenhouse_board(board_token: str) -> List[GreenhouseJob]:
         )
         raise
     except Exception as e:
-        logger.error(f"Error fetching Greenhouse board {board_token}: {str(e)}")
+        logger.error("Error fetching Greenhouse board %s: %s", ('board_token', 'str(e)'))
         raise
 
 
@@ -143,7 +143,7 @@ def update_or_create_job(greenhouse_job: GreenhouseJob, db) -> Job:
         existing_job.description = normalized_job["description"]
         existing_job.raw_json = normalized_job["raw_json"]
         existing_job.apply_url = normalized_job["apply_url"]
-        existing_job.updated_at = datetime.utcnow()
+        existing_job.updated_at = datetime.now(timezone.utc)
         db.add(existing_job)
         logger.info(
             f"Updated Greenhouse job: {normalized_job['title']} ({normalized_job['external_id']})"
@@ -191,7 +191,7 @@ async def sync_greenhouse_board(
 
             if latest_updated:
                 latest_updated = latest_updated[0]
-                logger.info(f"Using incremental sync from {latest_updated}")
+                logger.info("Using incremental sync from %s", latest_updated)
                 # Filter jobs updated after latest_updated
                 jobs = [job for job in jobs if job.updated_at > latest_updated]
 
@@ -211,7 +211,7 @@ async def sync_greenhouse_board(
 
     except Exception as e:
         db.rollback()
-        logger.error(f"Error syncing Greenhouse board {board_token}: {str(e)}")
+        logger.error("Error syncing Greenhouse board %s: %s", ('board_token', 'str(e)'))
         raise
     finally:
         db.close()

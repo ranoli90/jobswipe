@@ -31,11 +31,11 @@ def send_email_notification(
     try:
         user = db.query(User).filter(User.id == user_id).first()
         if not user:
-            logger.warning(f"User {user_id} not found for email notification")
+            logger.warning("User %s not found for email notification", user_id)
             return {"status": "failed", "reason": "User not found"}
 
         # Log notification (in production, integrate with email service like SendGrid, SES, etc.)
-        logger.info(f"Sending email to {user.email}: {subject}")
+        logger.info("Sending email to %s: %s", ('user.email', 'subject'))
 
         # Create notification record
         notification = Notification(
@@ -51,7 +51,7 @@ def send_email_notification(
         return {"status": "sent", "user_id": user_id, "email": user.email}
 
     except Exception as e:
-        logger.error(f"Failed to send email notification to {user_id}: {e}")
+        logger.error("Failed to send email notification to %s: %s", ('user_id', 'e'))
         raise self.retry(exc=e)
     finally:
         db.close()
@@ -80,11 +80,11 @@ def send_push_notification(
         )
 
         if prefs and not prefs.push_enabled:
-            logger.info(f"Push notifications disabled for user {user_id}")
+            logger.info("Push notifications disabled for user %s", user_id)
             return {"status": "skipped", "reason": "Push disabled"}
 
         # In production, integrate with FCM, APNS, etc.
-        logger.info(f"Sending push to user {user_id}: {title}")
+        logger.info("Sending push to user %s: %s", ('user_id', 'title'))
 
         # Create notification record
         notification = Notification(
@@ -101,7 +101,7 @@ def send_push_notification(
         return {"status": "sent", "user_id": user_id}
 
     except Exception as e:
-        logger.error(f"Failed to send push notification to {user_id}: {e}")
+        logger.error("Failed to send push notification to %s: %s", ('user_id', 'e'))
         raise self.retry(exc=e)
     finally:
         db.close()
@@ -120,7 +120,7 @@ def send_daily_digest():
 
     try:
         # Get users with daily digest enabled
-        today = datetime.utcnow().date()
+        today = datetime.now(timezone.utc).date()
         yesterday = today - timedelta(days=1)
 
         users = db.query(User).all()
@@ -160,11 +160,11 @@ def send_daily_digest():
                 )
                 digests_sent += 1
 
-        logger.info(f"Sent {digests_sent} daily digest emails")
+        logger.info("Sent %s daily digest emails", digests_sent)
         return digests_sent
 
     except Exception as e:
-        logger.error(f"Error sending daily digest: {e}")
+        logger.error("Error sending daily digest: %s", e)
         return 0
     finally:
         db.close()

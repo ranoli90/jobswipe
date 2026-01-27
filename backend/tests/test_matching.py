@@ -312,8 +312,8 @@ class TestMatchingService:
             assert len(result) == 2
             assert result[0]["score"] == 0.8
             assert result[1]["score"] == 0.3
-            assert result[0]["metadata"]["has_skill_match"] == True
-            assert result[1]["metadata"]["has_skill_match"] == False
+            assert result[0]["metadata"]["has_skill_match"] is True
+            assert result[1]["metadata"]["has_skill_match"] is False
 
     @pytest.mark.asyncio
     @patch("backend.services.matching.get_db")

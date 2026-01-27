@@ -90,7 +90,7 @@ async def create_application(
         return ApplicationTaskResponse.from_orm(task)
 
     except Exception as e:
-        logger.error(f"Error creating application for user {current_user.id}: {str(e)}")
+        logger.error("Error creating application for user %s: %s", ('current_user.id', 'str(e)'))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to create application: {str(e)}",

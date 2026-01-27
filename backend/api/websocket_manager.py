@@ -107,7 +107,7 @@ class WebSocketManager:
                     self._type_connections[conn_type] = set()
                 self._type_connections[conn_type].add(connection_id)
 
-            logger.info(f"WebSocket connected: {connection_id} (user: {user_id})")
+            logger.info("WebSocket connected: %s (user: %s)", ('connection_id', 'user_id'))
 
         # Start heartbeat for this connection
         asyncio.create_task(self._heartbeat(connection_id))
@@ -135,7 +135,7 @@ class WebSocketManager:
                 if conn_type in self._type_connections:
                     self._type_connections[conn_type].discard(connection_id)
 
-            logger.info(f"WebSocket disconnected: {connection_id}")
+            logger.info("WebSocket disconnected: %s", connection_id)
 
     async def send_personal_message(
         self,
@@ -237,7 +237,7 @@ class WebSocketManager:
             await self.disconnect(connection_id)
             return False
         except Exception as e:
-            logger.error(f"Failed to send message to {connection_id}: {e}")
+            logger.error("Failed to send message to %s: %s", ('connection_id', 'e'))
             return False
 
     async def _heartbeat(self, connection_id: str) -> None:
@@ -260,17 +260,17 @@ class WebSocketManager:
                 await conn.websocket.send_json(
                     {
                         "type": "ping",
-                        "timestamp": datetime.utcnow().isoformat(),
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
                     }
                 )
 
                 # Update last ping time
-                conn.last_ping = datetime.utcnow()
+                conn.last_ping = datetime.now(timezone.utc)
             except WebSocketDisconnect:
                 await self.disconnect(connection_id)
                 return
             except Exception as e:
-                logger.error(f"Heartbeat failed for {connection_id}: {e}")
+                logger.error("Heartbeat failed for %s: %s", ('connection_id', 'e'))
                 await self.disconnect(connection_id)
                 return
 
@@ -279,7 +279,7 @@ class WebSocketManager:
         async with self._lock:
             conn = self._connections.get(connection_id)
             if conn:
-                conn.last_ping = datetime.utcnow()
+                conn.last_ping = datetime.now(timezone.utc)
 
     def get_connection_count(self) -> int:
         """Get total number of connections"""
@@ -304,7 +304,7 @@ class WebSocketManager:
             Number of connections removed
         """
         removed = 0
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         async with self._lock:
             stale_ids = [
@@ -318,7 +318,7 @@ class WebSocketManager:
             removed += 1
 
         if removed > 0:
-            logger.info(f"Cleaned up {removed} stale WebSocket connections")
+            logger.info("Cleaned up %s stale WebSocket connections", removed)
 
         return removed
 

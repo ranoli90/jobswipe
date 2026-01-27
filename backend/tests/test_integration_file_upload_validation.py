@@ -360,17 +360,17 @@ class TestFileUploadValidationIntegration:
 
         # Test valid PDF
         valid, error = validate_resume_file("resume.pdf", valid_pdf_content)
-        assert valid == True
+        assert valid is True
         assert error == ""
 
         # Test invalid extension
         valid, error = validate_resume_file("resume.exe", valid_pdf_content)
-        assert valid == False
+        assert valid is False
         assert "extension" in error.lower()
 
         # Test malicious content
         valid, error = validate_resume_file("resume.pdf", malicious_exe_content)
-        assert valid == False
+        assert valid is False
         assert "dangerous" in error.lower()
 
         # Test oversized file
@@ -378,7 +378,7 @@ class TestFileUploadValidationIntegration:
         valid, error = validate_file(
             "test.pdf", large_content, max_size=5 * 1024 * 1024
         )
-        assert valid == False
+        assert valid is False
         assert "size exceeds" in error.lower()
 
     def test_content_type_validation(self, valid_pdf_content):
@@ -390,12 +390,12 @@ class TestFileUploadValidationIntegration:
         valid, error = validate_file(
             "test.pdf", valid_pdf_content, allowed_file_types=allowed_types
         )
-        assert valid == True
+        assert valid is True
 
         # Invalid type
         allowed_types = {"text/plain"}
         valid, error = validate_file(
             "test.pdf", valid_pdf_content, allowed_file_types=allowed_types
         )
-        assert valid == False
+        assert valid is False
         assert "not allowed" in error.lower()

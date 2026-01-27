@@ -104,7 +104,7 @@ async def find_duplicates(
         }
 
     except Exception as e:
-        logger.error(f"Error finding duplicates: {e}")
+        logger.error("Error finding duplicates: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to find duplicates: {str(e)}",
@@ -145,7 +145,7 @@ async def remove_duplicates_endpoint(
         }
 
     except Exception as e:
-        logger.error(f"Error removing duplicates: {e}")
+        logger.error("Error removing duplicates: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to remove duplicates: {str(e)}",
@@ -185,7 +185,7 @@ async def run_deduplication(
         }
 
     except Exception as e:
-        logger.error(f"Error running deduplication: {e}")
+        logger.error("Error running deduplication: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to run deduplication: {str(e)}",

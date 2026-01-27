@@ -156,7 +156,7 @@ class OAuth2Service:
             return self._normalize_user_info(provider, user_info.json())
 
         except Exception as e:
-            logger.error(f"OAuth2 error for {provider}: {e}")
+            logger.error("OAuth2 error for %s: %s", ('provider', 'e'))
             return None
 
     def _normalize_user_info(

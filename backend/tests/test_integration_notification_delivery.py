@@ -106,7 +106,7 @@ class TestNotificationDeliveryIntegration:
             assert result["user_id"] == user_id
             assert result["task_id"] == task_id
             assert result["type"] == "application_submitted"
-            assert result["delivered"] == True
+            assert result["delivered"] is True
             assert "title" in result
             assert "message" in result
 
@@ -336,7 +336,7 @@ class TestNotificationDeliveryIntegration:
 
             # Verify notifications were not sent during quiet hours, but stored
             mock_store.assert_called_once()
-            assert result["delivered"] == True  # Still marked as delivered since stored
+            assert result["delivered"] is True  # Still marked as delivered since stored
 
     @pytest.mark.asyncio
     async def test_notification_delivery_multiple_device_types(

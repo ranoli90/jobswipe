@@ -60,14 +60,14 @@ async def create_application_task(
         db.commit()
         db.refresh(task)
 
-        logger.info(f"Created application task: {task.id}")
+        logger.info("Created application task: %s", task.id)
 
         return task
 
     except Exception as e:
         if db:
             db.rollback()
-        logger.error(f"Error creating application task: {str(e)}")
+        logger.error("Error creating application task: %s", str(e))
         raise
 
 
@@ -89,7 +89,7 @@ async def run_application_task(task_id: str, db=None):
         task = db.query(ApplicationTask).filter(ApplicationTask.id == task_id).first()
 
         if not task:
-            logger.error(f"Application task not found: {task_id}")
+            logger.error("Application task not found: %s", task_id)
             return False
 
         # Get job and profile
@@ -101,7 +101,7 @@ async def run_application_task(task_id: str, db=None):
         )
 
         if not job or not profile:
-            logger.error(f"Job or profile not found for task {task_id}")
+            logger.error("Job or profile not found for task %s", task_id)
             task.status = "failed"
             task.last_error = "Job or profile not found"
             db.add(task)
@@ -128,7 +128,7 @@ async def run_application_task(task_id: str, db=None):
                     resume_path = f.name
 
         if not resume_path:
-            logger.error(f"No resume found for user {task.user_id}")
+            logger.error("No resume found for user %s", task.user_id)
             task.status = "failed"
             task.last_error = "No resume found"
             db.add(task)
@@ -164,7 +164,7 @@ async def run_application_task(task_id: str, db=None):
                 audit_logger,
             )
         else:
-            logger.warning(f"Unknown job source: {job.source}")
+            logger.warning("Unknown job source: %s", job.source)
             task.status = "needs_review"
             db.add(task)
             db.commit()
@@ -175,17 +175,17 @@ async def run_application_task(task_id: str, db=None):
 
         if success:
             task.status = "success"
-            logger.info(f"Application task completed successfully: {task_id}")
+            logger.info("Application task completed successfully: %s", task_id)
         else:
             # Check if error is CAPTCHA-related
             if "CAPTCHA" in error or "captcha" in error:
                 task.status = "waiting_human"
                 task.last_error = error
-                logger.warning(f"CAPTCHA detected for task {task_id}: {error}")
+                logger.warning("CAPTCHA detected for task %s: %s", ('task_id', 'error'))
             else:
                 task.status = "failed"
                 task.last_error = error
-                logger.error(f"Application task failed: {task_id} - {error}")
+                logger.error("Application task failed: %s - %s", ('task_id', 'error'))
 
         # Save audit logs
         for log_entry in audit_logger.get_logs():
@@ -208,12 +208,12 @@ async def run_application_task(task_id: str, db=None):
             try:
                 os.unlink(resume_path)
             except Exception as e:
-                logger.warning(f"Failed to delete temporary resume file: {str(e)}")
+                logger.warning("Failed to delete temporary resume file: %s", str(e))
 
         return success
 
     except Exception as e:
-        logger.error(f"Error running application task {task_id}: {str(e)}")
+        logger.error("Error running application task %s: %s", ('task_id', 'str(e)'))
 
         if db:
             task = (
@@ -231,7 +231,7 @@ async def run_application_task(task_id: str, db=None):
                     step="error",
                     payload={"message": str(e)},
                     artifacts={},
-                    timestamp=datetime.utcnow().isoformat(),
+                    timestamp=datetime.now(timezone.utc).isoformat(),
                 )
                 db.add(audit_log)
 
@@ -270,7 +270,7 @@ def get_application_status(
         )
 
     except Exception as e:
-        logger.error(f"Error getting application status: {str(e)}")
+        logger.error("Error getting application status: %s", str(e))
         raise
     finally:
         if db:
@@ -308,12 +308,12 @@ def cancel_application(user_id: str, job_id: str, db=None) -> bool:
         db.add(task)
         db.commit()
 
-        logger.info(f"Application task cancelled: {task.id}")
+        logger.info("Application task cancelled: %s", task.id)
 
         return True
 
     except Exception as e:
-        logger.error(f"Error cancelling application: {str(e)}")
+        logger.error("Error cancelling application: %s", str(e))
         raise
     finally:
         if db:
@@ -343,7 +343,7 @@ def get_user_applications(user_id: str, db=None) -> list:
         )
 
     except Exception as e:
-        logger.error(f"Error getting user applications: {str(e)}")
+        logger.error("Error getting user applications: %s", str(e))
         raise
     finally:
         if db:

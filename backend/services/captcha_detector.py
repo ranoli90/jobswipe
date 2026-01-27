@@ -54,7 +54,7 @@ class CaptchaDetector:
             return None
 
         except Exception as e:
-            logger.error(f"Error detecting CAPTCHA: {str(e)}")
+            logger.error("Error detecting CAPTCHA: %s", str(e))
             return None
 
     def solve_captcha(self, screenshot: bytes, site_url: str) -> Optional[Dict]:
@@ -83,7 +83,7 @@ class CaptchaDetector:
             return None
 
         except Exception as e:
-            logger.error(f"Error solving CAPTCHA: {str(e)}")
+            logger.error("Error solving CAPTCHA: %s", str(e))
             return None
 
     def _solve_automated(self, screenshot: bytes, site_url: str) -> Optional[Dict]:
@@ -129,7 +129,7 @@ class CaptchaDetector:
             return None
 
         except Exception as e:
-            logger.error(f"Error with automated CAPTCHA solving: {str(e)}")
+            logger.error("Error with automated CAPTCHA solving: %s", str(e))
             return None
 
     def _solve_human(self, screenshot: bytes, site_url: str) -> Optional[Dict]:
@@ -151,7 +151,7 @@ class CaptchaDetector:
             return {"type": "human", "status": "pending", "site_url": site_url}
 
         except Exception as e:
-            logger.error(f"Error with human CAPTCHA resolution: {str(e)}")
+            logger.error("Error with human CAPTCHA resolution: %s", str(e))
             return None
 
     def get_captcha_result(self, request_id: str) -> Optional[Dict]:
@@ -180,7 +180,7 @@ class CaptchaDetector:
             return None
 
         except Exception as e:
-            logger.error(f"Error getting CAPTCHA result: {str(e)}")
+            logger.error("Error getting CAPTCHA result: %s", str(e))
             return None
 
 
@@ -211,7 +211,7 @@ class HumanInTheLoopSystem:
             return None
 
         except Exception as e:
-            logger.error(f"Error queuing HITL task: {str(e)}")
+            logger.error("Error queuing HITL task: %s", str(e))
             return None
 
     def get_task_status(self, task_id: str) -> Dict:
@@ -233,5 +233,5 @@ class HumanInTheLoopSystem:
             return {"status": "error"}
 
         except Exception as e:
-            logger.error(f"Error getting HITL task status: {str(e)}")
+            logger.error("Error getting HITL task status: %s", str(e))
             return {"status": "error"}

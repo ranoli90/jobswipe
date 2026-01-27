@@ -91,12 +91,12 @@ class MigrationTester:
             return True
 
         except Exception as e:
-            logger.error(f"Forward migration failed: {e}")
+            logger.error("Forward migration failed: %s", e)
             return False
 
     def test_rollback_migration(self, target_revision: str = "base") -> bool:
         """Test rollback migration to specified revision."""
-        logger.info(f"Testing rollback migration to {target_revision}...")
+        logger.info("Testing rollback migration to %s...", target_revision)
 
         try:
             start_time = time.time()
@@ -117,7 +117,7 @@ class MigrationTester:
             return True
 
         except Exception as e:
-            logger.error(f"Rollback migration failed: {e}")
+            logger.error("Rollback migration failed: %s", e)
             return False
 
     def test_data_integrity_during_migration(self) -> bool:
@@ -147,7 +147,7 @@ class MigrationTester:
             return True
 
         except Exception as e:
-            logger.error(f"Data integrity test failed: {e}")
+            logger.error("Data integrity test failed: %s", e)
             return False
 
     def insert_test_data(self) -> dict:
@@ -188,7 +188,7 @@ class MigrationTester:
 
                 missing_tables = set(expected_tables) - set(existing_tables)
                 if missing_tables:
-                    logger.error(f"Missing tables: {missing_tables}")
+                    logger.error("Missing tables: %s", missing_tables)
                     return False
 
                 # Check alembic_version table
@@ -198,11 +198,11 @@ class MigrationTester:
                     logger.error("No alembic version found")
                     return False
 
-                logger.info(f"Current schema version: {current_version[0]}")
+                logger.info("Current schema version: %s", current_version[0])
                 return True
 
         except Exception as e:
-            logger.error(f"Schema validation failed: {e}")
+            logger.error("Schema validation failed: %s", e)
             return False
 
     def benchmark_migration_performance(self) -> dict:
@@ -236,23 +236,23 @@ class MigrationTester:
 
         results = {}
         for test_name, test_func in tests:
-            logger.info(f"Running {test_name}...")
+            logger.info("Running %s...", test_name)
             try:
                 result = test_func()
                 results[test_name] = result
                 status = "PASSED" if result else "FAILED"
-                logger.info(f"{test_name}: {status}")
+                logger.info("%s: %s", ('test_name', 'status'))
             except Exception as e:
-                logger.error(f"{test_name} failed with exception: {e}")
+                logger.error("%s failed with exception: %s", ('test_name', 'e'))
                 results[test_name] = False
 
         # Performance benchmarking
         try:
             perf_results = self.benchmark_migration_performance()
             results["Performance"] = perf_results
-            logger.info(f"Migration Performance: {perf_results}")
+            logger.info("Migration Performance: %s", perf_results)
         except Exception as e:
-            logger.error(f"Performance benchmarking failed: {e}")
+            logger.error("Performance benchmarking failed: %s", e)
 
         # Summary
         passed = sum(
@@ -260,7 +260,7 @@ class MigrationTester:
         )
         total = sum(1 for result in results.values() if isinstance(result, bool))
 
-        logger.info(f"Test Results: {passed}/{total} tests passed")
+        logger.info("Test Results: %s/%s tests passed", ('passed', 'total'))
 
         return passed == total
 

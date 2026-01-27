@@ -78,22 +78,22 @@ class ApiKeyService:
         # Look up by prefix first (fast index lookup)
         api_key = (
             self.db.query(ApiKey)
-            .filter(ApiKey.key_prefix == prefix, ApiKey.is_active == True)
+            .filter(ApiKey.key_prefix == prefix, ApiKey.is_active is True)
             .first()
         )
 
         if not api_key:
-            logger.warning(f"API key lookup failed for prefix: {prefix}")
+            logger.warning("API key lookup failed for prefix: %s", prefix)
             return None
 
         # Check expiration
-        if api_key.expires_at and api_key.expires_at < datetime.utcnow():
-            logger.warning(f"API key expired: {prefix}")
+        if api_key.expires_at and api_key.expires_at < datetime.now(timezone.utc):
+            logger.warning("API key expired: %s", prefix)
             return None
 
         # Verify the key hash
         if not self._verify_key_hash(key, api_key.key_hash):
-            logger.warning(f"API key hash mismatch: {prefix}")
+            logger.warning("API key hash mismatch: %s", prefix)
             return None
 
         return api_key
@@ -163,7 +163,7 @@ class ApiKeyService:
         self.db.commit()
         self.db.refresh(api_key)
 
-        logger.info(f"Created API key: {prefix} for service: {service_type}")
+        logger.info("Created API key: %s for service: %s", ('prefix', 'service_type'))
 
         return {
             "id": str(api_key.id),
@@ -197,7 +197,7 @@ class ApiKeyService:
         api_key.is_active = False
         self.db.commit()
 
-        logger.info(f"Revoked API key: {api_key.key_prefix}")
+        logger.info("Revoked API key: %s", api_key.key_prefix)
         return True
 
     def rotate_api_key(self, key_id: str, created_by: User) -> Optional[Dict[str, Any]]:
@@ -232,7 +232,7 @@ class ApiKeyService:
 
         self.db.commit()
 
-        logger.info(f"Rotated API key: {api_key.key_prefix}")
+        logger.info("Rotated API key: %s", api_key.key_prefix)
         return new_key_details
 
     def get_api_keys(
@@ -254,7 +254,7 @@ class ApiKeyService:
             query = query.filter(ApiKey.service_type == service_type)
 
         if active_only:
-            query = query.filter(ApiKey.is_active == True)
+            query = query.filter(ApiKey.is_active is True)
 
         return query.order_by(ApiKey.created_at.desc()).all()
 
@@ -314,7 +314,7 @@ class ApiKeyService:
         self.db.add(usage_log)
 
         # Update usage stats
-        api_key.last_used_at = datetime.utcnow()
+        api_key.last_used_at = datetime.now(timezone.utc)
         api_key.last_used_ip = ip_address
         api_key.usage_count += 1
 
@@ -334,7 +334,7 @@ class ApiKeyService:
         """
         from datetime import datetime, timedelta
 
-        one_hour_ago = datetime.utcnow() - timedelta(hours=1)
+        one_hour_ago = datetime.now(timezone.utc) - timedelta(hours=1)
 
         # Count requests in the last hour
         result = self.db.execute(
@@ -363,7 +363,7 @@ class ApiKeyService:
         Returns:
             Dict with usage statistics
         """
-        since = since or datetime.utcnow() - timedelta(days=7)
+        since = since or datetime.now(timezone.utc) - timedelta(days=7)
 
         result = self.db.execute(
             text("""

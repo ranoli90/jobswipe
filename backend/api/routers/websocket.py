@@ -42,7 +42,7 @@ async def websocket_connect(
         try:
             user_id = await get_current_user_from_websocket(websocket, token)
         except Exception as e:
-            logger.warning(f"WebSocket auth failed: {e}")
+            logger.warning("WebSocket auth failed: %s", e)
             # Allow anonymous connections for now
             pass
 
@@ -53,7 +53,7 @@ async def websocket_connect(
         try:
             types.add(ConnectionType(ct))
         except ValueError:
-            logger.warning(f"Unknown connection type: {ct}")
+            logger.warning("Unknown connection type: %s", ct)
 
     if not types:
         types = {ConnectionType.NOTIFICATIONS}
@@ -64,7 +64,7 @@ async def websocket_connect(
         user_id=user_id,
         connection_types=types,
         metadata={
-            "connected_at": datetime.utcnow().isoformat(),
+            "connected_at": datetime.now(timezone.utc).isoformat(),
             "client_ip": websocket.client.host if websocket.client else None,
         },
     )
@@ -77,7 +77,7 @@ async def websocket_connect(
                 "connection_id": connection_id,
                 "user_id": user_id,
                 "connection_types": [ct.value for ct in types],
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         )
 
@@ -89,7 +89,7 @@ async def websocket_connect(
             except WebSocketDisconnect:
                 break
             except Exception as e:
-                logger.error(f"WebSocket message error: {e}")
+                logger.error("WebSocket message error: %s", e)
                 await websocket.send_json(
                     {
                         "type": "error",
@@ -130,7 +130,7 @@ async def websocket_notifications(
                 "type": "connected",
                 "connection_id": connection_id,
                 "channel": "notifications",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         )
 
@@ -177,7 +177,7 @@ async def websocket_jobs(
                 "type": "connected",
                 "connection_id": connection_id,
                 "channel": "jobs",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         )
 
@@ -208,7 +208,7 @@ async def handle_websocket_message(connection_id: str, data: dict) -> None:
             connection_id,
             {
                 "type": "pong",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             },
         )
 
@@ -248,7 +248,7 @@ async def handle_websocket_message(connection_id: str, data: dict) -> None:
                 conn.metadata["job_preferences"] = preferences
 
     else:
-        logger.warning(f"Unknown WebSocket message type: {message_type}")
+        logger.warning("Unknown WebSocket message type: %s", message_type)
 
 
 @router.get("/stats")
@@ -265,7 +265,7 @@ async def get_websocket_stats() -> dict:
             ct.value: websocket_manager.get_type_connection_count(ct)
             for ct in ConnectionType
         },
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
 

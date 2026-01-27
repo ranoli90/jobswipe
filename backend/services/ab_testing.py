@@ -130,7 +130,7 @@ class FeatureFlagService:
 
                 return False
         except Exception as e:
-            logger.error(f"Failed to check feature flag {flag_name}: {e}")
+            logger.error("Failed to check feature flag %s: %s", ('flag_name', 'e'))
 
         return False
 
@@ -176,7 +176,7 @@ class FeatureFlagService:
                             enabled=enabled,
                             global_enabled=global_enabled,
                             user_ids=user_ids or [],
-                            updated_at=datetime.utcnow(),
+                            updated_at=datetime.now(timezone.utc),
                         )
                     )
                 else:
@@ -190,7 +190,7 @@ class FeatureFlagService:
 
                 await session.commit()
         except Exception as e:
-            logger.error(f"Failed to set feature flag {flag_name}: {e}")
+            logger.error("Failed to set feature flag %s: %s", ('flag_name', 'e'))
 
     @classmethod
     def clear_cache(cls) -> None:
@@ -265,7 +265,7 @@ class ABTestService:
                 session.add(test)
                 await session.commit()
         except Exception as e:
-            logger.error(f"Failed to save experiment: {e}")
+            logger.error("Failed to save experiment: %s", e)
 
         return experiment_id
 
@@ -331,12 +331,12 @@ class ABTestService:
                     .where(ABTest.experiment_id == experiment_id)
                     .values(
                         status=ExperimentStatus.RUNNING.value,
-                        started_at=datetime.utcnow(),
+                        started_at=datetime.now(timezone.utc),
                     )
                 )
                 await session.commit()
         except Exception as e:
-            logger.error(f"Failed to start experiment: {e}")
+            logger.error("Failed to start experiment: %s", e)
 
         return True
 
@@ -421,12 +421,12 @@ class ABTestService:
                     .where(ABTest.experiment_id == experiment_id)
                     .values(
                         status=ExperimentStatus.COMPLETED.value,
-                        ended_at=datetime.utcnow(),
+                        ended_at=datetime.now(timezone.utc),
                     )
                 )
                 await session.commit()
         except Exception as e:
-            logger.error(f"Failed to stop experiment: {e}")
+            logger.error("Failed to stop experiment: %s", e)
 
         return True
 

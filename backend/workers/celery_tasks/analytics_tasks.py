@@ -26,7 +26,7 @@ def generate_hourly_snapshot():
     db = next(get_db())
 
     try:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         hour_ago = now - timedelta(hours=1)
 
         # Count interactions in the last hour
@@ -56,7 +56,7 @@ def generate_hourly_snapshot():
             "interactions": interactions,
             "applications": applications,
             "active_users": active_users,
-            "jobs_available": db.query(Job).filter(Job.is_active == True).count(),
+            "jobs_available": db.query(Job).filter(Job.is_active is True).count(),
         }
 
         # Store in Redis for quick access
@@ -71,7 +71,7 @@ def generate_hourly_snapshot():
         return snapshot
 
     except Exception as e:
-        logger.error(f"Error generating hourly snapshot: {e}")
+        logger.error("Error generating hourly snapshot: %s", e)
         return {"error": str(e)}
     finally:
         db.close()
@@ -88,7 +88,7 @@ def calculate_daily_metrics():
     db = next(get_db())
 
     try:
-        today = datetime.utcnow().date()
+        today = datetime.now(timezone.utc).date()
         start_of_day = datetime.combine(today, datetime.min.time())
         end_of_day = start_of_day + timedelta(days=1)
 
@@ -153,11 +153,11 @@ def calculate_daily_metrics():
         r = redis.Redis(host="redis", port=6379, decode_responses=True)
         r.setex(f"analytics:daily:{today}", 30 * 24 * 3600, json.dumps(metrics))
 
-        logger.info(f"Calculated daily metrics for {today}")
+        logger.info("Calculated daily metrics for %s", today)
         return metrics
 
     except Exception as e:
-        logger.error(f"Error calculating daily metrics: {e}")
+        logger.error("Error calculating daily metrics: %s", e)
         return {"error": str(e)}
     finally:
         db.close()
@@ -177,7 +177,7 @@ def aggregate_engagement_metrics(days: int = 7):
     db = next(get_db())
 
     try:
-        end_date = datetime.utcnow()
+        end_date = datetime.now(timezone.utc)
         start_date = end_date - timedelta(days=days)
 
         # Get all interactions in the period
@@ -225,11 +225,11 @@ def aggregate_engagement_metrics(days: int = 7):
             ),
         }
 
-        logger.info(f"Aggregated engagement metrics for {days} days")
+        logger.info("Aggregated engagement metrics for %s days", days)
         return metrics
 
     except Exception as e:
-        logger.error(f"Error aggregating engagement metrics: {e}")
+        logger.error("Error aggregating engagement metrics: %s", e)
         return {"error": str(e)}
     finally:
         db.close()
@@ -260,7 +260,7 @@ def export_analytics_report(report_type: str = "daily", format: str = "json"):
             raise ValueError(f"Unknown report type: {report_type}")
 
         # Generate file
-        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         filename = f"{report_type}_report_{timestamp}.{format}"
         file_path = f"/tmp/reports/{filename}"
 
@@ -275,11 +275,11 @@ def export_analytics_report(report_type: str = "daily", format: str = "json"):
             df = pd.DataFrame([metrics])
             df.to_csv(file_path, index=False)
 
-        logger.info(f"Exported {report_type} report to {file_path}")
+        logger.info("Exported %s report to %s", ('report_type', 'file_path'))
         return file_path
 
     except Exception as e:
-        logger.error(f"Error exporting analytics report: {e}")
+        logger.error("Error exporting analytics report: %s", e)
         return {"error": str(e)}
 
 
@@ -301,7 +301,7 @@ def calculate_user_engagement_scores():
             # Calculate engagement score based on recent activity
             from datetime import timedelta
 
-            week_ago = datetime.utcnow() - timedelta(days=7)
+            week_ago = datetime.now(timezone.utc) - timedelta(days=7)
 
             interactions = (
                 db.query(UserJobInteraction)
@@ -333,11 +333,11 @@ def calculate_user_engagement_scores():
             processed += 1
 
         db.commit()
-        logger.info(f"Calculated engagement scores for {processed} users")
+        logger.info("Calculated engagement scores for %s users", processed)
         return processed
 
     except Exception as e:
-        logger.error(f"Error calculating engagement scores: {e}")
+        logger.error("Error calculating engagement scores: %s", e)
         db.rollback()
         return 0
     finally:

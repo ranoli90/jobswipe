@@ -189,7 +189,7 @@ def find_duplicates_in_db() -> List[List[Tuple[Job, float]]]:
 
     try:
         # Get all jobs from the last 30 days
-        cutoff_date = datetime.utcnow() - timedelta(days=MAX_DUPLICATE_WINDOW_DAYS)
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=MAX_DUPLICATE_WINDOW_DAYS)
         jobs = db.query(Job).filter(Job.created_at >= cutoff_date).all()
 
         logger.info(
@@ -198,12 +198,12 @@ def find_duplicates_in_db() -> List[List[Tuple[Job, float]]]:
 
         duplicates = find_duplicates(jobs)
 
-        logger.info(f"Found {len(duplicates)} duplicate groups")
+        logger.info("Found %s duplicate groups", len(duplicates))
 
         return duplicates
 
     except Exception as e:
-        logger.error(f"Error finding duplicates in database: {e}")
+        logger.error("Error finding duplicates in database: %s", e)
         raise
     finally:
         db.close()
@@ -230,13 +230,13 @@ def remove_duplicates(duplicate_groups: List[List[Tuple[Job, float]]]) -> int:
                 removed_count += 1
 
         db.commit()
-        logger.info(f"Removed {removed_count} duplicate jobs")
+        logger.info("Removed %s duplicate jobs", removed_count)
 
         return removed_count
 
     except Exception as e:
         db.rollback()
-        logger.error(f"Error removing duplicates: {e}")
+        logger.error("Error removing duplicates: %s", e)
         raise
     finally:
         db.close()

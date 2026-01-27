@@ -70,7 +70,7 @@ class SecretsManager:
         env_key = f"{path.replace('/', '_').upper()}_{key.upper()}"
         value = os.getenv(env_key, default)
         if value is not None and value != default:
-            logger.info(f"AUDIT: Secret accessed from environment - key: {env_key}")
+            logger.info("AUDIT: Secret accessed from environment - key: %s", env_key)
         elif value == default:
             logger.warning(
                 f"AUDIT: Secret not found, using default - path: {path}, key: {key}"
@@ -91,7 +91,7 @@ class SecretsManager:
                 self.client.secrets.kv.v2.create_or_update_secret(
                     path=path, secret={key: value}
                 )
-                logger.info(f"AUDIT: Secret set in Vault - path: {path}, key: {key}")
+                logger.info("AUDIT: Secret set in Vault - path: %s, key: %s", ('path', 'key'))
                 return
             except Exception as e:
                 logger.warning(

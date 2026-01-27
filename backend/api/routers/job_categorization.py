@@ -86,7 +86,7 @@ async def categorize_all(credentials: HTTPAuthorizationCredentials = Depends(sec
         }
 
     except Exception as e:
-        logger.error(f"Error categorizing jobs: {e}")
+        logger.error("Error categorizing jobs: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to categorize jobs: {str(e)}",
@@ -125,7 +125,7 @@ async def get_distribution(
         }
 
     except Exception as e:
-        logger.error(f"Error getting category distribution: {e}")
+        logger.error("Error getting category distribution: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get category distribution: {str(e)}",
@@ -173,7 +173,7 @@ async def run_categorization(
         }
 
     except Exception as e:
-        logger.error(f"Error running categorization: {e}")
+        logger.error("Error running categorization: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to run categorization: {str(e)}",

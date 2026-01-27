@@ -41,7 +41,7 @@ def cleanup_expired_tokens(days: int = DEFAULT_EXPIRED_TOKENS_DAYS):
     deleted = 0
 
     try:
-        cutoff = datetime.utcnow() - timedelta(days=days)
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
 
         # Delete expired tokens
         result = (
@@ -50,11 +50,11 @@ def cleanup_expired_tokens(days: int = DEFAULT_EXPIRED_TOKENS_DAYS):
 
         db.commit()
         deleted = result
-        logger.info(f"Cleaned up {deleted} expired refresh tokens")
+        logger.info("Cleaned up %s expired refresh tokens", deleted)
         return deleted
 
     except Exception as e:
-        logger.error(f"Error cleaning up expired tokens: {e}")
+        logger.error("Error cleaning up expired tokens: %s", e)
         db.rollback()
         return 0
     finally:
@@ -76,18 +76,18 @@ def cleanup_old_sessions(days: int = DEFAULT_OLD_SESSIONS_DAYS):
     deleted = 0
 
     try:
-        cutoff = datetime.utcnow() - timedelta(days=days)
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
 
         # Delete old sessions
         result = db.query(Session).filter(Session.created_at < cutoff).delete()
 
         db.commit()
         deleted = result
-        logger.info(f"Cleaned up {deleted} old sessions")
+        logger.info("Cleaned up %s old sessions", deleted)
         return deleted
 
     except Exception as e:
-        logger.error(f"Error cleaning up old sessions: {e}")
+        logger.error("Error cleaning up old sessions: %s", e)
         db.rollback()
         return 0
     finally:
@@ -109,18 +109,18 @@ def cleanup_expired_oauth_states(hours: int = DEFAULT_EXPIRED_OAUTH_STATES_HOURS
     deleted = 0
 
     try:
-        cutoff = datetime.utcnow() - timedelta(hours=hours)
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
 
         # Delete expired states
         result = db.query(OAuth2State).filter(OAuth2State.created_at < cutoff).delete()
 
         db.commit()
         deleted = result
-        logger.info(f"Cleaned up {deleted} expired OAuth2 states")
+        logger.info("Cleaned up %s expired OAuth2 states", deleted)
         return deleted
 
     except Exception as e:
-        logger.error(f"Error cleaning up OAuth2 states: {e}")
+        logger.error("Error cleaning up OAuth2 states: %s", e)
         db.rollback()
         return 0
     finally:
@@ -142,7 +142,7 @@ def cleanup_old_interactions(days: int = DEFAULT_OLD_INTERACTIONS_DAYS):
     archived = 0
 
     try:
-        cutoff = datetime.utcnow() - timedelta(days=days)
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
 
         # Get interactions to archive
         interactions = (
@@ -169,7 +169,7 @@ def cleanup_old_interactions(days: int = DEFAULT_OLD_INTERACTIONS_DAYS):
         return archived
 
     except Exception as e:
-        logger.error(f"Error archiving old interactions: {e}")
+        logger.error("Error archiving old interactions: %s", e)
         return 0
     finally:
         db.close()
@@ -192,7 +192,7 @@ def cleanup_orphan_notifications(days: int = DEFAULT_ORPHAN_NOTIFICATIONS_DAYS):
     try:
         from backend.db.models import Notification, User
 
-        cutoff = datetime.utcnow() - timedelta(days=days)
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
 
         # Get notifications for non-existent users
         orphan_notifications = (
@@ -206,11 +206,11 @@ def cleanup_orphan_notifications(days: int = DEFAULT_ORPHAN_NOTIFICATIONS_DAYS):
         orphan_notifications.delete(synchronize_session=False)
 
         db.commit()
-        logger.info(f"Cleaned up {deleted} orphan notifications")
+        logger.info("Cleaned up %s orphan notifications", deleted)
         return deleted
 
     except Exception as e:
-        logger.error(f"Error cleaning up orphan notifications: {e}")
+        logger.error("Error cleaning up orphan notifications: %s", e)
         db.rollback()
         return 0
     finally:
@@ -232,7 +232,7 @@ def cleanup_temp_files(hours: int = DEFAULT_TEMP_FILES_HOURS):
     import os
 
     deleted = 0
-    cutoff = datetime.utcnow() - timedelta(hours=hours)
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
 
     temp_dirs = TEMPORARY_DIRECTORIES
 
@@ -250,9 +250,9 @@ def cleanup_temp_files(hours: int = DEFAULT_TEMP_FILES_HOURS):
                     os.remove(file_path)
                     deleted += 1
                 except Exception as e:
-                    logger.warning(f"Could not delete {file_path}: {e}")
+                    logger.warning("Could not delete %s: %s", ('file_path', 'e'))
 
-    logger.info(f"Cleaned up {deleted} temporary files")
+    logger.info("Cleaned up %s temporary files", deleted)
     return deleted
 
 
@@ -275,9 +275,9 @@ def run_all_cleanup_tasks():
         )
         results["temp_files"] = cleanup_temp_files.delay().get(timeout=CELERY_TASK_TIMEOUT)
 
-        logger.info(f"Completed all cleanup tasks: {results}")
+        logger.info("Completed all cleanup tasks: %s", results)
         return results
 
     except Exception as e:
-        logger.error(f"Error running cleanup tasks: {e}")
+        logger.error("Error running cleanup tasks: %s", e)
         return {"error": str(e)}

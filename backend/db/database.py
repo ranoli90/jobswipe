@@ -62,7 +62,7 @@ def init_db():
         command.upgrade(alembic_cfg, "head")
         logger.info("Database migrations completed successfully")
     except Exception as e:
-        logger.error(f"Migration failed: {e}")
+        logger.error("Migration failed: %s", e)
         # Fallback to create_all for development if migrations fail
         if DATABASE_URL.startswith("sqlite"):
             logger.warning(

@@ -53,7 +53,7 @@ class MigrationValidator:
         for file_path in required_files:
             full_path = self.backend_dir / file_path
             if not full_path.exists():
-                logger.error(f"Required file missing: {file_path}")
+                logger.error("Required file missing: %s", file_path)
                 return False
 
         # Check if alembic command is available
@@ -102,7 +102,7 @@ class MigrationValidator:
                     )
                     return False
 
-        logger.info(f"Validated {len(migration_files)} migration files")
+        logger.info("Validated %s migration files", len(migration_files))
         return True
 
     def check_migration_history(self) -> bool:
@@ -111,7 +111,7 @@ class MigrationValidator:
 
         success, stdout, stderr = self.run_command(["alembic", "history"])
         if not success:
-            logger.error(f"Failed to get migration history: {stderr}")
+            logger.error("Failed to get migration history: %s", stderr)
             return False
 
         # Parse history output
@@ -138,7 +138,7 @@ class MigrationValidator:
             ["alembic", "upgrade", "--dry-run", "head"]
         )
         if not success:
-            logger.error(f"Dry run failed: {stderr}")
+            logger.error("Dry run failed: %s", stderr)
             return False
 
         logger.info("Migration dry run successful")
@@ -156,7 +156,7 @@ class MigrationValidator:
                 missing_vars.append(var)
 
         if missing_vars:
-            logger.error(f"Missing required environment variables: {missing_vars}")
+            logger.error("Missing required environment variables: %s", missing_vars)
             return False
 
         logger.info("Environment variables validated")
@@ -197,16 +197,16 @@ class MigrationValidator:
         all_passed = True
 
         for name, validation_func in validations:
-            logger.info(f"Running validation: {name}")
+            logger.info("Running validation: %s", name)
             try:
                 passed = validation_func()
                 results[name] = passed
                 status = "PASSED" if passed else "FAILED"
-                logger.info(f"{name}: {status}")
+                logger.info("%s: %s", ('name', 'status'))
                 if not passed:
                     all_passed = False
             except Exception as e:
-                logger.error(f"{name} failed with exception: {e}")
+                logger.error("%s failed with exception: %s", ('name', 'e'))
                 results[name] = False
                 all_passed = False
 
@@ -214,7 +214,7 @@ class MigrationValidator:
         passed_count = sum(results.values())
         total_count = len(results)
 
-        logger.info(f"Validation Summary: {passed_count}/{total_count} checks passed")
+        logger.info("Validation Summary: %s/%s checks passed", ('passed_count', 'total_count'))
 
         if all_passed:
             logger.info("✅ All pre-deployment validations passed!")

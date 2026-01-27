@@ -145,7 +145,7 @@ async def upload_resume(
         return CandidateProfileResponse.from_orm(profile)
 
     except Exception as e:
-        logger.error(f"Error uploading resume for user {current_user.id}: {str(e)}")
+        logger.error("Error uploading resume for user %s: %s", ('current_user.id', 'str(e)'))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to upload and parse resume",

@@ -119,17 +119,16 @@ class APNsClient:
                     device_token=device_token,
                     message_id=apns_id,
                 )
-            else:
-                error_data = response.json()
-                return PushResult(
-                    success=False,
+            error_data = response.json()
+            return PushResult(
+                success=False,
                     platform=Platform.IOS,
                     device_token=device_token,
                     error_code=error_data.get("reason"),
                     error_message=str(error_data),
                 )
         except Exception as e:
-            logger.error(f"APNs send failed: {e}")
+            logger.error("APNs send failed: %s", e)
             return PushResult(
                 success=False,
                 platform=Platform.IOS,
@@ -206,8 +205,7 @@ class FCMClient:
                     device_token=device_token,
                     message_id=response_data.get("name"),
                 )
-            else:
-                error_data = response.json()
+            error_data = response.json()
                 return PushResult(
                     success=False,
                     platform=Platform.ANDROID,
@@ -216,7 +214,7 @@ class FCMClient:
                     error_message=str(error_data),
                 )
         except Exception as e:
-            logger.error(f"FCM send failed: {e}")
+            logger.error("FCM send failed: %s", e)
             return PushResult(
                 success=False,
                 platform=Platform.ANDROID,
@@ -275,7 +273,7 @@ class PushNotificationService:
             tokens = device_tokens.fetchall()
 
         if not tokens:
-            logger.info(f"No device tokens found for user {user_id}")
+            logger.info("No device tokens found for user %s", user_id)
             return []
 
         # Create in-app notification
@@ -350,7 +348,7 @@ class PushNotificationService:
 
             for user_id, result in zip(batch, batch_results):
                 if isinstance(result, Exception):
-                    logger.error(f"Failed to send to {user_id}: {result}")
+                    logger.error("Failed to send to %s: %s", ('user_id', 'result'))
                     results[user_id] = []
                 else:
                     results[user_id] = result
@@ -402,7 +400,7 @@ class PushNotificationService:
                         token=token,
                         platform=platform.value,
                         app_version=app_version,
-                        last_used=datetime.utcnow(),
+                        last_used=datetime.now(timezone.utc),
                     )
                 )
             else:

@@ -142,7 +142,7 @@ class CompressionMiddleware(BaseHTTPMiddleware):
                 response.body = compressed_body
 
         except Exception as e:
-            logger.warning(f"Compression failed for {request.url.path}: {e}")
+            logger.warning("Compression failed for %s: %s", ('request.url.path', 'e'))
             # Fall back to uncompressed response
 
         return response

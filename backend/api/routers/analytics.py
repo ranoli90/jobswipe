@@ -90,7 +90,7 @@ async def get_analytics_metrics(
         )
 
     except Exception as e:
-        logger.error(f"Error retrieving analytics metrics: {e}")
+        logger.error("Error retrieving analytics metrics: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve analytics metrics: {str(e)}",
@@ -157,7 +157,7 @@ async def generate_report(
         )
 
     except Exception as e:
-        logger.error(f"Error generating report: {e}")
+        logger.error("Error generating report: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate report: {str(e)}",
@@ -197,7 +197,7 @@ async def download_report(
         )
 
     except Exception as e:
-        logger.error(f"Error downloading report: {e}")
+        logger.error("Error downloading report: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to download report: {str(e)}",
@@ -229,7 +229,7 @@ async def get_matching_accuracy_report(
         return report
 
     except Exception as e:
-        logger.error(f"Error retrieving matching accuracy report: {e}")
+        logger.error("Error retrieving matching accuracy report: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve matching accuracy report: {str(e)}",
@@ -261,7 +261,7 @@ async def get_user_behavior_report(
         return report
 
     except Exception as e:
-        logger.error(f"Error retrieving user behavior report: {e}")
+        logger.error("Error retrieving user behavior report: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve user behavior report: {str(e)}",
@@ -289,7 +289,7 @@ async def get_job_market_analysis(
         return report
 
     except Exception as e:
-        logger.error(f"Error retrieving job market analysis: {e}")
+        logger.error("Error retrieving job market analysis: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve job market analysis: {str(e)}",
@@ -317,7 +317,7 @@ async def get_dashboard_summary(
         return summary
 
     except Exception as e:
-        logger.error(f"Error retrieving dashboard summary: {e}")
+        logger.error("Error retrieving dashboard summary: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve dashboard summary: {str(e)}",
@@ -349,7 +349,7 @@ async def get_engagement_trends(
         return trends
 
     except Exception as e:
-        logger.error(f"Error retrieving engagement trends: {e}")
+        logger.error("Error retrieving engagement trends: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve engagement trends: {str(e)}",
@@ -381,7 +381,7 @@ async def get_job_performance(
         return performance
 
     except Exception as e:
-        logger.error(f"Error retrieving job performance: {e}")
+        logger.error("Error retrieving job performance: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve job performance: {str(e)}",
@@ -409,7 +409,7 @@ async def get_application_funnel(
         return funnel
 
     except Exception as e:
-        logger.error(f"Error retrieving application funnel: {e}")
+        logger.error("Error retrieving application funnel: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve application funnel: {str(e)}",

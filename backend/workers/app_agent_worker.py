@@ -57,7 +57,7 @@ def application_task_worker(task_id):
     Args:
         task_id: Application task ID
     """
-    logger.info(f"Starting application task: {task_id}")
+    logger.info("Starting application task: %s", task_id)
 
     try:
         # Run the application task
@@ -65,14 +65,14 @@ def application_task_worker(task_id):
         success = loop.run_until_complete(run_application_task(task_id))
 
         if success:
-            logger.info(f"Application task completed successfully: {task_id}")
+            logger.info("Application task completed successfully: %s", task_id)
             return True
         else:
-            logger.error(f"Application task failed: {task_id}")
+            logger.error("Application task failed: %s", task_id)
             raise Exception(f"Application task failed: {task_id}")
 
     except Exception as e:
-        logger.error(f"Error in application task worker: {str(e)}")
+        logger.error("Error in application task worker: %s", str(e))
         raise
 
 
@@ -85,8 +85,8 @@ def health_check():
 
 if __name__ == "__main__":
     logger.info("Starting Application Agent Worker")
-    logger.info(f"Broker URL: {CELERY_BROKER_URL}")
-    logger.info(f"Result Backend: {CELERY_RESULT_BACKEND}")
+    logger.info("Broker URL: %s", CELERY_BROKER_URL)
+    logger.info("Result Backend: %s", CELERY_RESULT_BACKEND)
 
     # Start worker
     celery.start()

@@ -134,7 +134,7 @@ class TestApplicationWorkflowIntegration:
 
                             result = await run_application_task("task-123", mock_db_session)
 
-                            assert result == True
+                            assert result is True
                             assert mock_task.status == "success"
                             assert mock_task.attempt_count == 1
                             mock_apply.assert_called_once()
@@ -181,7 +181,7 @@ class TestApplicationWorkflowIntegration:
 
                             result = await run_application_task("task-123", mock_db_session)
 
-                            assert result == False
+                            assert result is False
                             assert mock_task.status == "waiting_human"
                             assert "CAPTCHA" in mock_task.last_error
 
@@ -234,7 +234,7 @@ class TestApplicationWorkflowIntegration:
 
                                 result = await run_application_task(f"task-{source}", mock_db_session)
 
-                                assert result == True
+                                assert result is True
                                 agent_mock.apply.assert_called_once()
 
     def test_application_workflow_error_handling(self, mock_db_session):
@@ -257,7 +257,7 @@ class TestApplicationWorkflowIntegration:
 
         result = await run_application_task("task-123", mock_db_session)
 
-        assert result == False
+        assert result is False
         assert mock_task.status == "failed"
         assert mock_task.last_error == "No resume found"
 
@@ -277,5 +277,5 @@ class TestApplicationWorkflowIntegration:
 
                     result = await run_application_task("task-123", mock_db_session)
 
-                    assert result == False
+                    assert result is False
                     assert mock_task.status == "needs_review"

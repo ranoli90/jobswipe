@@ -130,9 +130,9 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     """Create JWT access token with enhanced security"""
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire, "type": "access"})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -142,9 +142,9 @@ def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None):
     """Create JWT refresh token with longer expiration"""
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(days=settings.refresh_token_expire_days)
+        expire = datetime.now(timezone.utc) + timedelta(days=settings.refresh_token_expire_days)
     to_encode.update({"exp": expire, "type": "refresh"})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -201,7 +201,7 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
         TokenResponse with access token and user info
     """
     try:
-        logger.info(f"Registration attempt for email: {user.email}")
+        logger.info("Registration attempt for email: %s", user.email)
 
         # Check if user already exists
         existing_user = db.query(User).filter(User.email == user.email).first()
@@ -222,7 +222,7 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(new_user)
 
-        logger.info(f"User registered successfully: {new_user.email}")
+        logger.info("User registered successfully: %s", new_user.email)
 
         # Create access token
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -243,13 +243,13 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
             ),
         )
     except ValueError as e:
-        logger.error(f"Registration validation error: {str(e)}")
+        logger.error("Registration validation error: %s", str(e))
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Validation error: {str(e)}",
         )
     except Exception as e:
-        logger.error(f"Registration failed: {str(e)}")
+        logger.error("Registration failed: %s", str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Registration failed: {str(e)}",
@@ -276,10 +276,10 @@ async def login(
         ip_address = request.client.host if request.client else "unknown"
         user_agent = request.headers.get("user-agent", "")
 
-        logger.info(f"Login attempt for email: {email} from IP: {ip_address}")
+        logger.info("Login attempt for email: %s from IP: %s", ('email', 'ip_address'))
 
         # Check for suspicious activity
-        one_hour_ago = datetime.utcnow() - timedelta(hours=1)
+        one_hour_ago = datetime.now(timezone.utc) - timedelta(hours=1)
         recent_attempts_from_ip = (
             db.query(FailedLoginAttempt)
             .filter(
@@ -298,7 +298,7 @@ async def login(
         user = db.query(User).filter(User.email == email).first()
 
         # Check if account is locked
-        if user and user.lockout_until and datetime.utcnow() < user.lockout_until:
+        if user and user.lockout_until and datetime.now(timezone.utc) < user.lockout_until:
             logger.warning(
                 f"Login attempt on locked account: {email} from IP: {ip_address}"
             )
@@ -319,7 +319,7 @@ async def login(
             db.add(failed_attempt)
 
             # Check failed attempts in last 24 hours
-            twenty_four_hours_ago = datetime.utcnow() - timedelta(hours=24)
+            twenty_four_hours_ago = datetime.now(timezone.utc) - timedelta(hours=24)
             failed_count = (
                 db.query(FailedLoginAttempt)
                 .filter(
@@ -334,7 +334,7 @@ async def login(
                 lockout_minutes = min(
                     60, 1 * (2 ** (failed_count - 5))
                 )  # 1, 2, 4, 8, 16, 32, 60...
-                lockout_until = datetime.utcnow() + timedelta(minutes=lockout_minutes)
+                lockout_until = datetime.now(timezone.utc) + timedelta(minutes=lockout_minutes)
                 if user:
                     user.lockout_until = lockout_until
                     logger.warning(
@@ -364,7 +364,7 @@ async def login(
             user.lockout_until = None
         db.commit()
 
-        logger.info(f"User logged in successfully: {user.email}")
+        logger.info("User logged in successfully: %s", user.email)
 
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
@@ -382,14 +382,14 @@ async def login(
             ),
         )
     except ValueError as e:
-        logger.error(f"Login authentication error: {str(e)}")
+        logger.error("Login authentication error: %s", str(e))
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Authentication error: {str(e)}",
             headers={"WWW-Authenticate": "Bearer"},
         )
     except Exception as e:
-        logger.error(f"Login failed: {str(e)}")
+        logger.error("Login failed: %s", str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Login failed: {str(e)}",
@@ -400,7 +400,7 @@ async def login(
 async def get_me(current_user: User = Depends(get_current_user)):
     """Get current authenticated user information with logging"""
     try:
-        logger.info(f"User accessed profile: {current_user.email}")
+        logger.info("User accessed profile: %s", current_user.email)
         return MeResponse(
             user=UserResponse(
                 id=str(current_user.id),
@@ -409,7 +409,7 @@ async def get_me(current_user: User = Depends(get_current_user)):
             )
         )
     except Exception as e:
-        logger.error(f"Failed to get user profile: {str(e)}")
+        logger.error("Failed to get user profile: %s", str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get user profile: {str(e)}",
@@ -516,7 +516,7 @@ async def refresh_access_token(
         # Generate new refresh token
         refresh_token = create_refresh_token(data={"sub": user.email})
 
-        logger.info(f"Token refreshed for user: {user.email}")
+        logger.info("Token refreshed for user: %s", user.email)
 
         return RefreshTokenResponse(
             access_token=access_token,
@@ -524,13 +524,13 @@ async def refresh_access_token(
             token_type="bearer",
         )
     except JWTError as e:
-        logger.error(f"Token refresh failed: {str(e)}")
+        logger.error("Token refresh failed: %s", str(e))
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Invalid or expired refresh token: {str(e)}",
         )
     except Exception as e:
-        logger.error(f"Token refresh error: {str(e)}")
+        logger.error("Token refresh error: %s", str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Token refresh failed: {str(e)}",
@@ -552,7 +552,7 @@ async def logout(
     # 1. Add the access token to a blacklist in Redis
     # 2. Set an appropriate TTL based on token expiration
     # For now, we just log the logout event
-    logger.info(f"User logged out: {current_user.email}")
+    logger.info("User logged out: %s", current_user.email)
 
     return {"message": "Successfully logged out"}
 
@@ -575,7 +575,7 @@ async def send_verification_email(
 
     # Don't reveal if user exists
     if not user:
-        logger.info(f"Verification email requested for non-existent email: {request.email}")
+        logger.info("Verification email requested for non-existent email: %s", request.email)
         return {"message": "If the email exists, a verification link has been sent"}
 
     if user.email_verified:
@@ -590,7 +590,7 @@ async def send_verification_email(
     # TODO: Send verification email via notification service
     # notification_service.send_email_verification(user.email, verification_token)
 
-    logger.info(f"Verification email sent to: {user.email}")
+    logger.info("Verification email sent to: %s", user.email)
 
     return {
         "message": "Verification email sent",
@@ -637,7 +637,7 @@ async def verify_email_with_token(
         user.email_verified = True
         db.commit()
 
-        logger.info(f"Email verified for user: {user.email}")
+        logger.info("Email verified for user: %s", user.email)
 
         return {"message": "Email verified successfully"}
     except JWTError as e:
@@ -665,7 +665,7 @@ async def forgot_password(
 
     # Don't reveal if user exists
     if not user:
-        logger.info(f"Password reset requested for non-existent email: {request.email}")
+        logger.info("Password reset requested for non-existent email: %s", request.email)
         return {"message": "If the email exists, a reset link has been sent"}
 
     # Generate reset token
@@ -677,7 +677,7 @@ async def forgot_password(
     # TODO: Send reset email via notification service
     # notification_service.send_password_reset(user.email, reset_token)
 
-    logger.info(f"Password reset email sent to: {user.email}")
+    logger.info("Password reset email sent to: %s", user.email)
 
     return {
         "message": "Password reset email sent",
@@ -735,7 +735,7 @@ async def reset_password(
         user.password_hash = get_password_hash(request.new_password)
         db.commit()
 
-        logger.info(f"Password reset for user: {user.email}")
+        logger.info("Password reset for user: %s", user.email)
 
         return {"message": "Password reset successfully"}
     except JWTError as e:

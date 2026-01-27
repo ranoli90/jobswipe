@@ -95,7 +95,7 @@ class OpenAIService:
             return response.data[0].embedding
 
         except Exception as e:
-            logger.error(f"Error generating job embedding: {str(e)}")
+            logger.error("Error generating job embedding: %s", str(e))
             return []
 
     @staticmethod
@@ -125,7 +125,7 @@ class OpenAIService:
             return response.data[0].embedding
 
         except Exception as e:
-            logger.error(f"Error generating profile embedding: {str(e)}")
+            logger.error("Error generating profile embedding: %s", str(e))
             return []
 
     @staticmethod
@@ -196,7 +196,7 @@ class OpenAIService:
             return float(normalized_score)
 
         except Exception as e:
-            logger.error(f"Error calculating semantic similarity: {str(e)}")
+            logger.error("Error calculating semantic similarity: %s", str(e))
             return 0.0
 
     @staticmethod
@@ -247,7 +247,7 @@ class OpenAIService:
             return OpenAIService._parse_match_analysis(analysis)
 
         except Exception as e:
-            logger.error(f"Error analyzing job match: {str(e)}")
+            logger.error("Error analyzing job match: %s", str(e))
             return {
                 "score": 0.5,
                 "analysis": f"Error analyzing match: {str(e)}",
@@ -300,8 +300,8 @@ class OpenAIService:
                 raise ValueError("No JSON found in response")
 
         except Exception as e:
-            logger.error(f"Error parsing match analysis: {str(e)}")
-            logger.debug(f"Raw analysis: {analysis}")
+            logger.error("Error parsing match analysis: %s", str(e))
+            logger.debug("Raw analysis: %s", analysis)
 
             return {
                 "score": 0.5,
@@ -361,7 +361,7 @@ class OpenAIService:
             return json.loads(response.choices[0].message.content)
 
         except Exception as e:
-            logger.error(f"Error extracting job entities: {str(e)}")
+            logger.error("Error extracting job entities: %s", str(e))
             return {
                 "skills": [],
                 "technologies": [],
@@ -417,7 +417,7 @@ class OpenAIService:
             return response.choices[0].message.content
 
         except Exception as e:
-            logger.error(f"Error completing prompt: {str(e)}")
+            logger.error("Error completing prompt: %s", str(e))
             return ""
 
     @staticmethod

@@ -266,7 +266,7 @@ def add_file_validation_middleware(
         max_file_size=max_file_size,
     )
 
-    logger.info(f"File validation middleware added (max_size: {max_file_size} bytes)")
+    logger.info("File validation middleware added (max_size: %s bytes)", max_file_size)
 
 
 # Utility function to validate a single file

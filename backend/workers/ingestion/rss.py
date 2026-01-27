@@ -57,13 +57,13 @@ async def fetch_rss_feed(feed_url: str) -> List[RSSJob]:
                     published=(
                         datetime(*entry.published_parsed[:6])
                         if hasattr(entry, "published_parsed")
-                        else datetime.utcnow()
+                        else datetime.now(timezone.utc)
                     ),
                     source_url=feed_url,
                 )
                 jobs.append(job)
 
-            logger.info(f"Fetched {len(jobs)} jobs from RSS feed: {feed_url}")
+            logger.info("Fetched %s jobs from RSS feed: %s", ('len(jobs)', 'feed_url'))
             return jobs
 
     except httpx.HTTPStatusError as e:
@@ -72,7 +72,7 @@ async def fetch_rss_feed(feed_url: str) -> List[RSSJob]:
         )
         raise
     except Exception as e:
-        logger.error(f"Error fetching RSS feed {feed_url}: {str(e)}")
+        logger.error("Error fetching RSS feed %s: %s", ('feed_url', 'str(e)'))
         raise
 
 
@@ -140,7 +140,7 @@ def update_or_create_job(rss_job: RSSJob, db) -> Job:
         existing_job.description = normalized_job["description"]
         existing_job.raw_json = normalized_job["raw_json"]
         existing_job.apply_url = normalized_job["apply_url"]
-        existing_job.updated_at = datetime.utcnow()
+        existing_job.updated_at = datetime.now(timezone.utc)
         db.add(existing_job)
         logger.info(
             f"Updated RSS job: {normalized_job['title']} ({normalized_job['external_id']})"
@@ -183,7 +183,7 @@ async def sync_rss_feed(feed_url: str) -> List[Job]:
 
     except Exception as e:
         db.rollback()
-        logger.error(f"Error syncing RSS feed {feed_url}: {str(e)}")
+        logger.error("Error syncing RSS feed %s: %s", ('feed_url', 'str(e)'))
         raise
     finally:
         db.close()

@@ -125,7 +125,7 @@ class TestApplicationService:
 
                             result = await run_application_task(str(mock_task.id), mock_db)
 
-                            assert result == True
+                            assert result is True
                             assert mock_task.status == "success"
                             assert mock_task.attempt_count == 1
                             mock_apply.assert_called_once()
@@ -184,7 +184,7 @@ class TestApplicationService:
 
                             result = await run_application_task(str(mock_task.id), mock_db)
 
-                            assert result == True
+                            assert result is True
                             assert mock_task.status == "success"
                             mock_apply.assert_called_once()
 
@@ -199,7 +199,7 @@ class TestApplicationService:
 
         result = await run_application_task("nonexistent-task-id", mock_db)
 
-        assert result == False
+        assert result is False
 
     @pytest.mark.asyncio
     @patch('backend.services.application_service.get_db')
@@ -218,7 +218,7 @@ class TestApplicationService:
 
         result = await run_application_task(str(mock_task.id), mock_db)
 
-        assert result == False
+        assert result is False
         assert mock_task.status == "failed"
         assert mock_task.last_error == "Job or profile not found"
 
@@ -246,7 +246,7 @@ class TestApplicationService:
 
         result = await run_application_task(str(mock_task.id), mock_db)
 
-        assert result == False
+        assert result is False
         assert mock_task.status == "failed"
         assert mock_task.last_error == "No resume found"
 
@@ -276,7 +276,7 @@ class TestApplicationService:
         with patch('backend.services.application_service.download_file', return_value=None):
             result = await run_application_task(str(mock_task.id), mock_db)
 
-            assert result == False
+            assert result is False
             assert mock_task.status == "failed"
             assert mock_task.last_error == "No resume found"
 
@@ -310,7 +310,7 @@ class TestApplicationService:
 
                     result = await run_application_task(str(mock_task.id), mock_db)
 
-                    assert result == False
+                    assert result is False
                     assert mock_task.status == "needs_review"
 
     @pytest.mark.asyncio
@@ -351,7 +351,7 @@ class TestApplicationService:
 
                             result = await run_application_task(str(mock_task.id), mock_db)
 
-                            assert result == False
+                            assert result is False
                             assert mock_task.status == "waiting_human"
                             assert "CAPTCHA" in mock_task.last_error
 
@@ -393,6 +393,6 @@ class TestApplicationService:
 
                             result = await run_application_task(str(mock_task.id), mock_db)
 
-                            assert result == False
+                            assert result is False
                             assert mock_task.status == "failed"
                             assert mock_task.last_error == "Application submission failed"

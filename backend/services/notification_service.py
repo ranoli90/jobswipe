@@ -70,7 +70,7 @@ class NotificationService:
                 )
                 logger.info("APNs client initialized")
             except Exception as e:
-                logger.error(f"Failed to initialize APNs client: {e}")
+                logger.error("Failed to initialize APNs client: %s", e)
 
         # FCM (Firebase Cloud Messaging)
         fcm_credentials_path = os.getenv("FCM_CREDENTIALS_PATH")
@@ -80,7 +80,7 @@ class NotificationService:
                 self.fcm_app = firebase_admin.initialize_app(cred)
                 logger.info("FCM client initialized")
             except Exception as e:
-                logger.error(f"Failed to initialize FCM client: {e}")
+                logger.error("Failed to initialize FCM client: %s", e)
 
         # SendGrid (Email service)
         sendgrid_api_key = os.getenv("SENDGRID_API_KEY")
@@ -91,7 +91,7 @@ class NotificationService:
                 )
                 logger.info("SendGrid client initialized")
             except Exception as e:
-                logger.error(f"Failed to initialize SendGrid client: {e}")
+                logger.error("Failed to initialize SendGrid client: %s", e)
 
     @property
     def apns_enabled(self) -> bool:
@@ -197,10 +197,10 @@ class NotificationService:
             await self._store_notification(notification)
 
             notification["delivered"] = True
-            logger.info(f"Notification sent to user {user_id}: {notification_type}")
+            logger.info("Notification sent to user %s: %s", ('user_id', 'notification_type'))
 
         except Exception as e:
-            logger.error(f"Failed to send notification: {e}")
+            logger.error("Failed to send notification: %s", e)
             notification["error"] = str(e)
 
         return notification
@@ -218,7 +218,7 @@ class NotificationService:
             )
             return preferences
         except Exception as e:
-            logger.error(f"Failed to get user preferences: {e}")
+            logger.error("Failed to get user preferences: %s", e)
             return None
         finally:
             db.close()
@@ -242,7 +242,7 @@ class NotificationService:
                 # Overnight range
                 return now >= start_time or now <= end_time
         except Exception as e:
-            logger.error(f"Error checking quiet hours: {e}")
+            logger.error("Error checking quiet hours: %s", e)
             return False
 
     def _should_send_push_notification(
@@ -310,7 +310,7 @@ class NotificationService:
                 )
 
         except Exception as e:
-            logger.error(f"Failed to send push notifications: {e}")
+            logger.error("Failed to send push notifications: %s", e)
 
     async def _get_user_device_tokens(self, user_id: str) -> List[DeviceToken]:
         """Get user's device tokens"""
@@ -319,7 +319,7 @@ class NotificationService:
             tokens = db.query(DeviceToken).filter(DeviceToken.user_id == user_id).all()
             return tokens
         except Exception as e:
-            logger.error(f"Failed to get device tokens: {e}")
+            logger.error("Failed to get device tokens: %s", e)
             return []
         finally:
             db.close()
@@ -348,7 +348,7 @@ class NotificationService:
 
                     # Send notification
                     await self.apns_client.send_notification(token.token, payload)
-                    logger.debug(f"APNs notification sent to device {token.device_id}")
+                    logger.debug("APNs notification sent to device %s", token.device_id)
 
                 except Exception as e:
                     logger.error(
@@ -356,7 +356,7 @@ class NotificationService:
                     )
 
         except Exception as e:
-            logger.error(f"Failed to send APNs notifications: {e}")
+            logger.error("Failed to send APNs notifications: %s", e)
 
     async def _send_fcm_notifications(
         self,
@@ -414,7 +414,7 @@ class NotificationService:
                         )
 
         except Exception as e:
-            logger.error(f"Failed to send FCM notifications: {e}")
+            logger.error("Failed to send FCM notifications: %s", e)
 
     async def _send_email_notification(
         self,
@@ -432,7 +432,7 @@ class NotificationService:
             # Get user email
             user_email = await self._get_user_email(user_id)
             if not user_email:
-                logger.warning(f"No email found for user {user_id}")
+                logger.warning("No email found for user %s", user_id)
                 return
 
             # Use template HTML if available, otherwise fallback to basic template
@@ -456,14 +456,14 @@ class NotificationService:
             response = self.sendgrid_client.send(mail)
 
             if response.status_code == 202:
-                logger.debug(f"Email notification sent to user {user_id}")
+                logger.debug("Email notification sent to user %s", user_id)
             else:
                 logger.error(
                     f"Failed to send email to user {user_id}: {response.status_code} - {response.body}"
                 )
 
         except Exception as e:
-            logger.error(f"Failed to send email notification: {e}")
+            logger.error("Failed to send email notification: %s", e)
 
     async def _get_user_email(self, user_id: str) -> Optional[str]:
         """Get user's email address"""
@@ -474,7 +474,7 @@ class NotificationService:
             user = db.query(User).filter(User.id == user_id).first()
             return user.email if user else None
         except Exception as e:
-            logger.error(f"Failed to get user email: {e}")
+            logger.error("Failed to get user email: %s", e)
             return None
         finally:
             db.close()
@@ -537,10 +537,10 @@ class NotificationService:
             db.add(db_notification)
             db.commit()
             db.refresh(db_notification)
-            logger.debug(f"Notification stored: {db_notification.id}")
+            logger.debug("Notification stored: %s", db_notification.id)
         except Exception as e:
             db.rollback()
-            logger.error(f"Failed to store notification: {e}")
+            logger.error("Failed to store notification: %s", e)
             raise
         finally:
             db.close()
@@ -583,7 +583,7 @@ class NotificationService:
                 for n in notifications
             ]
         except Exception as e:
-            logger.error(f"Failed to get user notifications: {e}")
+            logger.error("Failed to get user notifications: %s", e)
             return []
         finally:
             db.close()
@@ -622,7 +622,7 @@ class NotificationService:
                 )
         except Exception as e:
             db.rollback()
-            logger.error(f"Failed to mark notification as read: {e}")
+            logger.error("Failed to mark notification as read: %s", e)
         finally:
             db.close()
 
@@ -636,13 +636,13 @@ class NotificationService:
                 db.query(NotificationTemplate)
                 .filter(
                     NotificationTemplate.name == notification_type,
-                    NotificationTemplate.is_active == True,
+                    NotificationTemplate.is_active is True,
                 )
                 .first()
             )
             return template
         except Exception as e:
-            logger.error(f"Failed to get notification template: {e}")
+            logger.error("Failed to get notification template: %s", e)
             return None
         finally:
             db.close()
@@ -660,7 +660,7 @@ class NotificationService:
                 result = result.replace(placeholder, str(value))
             return result
         except Exception as e:
-            logger.error(f"Failed to render template: {e}")
+            logger.error("Failed to render template: %s", e)
             return template
 
     async def register_device_token(
@@ -717,7 +717,7 @@ class NotificationService:
 
         except Exception as e:
             db.rollback()
-            logger.error(f"Failed to register device token: {e}")
+            logger.error("Failed to register device token: %s", e)
             return False
         finally:
             db.close()
@@ -758,7 +758,7 @@ class NotificationService:
 
         except Exception as e:
             db.rollback()
-            logger.error(f"Failed to unregister device token: {e}")
+            logger.error("Failed to unregister device token: %s", e)
             return False
         finally:
             db.close()
@@ -829,12 +829,12 @@ class NotificationService:
                 db.add(new_prefs)
 
             db.commit()
-            logger.debug(f"Notification preferences updated for user {user_id}")
+            logger.debug("Notification preferences updated for user %s", user_id)
             return True
 
         except Exception as e:
             db.rollback()
-            logger.error(f"Failed to update user preferences: {e}")
+            logger.error("Failed to update user preferences: %s", e)
             return False
         finally:
             db.close()
@@ -848,7 +848,7 @@ class NotificationService:
                 return await operation()
             except Exception as e:
                 if attempt == max_retries - 1:
-                    logger.error(f"Operation failed after {max_retries} attempts: {e}")
+                    logger.error("Operation failed after %s attempts: %s", ('max_retries', 'e'))
                     raise
 
                 wait_time = delay * (2**attempt)
@@ -870,7 +870,7 @@ class NotificationService:
         try:
             await self._retry_operation(_operation, max_retries=3, delay=1.0)
         except Exception as e:
-            logger.error(f"Failed to send push notifications after retries: {e}")
+            logger.error("Failed to send push notifications after retries: %s", e)
             # Don't raise - we don't want push notification failures to break the entire notification
 
     async def _send_email_notification_safe(
@@ -891,7 +891,7 @@ class NotificationService:
         try:
             await self._retry_operation(_operation, max_retries=3, delay=2.0)
         except Exception as e:
-            logger.error(f"Failed to send email notification after retries: {e}")
+            logger.error("Failed to send email notification after retries: %s", e)
             # Don't raise - we don't want email failures to break the entire notification
 
     def _validate_notification_data(
@@ -921,7 +921,7 @@ class NotificationService:
 
             # Get delivered notifications
             delivered_notifications = (
-                db.query(Notification).filter(Notification.delivered == True).count()
+                db.query(Notification).filter(Notification.delivered is True).count()
             )
 
             # Get notifications by type
@@ -937,7 +937,7 @@ class NotificationService:
             recent_failures = (
                 db.query(Notification)
                 .filter(
-                    Notification.delivered == False,
+                    Notification.delivered is False,
                     Notification.created_at
                     >= datetime.now() - datetime.timedelta(hours=24),
                 )
@@ -962,7 +962,7 @@ class NotificationService:
             }
 
         except Exception as e:
-            logger.error(f"Failed to get notification stats: {e}")
+            logger.error("Failed to get notification stats: %s", e)
             return {}
         finally:
             db.close()

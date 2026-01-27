@@ -38,12 +38,12 @@ class EmbeddingService:
                 from sentence_transformers import SentenceTransformer
 
                 cls._model = SentenceTransformer(MODEL_NAME, cache_folder=CACHE_DIR)
-                logger.info(f"Loaded embedding model: {MODEL_NAME}")
+                logger.info("Loaded embedding model: %s", MODEL_NAME)
             except ImportError:
                 logger.warning("Sentence Transformers library not installed")
                 cls._model = None
             except Exception as e:
-                logger.error(f"Failed to load embedding model: {e}")
+                logger.error("Failed to load embedding model: %s", e)
                 cls._model = None
         return cls._model
 
@@ -91,7 +91,7 @@ class EmbeddingService:
 
             return embedding_list
         except Exception as e:
-            logger.error(f"Error generating job embedding: {str(e)}")
+            logger.error("Error generating job embedding: %s", str(e))
             return []
 
     @staticmethod
@@ -136,7 +136,7 @@ class EmbeddingService:
 
             return embedding_list
         except Exception as e:
-            logger.error(f"Error generating profile embedding: {str(e)}")
+            logger.error("Error generating profile embedding: %s", str(e))
             return []
 
     @staticmethod
@@ -201,7 +201,7 @@ class EmbeddingService:
             return float(normalized_score)
 
         except Exception as e:
-            logger.error(f"Error calculating semantic similarity: {str(e)}")
+            logger.error("Error calculating semantic similarity: %s", str(e))
             return 0.0
 
     @staticmethod
@@ -259,7 +259,7 @@ class EmbeddingService:
             }
 
         except Exception as e:
-            logger.error(f"Error analyzing job match: {str(e)}")
+            logger.error("Error analyzing job match: %s", str(e))
             return {
                 "score": 0.5,
                 "analysis": f"Error analyzing match: {str(e)}",

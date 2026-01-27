@@ -106,10 +106,10 @@ class AnalyticsService:
                         accurate_matches += 1
 
                 except Exception as e:
-                    logger.error(f"Error processing interaction: {e}")
+                    logger.error("Error processing interaction: %s", e)
                     import traceback
 
-                    logger.error(f"Stack trace: {traceback.format_exc()}")
+                    logger.error("Stack trace: %s", traceback.format_exc())
 
             # Calculate success rate
             apply_interactions = [i for i in interactions if i.action == "apply"]
@@ -142,7 +142,7 @@ class AnalyticsService:
             }
 
         except Exception as e:
-            logger.error(f"Error generating matching accuracy report: {e}")
+            logger.error("Error generating matching accuracy report: %s", e)
             return {"error": str(e)}
         finally:
             db.close()
@@ -263,7 +263,7 @@ class AnalyticsService:
             }
 
         except Exception as e:
-            logger.error(f"Error generating user behavior report: {e}")
+            logger.error("Error generating user behavior report: %s", e)
             return {"error": str(e)}
         finally:
             db.close()
@@ -322,7 +322,7 @@ class AnalyticsService:
             }
 
         except Exception as e:
-            logger.error(f"Error generating job market analysis: {e}")
+            logger.error("Error generating job market analysis: %s", e)
             return {"error": str(e)}
         finally:
             db.close()
@@ -444,11 +444,11 @@ class AnalyticsService:
             else:
                 raise ValueError(f"Unsupported format: {format}")
 
-            logger.info(f"Report exported successfully: {file_path}")
+            logger.info("Report exported successfully: %s", file_path)
             return file_path
 
         except Exception as e:
-            logger.error(f"Error exporting report: {e}")
+            logger.error("Error exporting report: %s", e)
             raise
 
     def _generate_html_report(self, data: Dict, report_type: str) -> str:
@@ -567,7 +567,7 @@ class AnalyticsService:
             }
 
         except Exception as e:
-            logger.error(f"Error generating dashboard summary: {e}")
+            logger.error("Error generating dashboard summary: %s", e)
             return {"error": str(e)}
         finally:
             db.close()
@@ -628,7 +628,7 @@ class AnalyticsService:
             }
 
         except Exception as e:
-            logger.error(f"Error generating engagement trends: {e}")
+            logger.error("Error generating engagement trends: %s", e)
             return {"error": str(e)}
         finally:
             db.close()
@@ -694,7 +694,7 @@ class AnalyticsService:
             }
 
         except Exception as e:
-            logger.error(f"Error generating job performance: {e}")
+            logger.error("Error generating job performance: %s", e)
             return {"error": str(e)}
         finally:
             db.close()
@@ -755,7 +755,7 @@ class AnalyticsService:
             }
 
         except Exception as e:
-            logger.error(f"Error generating application funnel: {e}")
+            logger.error("Error generating application funnel: %s", e)
             return {"error": str(e)}
         finally:
             db.close()

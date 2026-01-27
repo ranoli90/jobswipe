@@ -45,7 +45,7 @@ def get_spacy_model():
         )  # Use small model instead of large transformer
         logger.info("Loaded spaCy small model")
     except Exception as e:
-        logger.error(f"Could not load spaCy model: {e}")
+        logger.error("Could not load spaCy model: %s", e)
         _nlp = None
     return _nlp
 
@@ -71,7 +71,7 @@ class EnhancedResumeParser:
             return "\n".join(text)
 
         except Exception as e:
-            logger.error(f"Error parsing PDF: {str(e)}")
+            logger.error("Error parsing PDF: %s", str(e))
             raise
 
     @staticmethod
@@ -90,7 +90,7 @@ class EnhancedResumeParser:
             return "\n".join(text)
 
         except Exception as e:
-            logger.error(f"Error parsing DOCX: {str(e)}")
+            logger.error("Error parsing DOCX: %s", str(e))
             raise
 
     @staticmethod
@@ -206,7 +206,7 @@ class EnhancedResumeParser:
             return entities
 
         except Exception as e:
-            logger.error(f"Error extracting entities with spaCy: {str(e)}")
+            logger.error("Error extracting entities with spaCy: %s", str(e))
             return {}
 
     @staticmethod
@@ -405,7 +405,7 @@ class EnhancedResumeParser:
             else:
                 raise ValueError(f"Unsupported file type: {filename}")
 
-            logger.info(f"Extracted {len(text)} characters from resume")
+            logger.info("Extracted %s characters from resume", len(text))
 
             # Parse basic information
             basic_info = EnhancedResumeParser.parse_basic_info(text)
@@ -435,15 +435,15 @@ class EnhancedResumeParser:
                 "certifications": ai_data.get("certifications", []),
                 "entities": entities,
                 "raw_text": text[:2000],  # Truncate for storage
-                "parsed_at": datetime.utcnow().isoformat(),
+                "parsed_at": datetime.now(timezone.utc).isoformat(),
             }
 
-            logger.info(f"Successfully parsed resume: {parsed_data['full_name']}")
+            logger.info("Successfully parsed resume: %s", parsed_data['full_name'])
 
             return parsed_data
 
         except Exception as e:
-            logger.error(f"Error parsing resume: {str(e)}")
+            logger.error("Error parsing resume: %s", str(e))
             raise
 
 

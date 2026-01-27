@@ -77,7 +77,7 @@ async def sync_greenhouse_board(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid ingestion API key"
         )
 
-    logger.info(f"Syncing Greenhouse board: {board_token}, incremental: {incremental}")
+    logger.info("Syncing Greenhouse board: %s, incremental: %s", ('board_token', 'incremental'))
 
     try:
         from backend.workers.ingestion.greenhouse import \
@@ -92,7 +92,7 @@ async def sync_greenhouse_board(
         }
 
     except Exception as e:
-        logger.error(f"Error syncing Greenhouse board: {e}")
+        logger.error("Error syncing Greenhouse board: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to sync Greenhouse board: {str(e)}",
@@ -122,7 +122,7 @@ async def sync_lever_postings(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid ingestion API key"
         )
 
-    logger.info(f"Syncing Lever organization: {org_slug}, incremental: {incremental}")
+    logger.info("Syncing Lever organization: %s, incremental: %s", ('org_slug', 'incremental'))
 
     try:
         from backend.workers.ingestion.lever import \
@@ -137,7 +137,7 @@ async def sync_lever_postings(
         }
 
     except Exception as e:
-        logger.error(f"Error syncing Lever organization: {e}")
+        logger.error("Error syncing Lever organization: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to sync Lever organization: {str(e)}",
@@ -164,7 +164,7 @@ async def sync_rss_feed(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid ingestion API key"
         )
 
-    logger.info(f"Syncing RSS feed: {feed_url}")
+    logger.info("Syncing RSS feed: %s", feed_url)
 
     try:
         from backend.workers.ingestion.rss import sync_rss_feed as rss_sync
@@ -178,7 +178,7 @@ async def sync_rss_feed(
         }
 
     except Exception as e:
-        logger.error(f"Error syncing RSS feed: {e}")
+        logger.error("Error syncing RSS feed: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to sync RSS feed: {str(e)}",
@@ -206,7 +206,7 @@ async def trigger_ingestion(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid ingestion API key"
         )
 
-    logger.info(f"Triggering job ingestion with request: {request}")
+    logger.info("Triggering job ingestion with request: %s", request)
 
     try:
         jobs = await ingest_jobs_once()
@@ -226,7 +226,7 @@ async def trigger_ingestion(
         )
 
     except Exception as e:
-        logger.error(f"Error triggering ingestion: {e}")
+        logger.error("Error triggering ingestion: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to trigger ingestion: {str(e)}",
@@ -264,7 +264,7 @@ async def get_ingestion_status(
         )
 
     except Exception as e:
-        logger.error(f"Error getting ingestion status: {e}")
+        logger.error("Error getting ingestion status: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get ingestion status: {str(e)}",
@@ -304,7 +304,7 @@ async def start_periodic_ingestion(
         }
 
     except Exception as e:
-        logger.error(f"Error starting periodic ingestion: {e}")
+        logger.error("Error starting periodic ingestion: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to start periodic ingestion: {str(e)}",
@@ -337,7 +337,7 @@ async def stop_periodic_ingestion(
         return {"success": True, "message": "Periodic ingestion stopped"}
 
     except Exception as e:
-        logger.error(f"Error stopping periodic ingestion: {e}")
+        logger.error("Error stopping periodic ingestion: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to stop periodic ingestion: {str(e)}",
@@ -365,7 +365,7 @@ async def get_ingestion_sources():
         }
 
     except Exception as e:
-        logger.error(f"Error getting ingestion sources: {e}")
+        logger.error("Error getting ingestion sources: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get ingestion sources: {str(e)}",

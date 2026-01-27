@@ -47,7 +47,7 @@ def string_validator(field_name: str):
             raise ValueError(f"{field_name} must be a string")
         sanitized = sanitize_string(v)
         if sanitized != v:
-            logger.warning(f"Input sanitized for field {field_name}")
+            logger.warning("Input sanitized for field %s", field_name)
         return sanitized
 
     return validator(field_name, pre=True, allow_reuse=True)(validate_string)

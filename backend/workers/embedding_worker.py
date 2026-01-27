@@ -41,7 +41,7 @@ class EmbeddingTask:
         self.priority = priority
         self.metadata = metadata or {}
         self.status = TaskStatus.PENDING
-        self.created_at = datetime.utcnow()
+        self.created_at = datetime.now(timezone.utc)
         self.started_at = None
         self.completed_at = None
         self.result = None
@@ -193,7 +193,7 @@ class EmbeddingQueue:
         # Use negative priority so higher values come first (ZADD sorts ascending)
         await self._client.zadd(f"{self.PENDING_QUEUE}:sorted", {task_id: -priority})
 
-        logger.debug(f"Enqueued embedding task: {task_id}")
+        logger.debug("Enqueued embedding task: %s", task_id)
         return task_id
 
     async def enqueue_batch(
@@ -241,17 +241,17 @@ class EmbeddingQueue:
 
         task = EmbeddingTask.from_dict(json.loads(task_data))
         task.status = TaskStatus.PROCESSING
-        task.started_at = datetime.utcnow()
+        task.started_at = datetime.now(timezone.utc)
 
         # Update task data
         await self._client.hset(self.PENDING_QUEUE, task_id, json.dumps(task.to_dict()))
 
         # Move to processing set
         await self._client.zadd(
-            self.PROCESSING_SET, {task_id: datetime.utcnow().timestamp()}
+            self.PROCESSING_SET, {task_id: datetime.now(timezone.utc).timestamp()}
         )
 
-        logger.debug(f"Dequeued embedding task: {task_id}")
+        logger.debug("Dequeued embedding task: %s", task_id)
         return task
 
     async def complete(self, task_id: str, result: List[float]) -> bool:
@@ -275,7 +275,7 @@ class EmbeddingQueue:
 
         task = EmbeddingTask.from_dict(json.loads(task_data))
         task.status = TaskStatus.COMPLETED
-        task.completed_at = datetime.utcnow()
+        task.completed_at = datetime.now(timezone.utc)
         task.result = result
 
         # Remove from processing set
@@ -290,7 +290,7 @@ class EmbeddingQueue:
         # Remove from pending queue
         await self._client.hdel(self.PENDING_QUEUE, task_id)
 
-        logger.debug(f"Completed embedding task: {task_id}")
+        logger.debug("Completed embedding task: %s", task_id)
         return True
 
     async def fail(self, task_id: str, error: str, retry: bool = True) -> bool:
@@ -342,7 +342,7 @@ class EmbeddingQueue:
         else:
             # Mark as failed
             task.status = TaskStatus.FAILED
-            task.completed_at = datetime.utcnow()
+            task.completed_at = datetime.now(timezone.utc)
             task.error = error
 
             # Remove from processing set
@@ -357,7 +357,7 @@ class EmbeddingQueue:
             # Remove from pending queue
             await self._client.hdel(self.PENDING_QUEUE, task_id)
 
-            logger.error(f"Embedding task failed: {task_id} - {error}")
+            logger.error("Embedding task failed: %s - %s", ('task_id', 'error'))
             return False
 
     async def get_status(self, task_id: str) -> Optional[Dict[str, Any]]:
@@ -426,7 +426,7 @@ class EmbeddingQueue:
             await self.complete(task.task_id, result)
 
         except Exception as e:
-            logger.error(f"Error processing task {task.task_id}: {e}")
+            logger.error("Error processing task %s: %s", ('task.task_id', 'e'))
             await self.fail(task.task_id, str(e))
 
     async def _worker_loop(self, embedding_service) -> None:
@@ -443,7 +443,7 @@ class EmbeddingQueue:
                     await asyncio.sleep(0.1)
 
             except Exception as e:
-                logger.error(f"Worker error: {e}")
+                logger.error("Worker error: %s", e)
                 await asyncio.sleep(1)
 
     async def _start_workers(self, embedding_service, num_workers: int = None) -> None:
@@ -460,7 +460,7 @@ class EmbeddingQueue:
         for i in range(num_workers):
             worker = asyncio.create_task(self._worker_loop(embedding_service))
             self._worker_tasks.append(worker)
-            logger.debug(f"Started embedding worker {i + 1}/{num_workers}")
+            logger.debug("Started embedding worker %s/%s", ('i + 1', 'num_workers'))
 
     async def _stop_workers(self) -> None:
         """Stop all worker processes"""
@@ -509,7 +509,7 @@ class EmbeddingQueue:
         await self._client.delete(self.COMPLETED_HASH)
         await self._client.delete(self.FAILED_QUEUE)
 
-        logger.info(f"Cleared embedding queues: {stats}")
+        logger.info("Cleared embedding queues: %s", stats)
         return stats
 
 

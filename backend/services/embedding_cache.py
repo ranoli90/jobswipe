@@ -76,7 +76,7 @@ class EmbeddingCache:
                 await self._client.ping()
                 logger.info("Connected to Redis embedding cache")
             except Exception as e:
-                logger.error(f"Failed to connect to Redis: {e}")
+                logger.error("Failed to connect to Redis: %s", e)
                 self._client = None
 
     async def disconnect(self) -> None:
@@ -131,7 +131,7 @@ class EmbeddingCache:
                 self.misses += 1
                 return None
         except Exception as e:
-            logger.error(f"Error getting embedding from cache: {e}")
+            logger.error("Error getting embedding from cache: %s", e)
             return None
 
     async def set_embedding(
@@ -158,7 +158,7 @@ class EmbeddingCache:
             await self._client.setex(key, ttl, json.dumps(embedding))
             return True
         except Exception as e:
-            logger.error(f"Error caching embedding: {e}")
+            logger.error("Error caching embedding: %s", e)
             return False
 
     async def get_job_embedding(self, job_id: str) -> Optional[List[float]]:
@@ -181,11 +181,10 @@ class EmbeddingCache:
             if cached:
                 self.hits += 1
                 return json.loads(cached)
-            else:
-                self.misses += 1
-                return None
+            self.misses += 1
+            return None
         except Exception as e:
-            logger.error(f"Error getting job embedding from cache: {e}")
+            logger.error("Error getting job embedding from cache: %s", e)
             return None
 
     async def set_job_embedding(
@@ -212,7 +211,7 @@ class EmbeddingCache:
             await self._client.setex(key, ttl, json.dumps(embedding))
             return True
         except Exception as e:
-            logger.error(f"Error caching job embedding: {e}")
+            logger.error("Error caching job embedding: %s", e)
             return False
 
     async def get_batch_embeddings(
@@ -255,7 +254,7 @@ class EmbeddingCache:
 
             return embeddings
         except Exception as e:
-            logger.error(f"Error in batch embedding get: {e}")
+            logger.error("Error in batch embedding get: %s", e)
             return {text: None for text in texts}
 
     async def set_batch_embeddings(
@@ -289,10 +288,10 @@ class EmbeddingCache:
 
             # Count successful operations
             cached_count = sum(1 for result in results if result)
-            logger.info(f"Cached {cached_count}/{len(embeddings)} embeddings")
+            logger.info("Cached %s/%s embeddings", ('cached_count', 'len(embeddings)'))
             return cached_count
         except Exception as e:
-            logger.error(f"Error in batch embedding set: {e}")
+            logger.error("Error in batch embedding set: %s", e)
             return 0
 
     async def get_popular_jobs(
@@ -317,7 +316,7 @@ class EmbeddingCache:
             jobs = await self._client.lrange(key, 0, limit - 1)
             return jobs
         except Exception as e:
-            logger.error(f"Error getting popular jobs from cache: {e}")
+            logger.error("Error getting popular jobs from cache: %s", e)
             return []
 
     async def add_popular_job(
@@ -345,7 +344,7 @@ class EmbeddingCache:
             await self._client.ltrim(key, 0, max_size - 1)
             return True
         except Exception as e:
-            logger.error(f"Error adding popular job to cache: {e}")
+            logger.error("Error adding popular job to cache: %s", e)
             return False
 
     async def invalidate_embedding(self, text: str) -> bool:
@@ -367,7 +366,7 @@ class EmbeddingCache:
             await self._client.delete(key)
             return True
         except Exception as e:
-            logger.error(f"Error invalidating embedding: {e}")
+            logger.error("Error invalidating embedding: %s", e)
             return False
 
     async def invalidate_job_embedding(self, job_id: str) -> bool:
@@ -389,7 +388,7 @@ class EmbeddingCache:
             await self._client.delete(key)
             return True
         except Exception as e:
-            logger.error(f"Error invalidating job embedding: {e}")
+            logger.error("Error invalidating job embedding: %s", e)
             return False
 
     def get_stats(self) -> Dict[str, Any]:
@@ -442,7 +441,7 @@ class EmbeddingCache:
             logger.info("Cleared all cached embeddings")
             return True
         except Exception as e:
-            logger.error(f"Error clearing cache: {e}")
+            logger.error("Error clearing cache: %s", e)
             return False
 
 

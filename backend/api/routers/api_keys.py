@@ -304,6 +304,6 @@ async def get_api_key_stats(
         "key_name": key.name,
         "service_type": key.service_type,
         "period_start": since.isoformat() if since else None,
-        "period_end": datetime.utcnow().isoformat(),
+        "period_end": datetime.now(timezone.utc).isoformat(),
         **stats,
     }

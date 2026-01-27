@@ -19,12 +19,12 @@ class TestOpenAIService:
             mock_client = MagicMock()
             mock_client.models.list.return_value = []
             mock_openai.return_value = mock_client
-            assert OpenAIService.is_available() == True
+            assert OpenAIService.is_available() is True
 
         # Test without Ollama
         with patch('backend.services.openai_service.OpenAI') as mock_openai:
             mock_openai.side_effect = Exception("Ollama not available")
-            assert OpenAIService.is_available() == False
+            assert OpenAIService.is_available() is False
             
     def test_profile_to_text_conversion(self):
         """Test profile dictionary to text conversion"""

@@ -24,7 +24,7 @@ class TestEmbeddingService:
     @patch("backend.services.embedding_service.redis")
     def test_is_available_no_model(self, mock_redis):
         """Test is_available when model is not loaded"""
-        assert EmbeddingService.is_available() == False
+        assert EmbeddingService.is_available() is False
 
     @patch("backend.services.embedding_service.redis")
     @patch("backend.services.embedding_service.SentenceTransformer")
@@ -34,7 +34,7 @@ class TestEmbeddingService:
         mock_sentence_transformer.return_value = mock_model
         EmbeddingService._model = mock_model
 
-        assert EmbeddingService.is_available() == True
+        assert EmbeddingService.is_available() is True
 
     @patch("backend.services.embedding_service.redis")
     @patch("backend.services.embedding_service.SentenceTransformer")

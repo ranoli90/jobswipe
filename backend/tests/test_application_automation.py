@@ -102,9 +102,9 @@ class TestApplicationAutomationService:
 
         result = await service.run_application_task(mock_task)
 
-        assert result["success"] == True
+        assert result["success"] is True
         assert result["status"] == "success"
-        assert result["submitted"] == True
+        assert result["submitted"] is True
 
         mock_init.assert_called_once()
         mock_navigate.assert_called_once()
@@ -194,9 +194,9 @@ class TestApplicationAutomationService:
 
         result = await service.run_application_task(mock_task)
 
-        assert result["success"] == False
+        assert result["success"] is False
         assert result["status"] == "failed"
-        assert result["submitted"] == False
+        assert result["submitted"] is False
 
     @pytest.mark.asyncio
     @patch(
@@ -256,7 +256,7 @@ class TestApplicationAutomationService:
 
         result = await service.run_application_task(mock_task)
 
-        assert result["success"] == False
+        assert result["success"] is False
         assert result["status"] == "failed"
         assert "Navigation failed" in result["message"]
 

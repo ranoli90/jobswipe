@@ -52,7 +52,7 @@ def validate_database_connection(engine):
 
             logger.info("Database connection validated successfully")
     except Exception as e:
-        logger.error(f"Database connection validation failed: {e}")
+        logger.error("Database connection validation failed: %s", e)
         raise
 
 

@@ -238,7 +238,7 @@ def categorize_all_jobs() -> List[Dict[str, any]]:
 
     try:
         jobs = db.query(Job).all()
-        logger.info(f"Categorizing {len(jobs)} jobs")
+        logger.info("Categorizing %s jobs", len(jobs))
 
         results = categorize_jobs(jobs)
 
@@ -254,13 +254,13 @@ def categorize_all_jobs() -> List[Dict[str, any]]:
                 job.raw_json["category_keywords"] = result["keywords"]
 
         db.commit()
-        logger.info(f"Successfully categorized {len(results)} jobs")
+        logger.info("Successfully categorized %s jobs", len(results))
 
         return results
 
     except Exception as e:
         db.rollback()
-        logger.error(f"Error categorizing jobs: {e}")
+        logger.error("Error categorizing jobs: %s", e)
         raise
     finally:
         db.close()
@@ -291,7 +291,7 @@ def get_category_distribution() -> Dict[str, int]:
         return distribution
 
     except Exception as e:
-        logger.error(f"Error getting category distribution: {e}")
+        logger.error("Error getting category distribution: %s", e)
         raise
     finally:
         db.close()

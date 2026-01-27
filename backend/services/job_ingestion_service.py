@@ -217,7 +217,7 @@ class JobIngestionService:
             logger.info("Kafka connection initialized successfully")
 
         except Exception as e:
-            logger.warning(f"Failed to initialize Kafka connection: {e}")
+            logger.warning("Failed to initialize Kafka connection: %s", e)
             logger.warning("Falling back to direct database ingestion")
 
     async def ingest_jobs_from_sources(self) -> List[Dict]:
@@ -225,7 +225,7 @@ class JobIngestionService:
         all_jobs = []
 
         for source, config in self.JOB_SOURCES.items():
-            logger.info(f"Ingesting jobs from {source}")
+            logger.info("Ingesting jobs from %s", source)
 
             try:
                 if config["type"] == "rss":
@@ -233,14 +233,14 @@ class JobIngestionService:
                 elif config["type"] == "scrape":
                     jobs = await self.ingest_scraped_jobs(config)
                 else:
-                    logger.warning(f"Unknown job source type: {config['type']}")
+                    logger.warning("Unknown job source type: %s", config['type'])
                     continue
 
                 all_jobs.extend(jobs)
-                logger.info(f"Ingested {len(jobs)} jobs from {source}")
+                logger.info("Ingested %s jobs from %s", ('len(jobs)', 'source'))
 
             except Exception as e:
-                logger.error(f"Error ingesting jobs from {source}: {e}")
+                logger.error("Error ingesting jobs from %s: %s", ('source', 'e'))
 
         return all_jobs
 
@@ -293,10 +293,10 @@ class JobIngestionService:
                                 jobs.append(job)
 
                         except Exception as e:
-                            logger.error(f"Error parsing RSS entry: {e}")
+                            logger.error("Error parsing RSS entry: %s", e)
 
         except Exception as e:
-            logger.error(f"Error ingesting RSS feed {config['url']}: {e}")
+            logger.error("Error ingesting RSS feed %s: %s", ("config['url']", 'e'))
 
         return jobs[:MAX_JOB_POSTINGS_PER_SOURCE]
 
@@ -352,10 +352,10 @@ class JobIngestionService:
                                     jobs.append(job)
 
                             except Exception as e:
-                                logger.error(f"Error parsing job link: {e}")
+                                logger.error("Error parsing job link: %s", e)
 
             except Exception as e:
-                logger.error(f"Error scraping {company_config['name']} jobs: {e}")
+                logger.error("Error scraping %s jobs: %s", ("company_config['name']", 'e'))
 
         return jobs[:MAX_JOB_POSTINGS_PER_SOURCE]
 
@@ -449,7 +449,7 @@ class JobIngestionService:
                 existing_job.type = job_data.get("type", "")
                 existing_job.updated_at = datetime.now()
                 db.commit()
-                logger.info(f"Updated job: {job_data['title']}")
+                logger.info("Updated job: %s", job_data['title'])
 
             else:
                 # Create new job
@@ -468,12 +468,12 @@ class JobIngestionService:
 
                 db.add(new_job)
                 db.commit()
-                logger.info(f"Created new job: {job_data['title']}")
+                logger.info("Created new job: %s", job_data['title'])
 
             return True
 
         except Exception as e:
-            logger.error(f"Error processing job: {e}")
+            logger.error("Error processing job: %s", e)
             db.rollback()
             return False
 
@@ -489,13 +489,13 @@ class JobIngestionService:
             try:
                 # Check if job meets quality standards
                 if len(job.get("description", "")) < 500:
-                    logger.warning(f"Job description too short: {job['title']}")
+                    logger.warning("Job description too short: %s", job['title'])
                     continue
 
                 if self.kafka_producer:
                     # Send to Kafka for real-time processing
                     self.kafka_producer.send(KAFKA_JOB_TOPIC, job)
-                    logger.debug(f"Sent job to Kafka: {job['title']}")
+                    logger.debug("Sent job to Kafka: %s", job['title'])
                 else:
                     # Process directly if Kafka not available
                     await self.process_job(job)
@@ -525,15 +525,15 @@ class JobIngestionService:
             for msg in self.kafka_consumer:
                 try:
                     job_data = msg.value
-                    logger.info(f"Processing job from Kafka: {job_data['title']}")
+                    logger.info("Processing job from Kafka: %s", job_data['title'])
 
                     await self.process_job(job_data)
 
                 except Exception as e:
-                    logger.error(f"Error processing Kafka message: {e}")
+                    logger.error("Error processing Kafka message: %s", e)
 
         except Exception as e:
-            logger.error(f"Kafka consumer error: {e}")
+            logger.error("Kafka consumer error: %s", e)
 
         finally:
             self.kafka_consumer.close()
@@ -552,16 +552,16 @@ class JobIngestionService:
                 jobs = await self.ingest_jobs_from_sources()
 
                 if jobs:
-                    logger.info(f"Ingested {len(jobs)} jobs for processing")
+                    logger.info("Ingested %s jobs for processing", len(jobs))
                     await self.process_jobs_batch(jobs)
                 else:
                     logger.info("No new jobs to ingest")
 
-                logger.info(f"Next ingestion in {interval_seconds} seconds")
+                logger.info("Next ingestion in %s seconds", interval_seconds)
                 await asyncio.sleep(interval_seconds)
 
             except Exception as e:
-                logger.error(f"Periodic ingestion error: {e}")
+                logger.error("Periodic ingestion error: %s", e)
                 await asyncio.sleep(60)  # Wait before retrying
 
     async def run_once(self):
@@ -574,7 +574,7 @@ class JobIngestionService:
             jobs = await self.ingest_jobs_from_sources()
 
             if jobs:
-                logger.info(f"Ingested {len(jobs)} jobs")
+                logger.info("Ingested %s jobs", len(jobs))
                 success, failed = await self.process_jobs_batch(jobs)
                 logger.info(
                     f"Processing complete: {success} succeeded, {failed} failed"
@@ -585,7 +585,7 @@ class JobIngestionService:
             return jobs
 
         except Exception as e:
-            logger.error(f"Single ingestion run error: {e}")
+            logger.error("Single ingestion run error: %s", e)
             return []
 
 

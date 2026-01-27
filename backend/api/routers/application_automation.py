@@ -115,7 +115,7 @@ async def auto_apply_to_job(
         )
 
     try:
-        logger.info(f"Starting auto-apply for task: {request.task_id}")
+        logger.info("Starting auto-apply for task: %s", request.task_id)
 
         # Get task from database
         db = next(get_db())
@@ -144,7 +144,7 @@ async def auto_apply_to_job(
         # Run automation
         result = await application_automation_service.run_application_task(task)
 
-        logger.info(f"Auto-apply completed: {result}")
+        logger.info("Auto-apply completed: %s", result)
 
         return ApplicationAutomationResponse(
             success=result["success"],
@@ -156,7 +156,7 @@ async def auto_apply_to_job(
         )
 
     except Exception as e:
-        logger.error(f"Error in auto-apply: {e}")
+        logger.error("Error in auto-apply: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to run auto-apply: {str(e)}",
@@ -181,7 +181,7 @@ async def auto_apply_all(
         )
 
     try:
-        logger.info(f"Starting auto-apply-all for user: {current_user.id}")
+        logger.info("Starting auto-apply-all for user: %s", current_user.id)
 
         db = next(get_db())
         tasks = (
@@ -207,7 +207,7 @@ async def auto_apply_all(
                 )
 
             except Exception as e:
-                logger.error(f"Failed to apply to task {task.id}: {e}")
+                logger.error("Failed to apply to task %s: %s", ('task.id', 'e'))
                 results.append(
                     {
                         "task_id": str(task.id),
@@ -226,7 +226,7 @@ async def auto_apply_all(
         }
 
     except Exception as e:
-        logger.error(f"Error in auto-apply-all: {e}")
+        logger.error("Error in auto-apply-all: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to run auto-apply-all: {str(e)}",
@@ -268,7 +268,7 @@ async def get_pending_tasks(current_user: User = Depends(get_current_user)):
         }
 
     except Exception as e:
-        logger.error(f"Error getting pending tasks: {e}")
+        logger.error("Error getting pending tasks: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get pending tasks: {str(e)}",
@@ -310,7 +310,7 @@ async def get_application_history(current_user: User = Depends(get_current_user)
         }
 
     except Exception as e:
-        logger.error(f"Error getting application history: {e}")
+        logger.error("Error getting application history: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get application history: {str(e)}",
@@ -352,7 +352,7 @@ async def get_automation_stats(current_user: User = Depends(get_current_user)):
         return {"success": True, "stats": stats, "success_rate": round(success_rate, 2)}
 
     except Exception as e:
-        logger.error(f"Error getting automation stats: {e}")
+        logger.error("Error getting automation stats: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get automation stats: {str(e)}",
@@ -371,7 +371,7 @@ async def cancel_task(task_id: str, current_user: User = Depends(get_current_use
         Success message
     """
     try:
-        logger.info(f"Cancelling task: {task_id}")
+        logger.info("Cancelling task: %s", task_id)
 
         db = next(get_db())
         task = db.query(ApplicationTask).filter(ApplicationTask.id == task_id).first()
@@ -399,12 +399,12 @@ async def cancel_task(task_id: str, current_user: User = Depends(get_current_use
         db.add(task)
         db.commit()
 
-        logger.info(f"Task cancelled successfully: {task_id}")
+        logger.info("Task cancelled successfully: %s", task_id)
 
         return {"success": True, "message": "Task cancelled successfully"}
 
     except Exception as e:
-        logger.error(f"Error cancelling task: {e}")
+        logger.error("Error cancelling task: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to cancel task: {str(e)}",
@@ -476,7 +476,7 @@ async def generate_cover_letter(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error generating cover letter: {e}")
+        logger.error("Error generating cover letter: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate cover letter: {str(e)}",
@@ -550,7 +550,7 @@ async def regenerate_cover_letter(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error regenerating cover letter: {e}")
+        logger.error("Error regenerating cover letter: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to regenerate cover letter: {str(e)}",
@@ -576,7 +576,7 @@ async def get_domain_status(domain: str):
         return {"success": True, "domain": domain, "status": status}
 
     except Exception as e:
-        logger.error(f"Error getting domain status for {domain}: {e}")
+        logger.error("Error getting domain status for %s: %s", ('domain', 'e'))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get domain status: {str(e)}",
@@ -612,7 +612,7 @@ async def get_all_domains_status():
         return {"success": True, "domains": domain_statuses}
 
     except Exception as e:
-        logger.error(f"Error getting all domains status: {e}")
+        logger.error("Error getting all domains status: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get domains status: {str(e)}",
@@ -658,7 +658,7 @@ async def send_notification(
         }
 
         # Log notification (in production, you'd send it)
-        logger.info(f"Notification queued: {notification_data}")
+        logger.info("Notification queued: %s", notification_data)
 
         # TODO: Implement actual notification sending
         # await notification_service.send_push_notification(current_user.id, request.message)
@@ -671,7 +671,7 @@ async def send_notification(
         }
 
     except Exception as e:
-        logger.error(f"Error sending notification: {e}")
+        logger.error("Error sending notification: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to send notification: {str(e)}",
@@ -698,7 +698,7 @@ async def get_notifications(
         return {"success": True, "notifications": [], "total": 0}
 
     except Exception as e:
-        logger.error(f"Error getting notifications: {e}")
+        logger.error("Error getting notifications: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get notifications: {str(e)}",

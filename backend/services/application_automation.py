@@ -55,7 +55,7 @@ class ApplicationAutomationService:
             logger.info("Playwright browser initialized successfully")
 
         except Exception as e:
-            logger.error(f"Failed to initialize browser: {e}")
+            logger.error("Failed to initialize browser: %s", e)
             raise
 
     async def close_browser(self):
@@ -80,7 +80,7 @@ class ApplicationAutomationService:
             logger.info("Playwright browser closed")
 
         except Exception as e:
-            logger.error(f"Failed to close browser: {e}")
+            logger.error("Failed to close browser: %s", e)
 
     async def fill_form_field(self, selector: str, value: str):
         """Fill form field with value"""
@@ -88,10 +88,10 @@ class ApplicationAutomationService:
             await self.page.wait_for_selector(selector, timeout=10000)
             await self.page.fill(selector, value)
             await self.page.wait_for_timeout(500)  # Add human-like delay
-            logger.debug(f"Filled field {selector} with value: {value}")
+            logger.debug("Filled field %s with value: %s", ('selector', 'value'))
 
         except Exception as e:
-            logger.warning(f"Failed to fill field {selector}: {e}")
+            logger.warning("Failed to fill field %s: %s", ('selector', 'e'))
 
     async def click_element(self, selector: str):
         """Click on an element"""
@@ -99,10 +99,10 @@ class ApplicationAutomationService:
             await self.page.wait_for_selector(selector, timeout=10000)
             await self.page.click(selector)
             await self.page.wait_for_timeout(500)
-            logger.debug(f"Clicked element: {selector}")
+            logger.debug("Clicked element: %s", selector)
 
         except Exception as e:
-            logger.warning(f"Failed to click element {selector}: {e}")
+            logger.warning("Failed to click element %s: %s", ('selector', 'e'))
 
     async def check_for_captcha(self) -> Optional[Dict]:
         """Check if page contains CAPTCHA
@@ -118,7 +118,7 @@ class ApplicationAutomationService:
             captcha_details = self.captcha_detector.detect_captcha(screenshot)
 
             if captcha_details:
-                logger.warning(f"CAPTCHA detected: {captcha_details}")
+                logger.warning("CAPTCHA detected: %s", captcha_details)
 
                 # Queue for human resolution if automated solving fails
                 captcha_details["screenshot"] = screenshot
@@ -143,7 +143,7 @@ class ApplicationAutomationService:
             return None
 
         except Exception as e:
-            logger.error(f"Error checking for CAPTCHA: {e}")
+            logger.error("Error checking for CAPTCHA: %s", e)
             return None
 
     async def solve_captcha(self, captcha_details: Dict) -> Optional[Dict]:
@@ -176,7 +176,7 @@ class ApplicationAutomationService:
             return None
 
         except Exception as e:
-            logger.error(f"Error solving CAPTCHA: {e}")
+            logger.error("Error solving CAPTCHA: %s", e)
             return None
 
     async def select_dropdown(self, selector: str, value: str):
@@ -185,10 +185,10 @@ class ApplicationAutomationService:
             await self.page.wait_for_selector(selector, timeout=10000)
             await self.page.select_option(selector, value)
             await self.page.wait_for_timeout(500)
-            logger.debug(f"Selected {value} from {selector}")
+            logger.debug("Selected %s from %s", ('value', 'selector'))
 
         except Exception as e:
-            logger.warning(f"Failed to select dropdown {selector}: {e}")
+            logger.warning("Failed to select dropdown %s: %s", ('selector', 'e'))
 
     async def fill_checkboxes(self, selectors: List[str]):
         """Fill multiple checkboxes"""
@@ -198,10 +198,10 @@ class ApplicationAutomationService:
                 is_checked = await self.page.is_checked(selector)
                 if not is_checked:
                     await self.page.check(selector)
-                logger.debug(f"Handled checkbox: {selector}")
+                logger.debug("Handled checkbox: %s", selector)
 
             except Exception as e:
-                logger.warning(f"Failed to handle checkbox {selector}: {e}")
+                logger.warning("Failed to handle checkbox %s: %s", ('selector', 'e'))
 
     async def upload_file(self, selector: str, file_path: str):
         """Upload file using file input"""
@@ -209,20 +209,20 @@ class ApplicationAutomationService:
             await self.page.wait_for_selector(selector, timeout=10000)
             await self.page.set_input_files(selector, file_path)
             await self.page.wait_for_timeout(1000)
-            logger.debug(f"Uploaded file: {file_path}")
+            logger.debug("Uploaded file: %s", file_path)
 
         except Exception as e:
-            logger.warning(f"Failed to upload file {file_path}: {e}")
+            logger.warning("Failed to upload file %s: %s", ('file_path', 'e'))
 
     async def submit_form(self, selector: str = "button[type='submit']"):
         """Submit form by clicking submit button"""
         try:
             await self.page.wait_for_selector(selector, timeout=10000)
             await self.page.click(selector)
-            logger.debug(f"Form submitted")
+            logger.debug("Form submitted")
 
         except Exception as e:
-            logger.warning(f"Failed to submit form: {e}")
+            logger.warning("Failed to submit form: %s", e)
 
     async def handle_common_elements(self):
         """Handle common form elements"""
@@ -259,19 +259,19 @@ class ApplicationAutomationService:
                     continue
 
         except Exception as e:
-            logger.warning(f"Failed to handle common elements: {e}")
+            logger.warning("Failed to handle common elements: %s", e)
 
     async def navigate_to_application_page(self, apply_url: str):
         """Navigate to job application page"""
         try:
-            logger.info(f"Navigating to application page: {apply_url}")
+            logger.info("Navigating to application page: %s", apply_url)
             await self.page.goto(apply_url, timeout=60000)
             await self.page.wait_for_load_state("networkidle")
             await self.page.wait_for_timeout(2000)
             logger.debug("Page loaded successfully")
 
         except Exception as e:
-            logger.error(f"Failed to navigate to {apply_url}: {e}")
+            logger.error("Failed to navigate to %s: %s", ('apply_url', 'e'))
             raise
 
     async def extract_form_fields(self) -> Dict[str, List[str]]:
@@ -299,11 +299,11 @@ class ApplicationAutomationService:
                 """),
             }
 
-            logger.debug(f"Extracted fields: {fields}")
+            logger.debug("Extracted fields: %s", fields)
             return fields
 
         except Exception as e:
-            logger.warning(f"Failed to extract form fields: {e}")
+            logger.warning("Failed to extract form fields: %s", e)
             return {}
 
     async def fill_application_form(self, profile: Dict):
@@ -368,7 +368,7 @@ class ApplicationAutomationService:
             logger.info("Form fields filled successfully")
 
         except Exception as e:
-            logger.error(f"Failed to fill application form: {e}")
+            logger.error("Failed to fill application form: %s", e)
 
     async def validate_form_submission(self):
         """Validate form submission success"""
@@ -410,7 +410,7 @@ class ApplicationAutomationService:
             return True
 
         except Exception as e:
-            logger.error(f"Failed to validate form submission: {e}")
+            logger.error("Failed to validate form submission: %s", e)
             return False
 
     async def auto_apply_to_job(self, task: ApplicationTask) -> Dict:
@@ -433,7 +433,7 @@ class ApplicationAutomationService:
         }
 
         try:
-            logger.info(f"Starting auto-apply for job: {task.job_id}")
+            logger.info("Starting auto-apply for job: %s", task.job_id)
 
             # Initialize browser
             await self.initialize_browser()
@@ -464,7 +464,7 @@ class ApplicationAutomationService:
                 result["message"] = (
                     f"Rate limit exceeded. Retry after {rate_retry_after:.1f} seconds"
                 )
-                logger.warning(f"Rate limit exceeded for {job.apply_url}")
+                logger.warning("Rate limit exceeded for %s", job.apply_url)
 
                 # Send notification to user
                 await self._send_user_notification(
@@ -485,7 +485,7 @@ class ApplicationAutomationService:
                 result["message"] = (
                     f"Circuit breaker open. Retry after {cb_retry_after:.1f} seconds"
                 )
-                logger.warning(f"Circuit breaker open for {job.apply_url}")
+                logger.warning("Circuit breaker open for %s", job.apply_url)
 
                 # Send notification to user
                 await self._send_user_notification(
@@ -504,7 +504,7 @@ class ApplicationAutomationService:
             # Check for CAPTCHA after navigation
             captcha_details = await self.check_for_captcha()
             if captcha_details:
-                logger.warning(f"CAPTCHA detected for job {task.job_id}")
+                logger.warning("CAPTCHA detected for job %s", task.job_id)
                 result["status"] = "waiting_human"
                 result["message"] = "CAPTCHA detected, waiting for human resolution"
                 result["captcha_details"] = captcha_details
@@ -564,10 +564,10 @@ class ApplicationAutomationService:
             result["screenshot"] = await self.page.screenshot()
 
         except Exception as e:
-            logger.error(f"Auto-apply failed: {e}")
+            logger.error("Auto-apply failed: %s", e)
             import traceback
 
-            logger.error(f"Traceback: {traceback.format_exc()}")
+            logger.error("Traceback: %s", traceback.format_exc())
             result["message"] = str(e)
 
             try:
@@ -617,7 +617,7 @@ class ApplicationAutomationService:
                 f"Notification: User {user_id}, Task {task_id}, Type {notification_type}, Message: {message}"
             )
         except Exception as e:
-            logger.error(f"Failed to send notification: {e}")
+            logger.error("Failed to send notification: %s", e)
 
     def _parse_profile_to_dict(self, profile: CandidateProfile, user: User) -> Dict:
         """Convert CandidateProfile to dictionary"""
@@ -653,7 +653,7 @@ class ApplicationAutomationService:
         Returns:
             Dictionary with execution results
         """
-        logger.info(f"Processing application task: {task.id}")
+        logger.info("Processing application task: %s", task.id)
 
         # Update task status
         task.status = "in_progress"
@@ -679,12 +679,12 @@ class ApplicationAutomationService:
             db.add(task)
             db.commit()
 
-            logger.info(f"Task completed: {task.id} - Status: {task.status}")
+            logger.info("Task completed: %s - Status: %s", ('task.id', 'task.status'))
 
             return result
 
         except Exception as e:
-            logger.error(f"Task failed: {task.id} - Error: {e}")
+            logger.error("Task failed: %s - Error: %s", ('task.id', 'e'))
 
             task.status = "failed"
             task.attempt_count += 1

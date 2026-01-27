@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 try:
     nlp = spacy.load("en_core_web_sm")
 except Exception as e:
-    logger.warning(f"Could not load spaCy model: {e}")
+    logger.warning("Could not load spaCy model: %s", e)
     nlp = None
 
 
@@ -53,7 +53,7 @@ def extract_text_from_pdf(file_content: bytes) -> str:
         return "\n".join(text)
 
     except Exception as e:
-        logger.error(f"Error parsing PDF: {str(e)}")
+        logger.error("Error parsing PDF: %s", str(e))
         raise
 
 
@@ -80,7 +80,7 @@ def extract_text_from_docx(file_content: bytes) -> str:
         return "\n".join(text)
 
     except Exception as e:
-        logger.error(f"Error parsing DOCX: {str(e)}")
+        logger.error("Error parsing DOCX: %s", str(e))
         raise
 
 
@@ -100,7 +100,7 @@ def extract_text_from_image(file_content: bytes) -> str:
         return text
 
     except Exception as e:
-        logger.error(f"Error parsing image with OCR: {str(e)}")
+        logger.error("Error parsing image with OCR: %s", str(e))
         raise
 
 
@@ -423,13 +423,13 @@ def parse_resume_with_openai(text: str) -> dict:
                 parsed_data = json.loads(response["analysis"])
                 return parsed_data
             except json.JSONDecodeError as e:
-                logger.warning(f"Failed to parse OpenAI JSON response: {e}")
+                logger.warning("Failed to parse OpenAI JSON response: %s", e)
                 return {}
 
         return {}
 
     except Exception as e:
-        logger.warning(f"OpenAI resume parsing failed: {e}")
+        logger.warning("OpenAI resume parsing failed: %s", e)
         return {}
 
 
@@ -507,5 +507,5 @@ def parse_resume(file_content: bytes, filename: str) -> dict:
         return ai_parsed_data
 
     except Exception as e:
-        logger.error(f"Error parsing resume: {str(e)}")
+        logger.error("Error parsing resume: %s", str(e))
         raise

@@ -144,8 +144,6 @@ class CorrelationIdMiddleware:
             await send(message)
 
         # Set request_id in logging context
-        import logging
-
         old_factory = logging.getLogRecordFactory()
 
         def record_factory(*args, **kwargs):
@@ -176,10 +174,10 @@ async def startup():
     try:
         # Settings are already validated during instantiation, but we log success
         logger.info("Environment configuration validation successful")
-        logger.info(f"Environment: {settings.environment}")
-        logger.info(f"Debug mode: {settings.debug}")
+        logger.info("Environment: %s", settings.environment)
+        logger.info("Debug mode: %s", settings.debug)
     except Exception as e:
-        logger.error(f"Environment configuration validation failed: {e}")
+        logger.error("Environment configuration validation failed: %s", e)
         raise
 
     redis_instance = redis.from_url(
@@ -264,29 +262,6 @@ class SecurityHeadersMiddleware:
         if scope["type"] != "http":
             await self.app(scope, receive, send)
             return
-
-        async def wrapped_send(message):
-            if message["type"] == "http.response.start":
-                headers = message.get("headers", [])
-                # Add security headers
-                headers.extend(
-                    [
-                        (b"X-Content-Type-Options", b"nosniff"),
-                        (b"X-Frame-Options", b"DENY"),
-                        (b"X-XSS-Protection", b"1; mode=block"),
-                        (
-                            b"Strict-Transport-Security",
-                            b"max-age=31536000; includeSubDomains",
-                        ),
-                        (
-                            b"Content-Security-Policy",
-                            b"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'",
-                        ),
-                        (b"Referrer-Policy", b"strict-origin-when-cross-origin"),
-                    ]
-                )
-                message["headers"] = headers
-            await send(message)
 
         await self.app(scope, receive, send)
 
@@ -382,33 +357,31 @@ async def global_exception_handler(request: Request, exc):
             extra={"ip": client_ip, "user": user_id, "path": str(request.url.path)},
         )
 
-    logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    logger.error("Unhandled exception: %s", exc_info=True)
     return JSONResponse(
         status_code=500,
-        content={"detail": "Internal server error"},
+        content=%s,
     )
 
 
 @app.get("/", dependencies=[Depends(public_limiter)])
 async def root():
     """Root endpoint - health check"""
-    return {"service": "JobSwipe API", "version": "1.0.0", "status": "healthy"}
+    return %s
 
 
 @app.get("/health", dependencies=[Depends(public_limiter)])
 async def health_check():
     """Basic health check endpoint - service availability"""
-    return {"status": "healthy", "service": "JobSwipe API", "version": "1.0.0"}
+    return %s
 
 
-@app.get("/ready")
+@app.get("/ready", ('exc', '"detail": "Internal server error"', '"service": "JobSwipe API", "version": "1.0.0", "status": "healthy"', '"status": "healthy", "service": "JobSwipe API", "version": "1.0.0"'))
 async def readiness_check():
     """Readiness check endpoint - dependencies check"""
-    import datetime
-
     health_status = {
         "status": "ready",
-        "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.datetime.now(timezone.utc).isoformat() + "Z",
         "services": {},
     }
 
@@ -419,13 +392,13 @@ async def readiness_check():
         health_status["services"]["database"] = "ready"
         db.close()
     except Exception as e:
-        logger.error(f"Database readiness check failed: {str(e)}", exc_info=True)
-        health_status["services"]["database"] = f"not ready: {str(e)}"
+        logger.error("Database readiness check failed: %s", exc_info=True)
+        health_status["services"]["database"] = f"not ready: %s"
         health_status["status"] = "not ready"
 
     # Check Redis connectivity
     try:
-        redis_url = os.getenv("CELERY_RESULT_BACKEND", "redis://redis:6379/0")
+        redis_url = os.getenv("CELERY_RESULT_BACKEND", "redis://redis:6379/0", ('str(e)', 'str(e)'))
         if redis_url.startswith("redis://"):
             redis_client = redis.from_url(redis_url)
             redis_client.ping()
@@ -433,15 +406,15 @@ async def readiness_check():
         else:
             health_status["services"]["redis"] = "unknown"
     except Exception as e:
-        logger.error(f"Redis readiness check failed: {str(e)}", exc_info=True)
-        health_status["services"]["redis"] = f"not ready: {str(e)}"
+        logger.error("Redis readiness check failed: %s", exc_info=True)
+        health_status["services"]["redis"] = f"not ready: %s"
         health_status["status"] = "not ready"
 
     # Check Ollama connectivity
     try:
         import httpx
 
-        ollama_url = os.getenv("OLLAMA_BASE_URL", "http://ollama:11434")
+        ollama_url = os.getenv("OLLAMA_BASE_URL", "http://ollama:11434", ('str(e)', 'str(e)'))
         async with httpx.AsyncClient() as client:
             response = await client.get(f"{ollama_url}/api/tags", timeout=5.0)
             if response.status_code == 200:
@@ -452,14 +425,14 @@ async def readiness_check():
                 ] = f"not ready: HTTP {response.status_code}"
                 health_status["status"] = "not ready"
     except Exception as e:
-        logger.error(f"Ollama readiness check failed: {str(e)}", exc_info=True)
-        health_status["services"]["ollama"] = f"not ready: {str(e)}"
+        logger.error("Ollama readiness check failed: %s", exc_info=True)
+        health_status["services"]["ollama"] = f"not ready: %s"
         health_status["status"] = "not ready"
 
     return health_status
 
 
-@app.get("/metrics")
+@app.get("/metrics", ('str(e)', 'str(e)'))
 async def get_metrics():
     """Prometheus metrics endpoint"""
     return await metrics_endpoint()

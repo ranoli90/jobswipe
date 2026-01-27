@@ -275,7 +275,7 @@ class ApplicationLogger:
             "timestamp": "2026-01-25T00:00:00Z",
         }
         self.logs.append(log_entry)
-        logger.info(f"Task {self.task_id} - {step}: {payload}")
+        logger.info("Task %s - %s: %s", ('self.task_id', 'step', 'payload'))
 
     def get_logs(self):
         """Get all log entries"""
