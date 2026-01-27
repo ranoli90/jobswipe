@@ -60,7 +60,7 @@ class MigrationCreator:
     # Example: Migrate existing data
     # connection = op.get_bind()
     #
-    # # Example 1: Update existing records
+    # Example 1: Update existing records
     # connection.execute(
     #     sa.text("""
     #         UPDATE users
@@ -69,7 +69,7 @@ class MigrationCreator:
     #     """)
     # )
     #
-    # # Example 2: Migrate data between tables
+    # Example 2: Migrate data between tables
     # connection.execute(
     #     sa.text("""
     #         INSERT INTO user_preferences (user_id, preference_key, preference_value)
@@ -79,7 +79,7 @@ class MigrationCreator:
     #     """)
     # )
     #
-    # # Example 3: Transform JSON data
+    # Example 3: Transform JSON data
     # connection.execute(
     #     sa.text("""
     #         UPDATE candidate_profiles

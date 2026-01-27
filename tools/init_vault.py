@@ -4,6 +4,7 @@ Initialize HashiCorp Vault with default secrets for JobSwipe
 """
 
 import os
+import sys
 import time
 
 import hvac
@@ -91,4 +92,4 @@ def init_vault():
 
 if __name__ == "__main__":
     success = init_vault()
-    exit(0 if success else 1)
+    sys.exit(0 if success else 1)

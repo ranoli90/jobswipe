@@ -10,7 +10,16 @@ import hvac
 
 from backend.config import settings
 
-logger = logging.getLogger(__name__)
+# Vault secret paths as constants to avoid duplication
+DATABASE_VAULT_PATH = "jobswipe/database"
+OPENAI_VAULT_PATH = "jobswipe/openai"
+JWT_VAULT_PATH = "jobswipe/jwt"
+ENCRYPTION_VAULT_PATH = "jobswipe/encryption"
+
+# Vault secret paths as constants to avoid duplication
+DATABASE_VAULT_PATH = "jobswipe/database"
+OPENAI_VAULT_PATH = "jobswipe/openai"
+JWT_VAULT_PATH = "jobswipe/jwt"
 
 
 class SecretsManager:
@@ -97,26 +106,26 @@ class SecretsManager:
     def get_encryption_key(self) -> str:
         """Get encryption key for PII data"""
         return self.get_secret(
-            "jobswipe/encryption", "key", "dev-encryption-key-change-in-production"
+            ENCRYPTION_VAULT_PATH, "key", "dev-encryption-key-change-in-production"
         )
 
     def get_database_credentials(self) -> Dict[str, str]:
         """Get database credentials"""
         return {
-            "host": self.get_secret("jobswipe/database", "host", "postgres"),
-            "port": self.get_secret("jobswipe/database", "port", "5432"),
-            "database": self.get_secret("jobswipe/database", "database", "jobswipe"),
-            "username": self.get_secret("jobswipe/database", "username", "postgres"),
-            "password": self.get_secret("jobswipe/database", "password", "postgres"),
+            "host": self.get_secret(DATABASE_VAULT_PATH, "host", "postgres"),
+            "port": self.get_secret(DATABASE_VAULT_PATH, "port", "5432"),
+            "database": self.get_secret(DATABASE_VAULT_PATH, "database", "jobswipe"),
+            "username": self.get_secret(DATABASE_VAULT_PATH, "username", "postgres"),
+            "password": self.get_secret(DATABASE_VAULT_PATH, "password", "postgres"),
         }
 
     def get_openai_api_key(self) -> Optional[str]:
         """Get OpenAI API key"""
-        return self.get_secret("jobswipe/openai", "api_key")
+        return self.get_secret(OPENAI_VAULT_PATH, "api_key")
 
     def get_jwt_secret_key(self) -> str:
         """Get JWT secret key"""
-        return self.get_secret("jobswipe/jwt", "secret_key", settings.secret_key)
+        return self.get_secret(JWT_VAULT_PATH, "secret_key", settings.secret_key)
 
 
 # Global secrets manager instance

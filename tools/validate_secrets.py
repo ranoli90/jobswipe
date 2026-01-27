@@ -55,7 +55,7 @@ class SecretValidator:
                     if "=" in line:
                         key, value = line.split("=", 1)
                         key = key.strip()
-                        value = value.strip().strip("\"'" "")
+                        value = value.strip().strip('"\'"')
                         env_vars[key] = value
         except Exception as e:
             self.errors.append(f"Failed to read {self.env_file}: {e}")
