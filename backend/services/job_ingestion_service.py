@@ -186,10 +186,6 @@ class JobIngestionService:
         },
     }
 
-    # Job types to include
-    JOB_TYPES = ["Software Engineer", "Data Scientist", "Product Manager", "Designer"]
-    MAX_JOB_POSTINGS_PER_SOURCE = 100
-
     def __init__(self, openai_service=None):
         if openai_service is None:
             self.openai_service = OpenAIService()
@@ -268,7 +264,7 @@ class JobIngestionService:
                             # Check if job title contains any of the desired job types
                             if any(
                                 job_type.lower() in entry.title.lower()
-                                for job_type in self.JOB_TYPES
+                                for job_type in JOB_TYPES
                             ):
                                 # Extract job details
                                 job = {
@@ -338,7 +334,7 @@ class JobIngestionService:
                                 # Check if job title contains any of the desired job types
                                 if any(
                                     job_type.lower() in job_title.lower()
-                                    for job_type in self.JOB_TYPES
+                                    for job_type in JOB_TYPES
                                 ):
                                     job = {
                                         "id": hash(job_url),

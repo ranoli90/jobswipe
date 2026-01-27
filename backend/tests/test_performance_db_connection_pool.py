@@ -170,7 +170,7 @@ class TestDatabaseConnectionPoolStress:
                 for conn in connections:
                     try:
                         conn.close()
-                    except:
+                    except Exception:
                         pass
 
     @pytest.mark.asyncio
@@ -346,7 +346,7 @@ class TestDatabaseConnectionPoolStress:
                 try:
                     conn = engine.connect()
                     connections.append(conn)
-                except:
+                except Exception:
                     break
 
             # Pool should have allocated connections
@@ -356,7 +356,7 @@ class TestDatabaseConnectionPoolStress:
             for conn in connections:
                 try:
                     conn.close()
-                except:
+                except Exception:
                     pass
 
     @pytest.mark.asyncio

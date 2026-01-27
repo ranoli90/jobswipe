@@ -172,10 +172,13 @@ class TestJobIngestionServiceSimple:
         """Test that job types are correctly configured"""
         service = JobIngestionService()
 
-        assert len(JobIngestionService.JOB_TYPES) > 0
-        assert "Software Engineer" in JobIngestionService.JOB_TYPES
-        assert "Data Scientist" in JobIngestionService.JOB_TYPES
-        assert "Product Manager" in JobIngestionService.JOB_TYPES
+        # Import module-level constant
+        from backend.services.job_ingestion_service import JOB_TYPES
+        
+        assert len(JOB_TYPES) > 0
+        assert "Software Engineer" in JOB_TYPES
+        assert "Data Scientist" in JOB_TYPES
+        assert "Product Manager" in JOB_TYPES
 
     def test_source_companies_configuration(self):
         """Test that companies are configured for each source"""
