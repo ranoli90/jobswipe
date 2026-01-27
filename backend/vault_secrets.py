@@ -2,17 +2,23 @@
 Secrets management utilities for JobSwipe
 """
 
+import logging
 import os
+from typing import Any, Dict, Optional
+
 import hvac
-from typing import Optional, Dict, Any
+
+from backend.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class SecretsManager:
     """Manages secrets using HashiCorp Vault"""
 
     def __init__(self):
-        self.vault_url = os.getenv("VAULT_URL", "http://vault:8200")
-        self.vault_token = os.getenv("VAULT_TOKEN", "dev-token-change-in-production")
+        self.vault_url = settings.vault_url
+        self.vault_token = settings.vault_token
         self.client = None
         self._connect()
 
@@ -21,13 +27,19 @@ class SecretsManager:
         try:
             self.client = hvac.Client(url=self.vault_url, token=self.vault_token)
             if not self.client.is_authenticated():
-                print("Warning: Vault authentication failed, falling back to environment variables")
+                logger.warning(
+                    "Vault authentication failed, falling back to environment variables"
+                )
                 self.client = None
         except Exception as e:
-            print(f"Warning: Could not connect to Vault: {e}, falling back to environment variables")
+            logger.warning(
+                f"Could not connect to Vault: {e}, falling back to environment variables"
+            )
             self.client = None
 
-    def get_secret(self, path: str, key: str, default: Optional[str] = None) -> Optional[str]:
+    def get_secret(
+        self, path: str, key: str, default: Optional[str] = None
+    ) -> Optional[str]:
         """
         Get a secret from Vault
 
@@ -42,14 +54,28 @@ class SecretsManager:
         if self.client:
             try:
                 response = self.client.secrets.kv.v2.read_secret_version(path=path)
-                if response and 'data' in response and 'data' in response['data']:
-                    return response['data']['data'].get(key)
+                if response and "data" in response and "data" in response["data"]:
+                    value = response["data"]["data"].get(key)
+                    if value is not None:
+                        logger.info(
+                            f"AUDIT: Secret accessed from Vault - path: {path}, key: {key}"
+                        )
+                        return value
             except Exception as e:
-                print(f"Error reading secret from Vault: {e}")
+                logger.warning(
+                    f"AUDIT: Failed to read secret from Vault - path: {path}, key: {key}, error: {str(e)}"
+                )
 
         # Fallback to environment variables
         env_key = f"{path.replace('/', '_').upper()}_{key.upper()}"
-        return os.getenv(env_key, default)
+        value = os.getenv(env_key, default)
+        if value is not None and value != default:
+            logger.info(f"AUDIT: Secret accessed from environment - key: {env_key}")
+        elif value == default:
+            logger.warning(
+                f"AUDIT: Secret not found, using default - path: {path}, key: {key}"
+            )
+        return value
 
     def set_secret(self, path: str, key: str, value: str):
         """
@@ -63,21 +89,27 @@ class SecretsManager:
         if self.client:
             try:
                 self.client.secrets.kv.v2.create_or_update_secret(
-                    path=path,
-                    secret={key: value}
+                    path=path, secret={key: value}
                 )
+                logger.info(f"AUDIT: Secret set in Vault - path: {path}, key: {key}")
                 return
             except Exception as e:
-                print(f"Error writing secret to Vault: {e}")
+                logger.warning(
+                    f"AUDIT: Failed to set secret in Vault - path: {path}, key: {key}, error: {str(e)}"
+                )
 
         # Fallback: set environment variable (not persistent)
         env_key = f"{path.replace('/', '_').upper()}_{key.upper()}"
         os.environ[env_key] = value
-        print(f"Warning: Secret stored in environment variable {env_key} (not persistent)")
+        logger.warning(
+            f"AUDIT: Secret stored in environment variable {env_key} (not persistent)"
+        )
 
     def get_encryption_key(self) -> str:
         """Get encryption key for PII data"""
-        return self.get_secret("jobswipe/encryption", "key", "dev-encryption-key-change-in-production")
+        return self.get_secret(
+            "jobswipe/encryption", "key", "dev-encryption-key-change-in-production"
+        )
 
     def get_database_credentials(self) -> Dict[str, str]:
         """Get database credentials"""
@@ -86,7 +118,7 @@ class SecretsManager:
             "port": self.get_secret("jobswipe/database", "port", "5432"),
             "database": self.get_secret("jobswipe/database", "database", "jobswipe"),
             "username": self.get_secret("jobswipe/database", "username", "postgres"),
-            "password": self.get_secret("jobswipe/database", "password", "postgres")
+            "password": self.get_secret("jobswipe/database", "password", "postgres"),
         }
 
     def get_openai_api_key(self) -> Optional[str]:
@@ -95,7 +127,7 @@ class SecretsManager:
 
     def get_jwt_secret_key(self) -> str:
         """Get JWT secret key"""
-        return self.get_secret("jobswipe/jwt", "secret_key", "dev-jwt-secret-change-in-production")
+        return self.get_secret("jobswipe/jwt", "secret_key", settings.secret_key)
 
 
 # Global secrets manager instance

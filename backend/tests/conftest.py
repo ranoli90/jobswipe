@@ -2,67 +2,75 @@
 Configuration for tests with mocking.
 """
 
-import pytest
-from unittest.mock import patch, MagicMock
-from fastapi.testclient import TestClient
-import sys
 import os
+import sys
+from unittest.mock import MagicMock, patch
+
+import pytest
+from fastapi.testclient import TestClient
 
 # Add the backend directory to Python path
 BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BACKEND_DIR)
 
+
 # Mock external services before importing the main module
 @pytest.fixture(autouse=True)
 def mock_external_services():
     """Mock external services to avoid real API calls"""
-    
+
     # Mock MinIO
-    with patch('backend.services.storage.StorageService.__init__') as mock_storage_init:
+    with patch("backend.services.storage.StorageService.__init__") as mock_storage_init:
         mock_storage_init.return_value = None
-        
+
     # Mock OpenAI
-    with patch('backend.services.openai_service.openai_service.is_available') as mock_openai_available:
+    with patch(
+        "backend.services.openai_service.openai_service.is_available"
+    ) as mock_openai_available:
         mock_openai_available.return_value = False
-        
+
     # Mock Kafka
-    with patch('backend.services.job_ingestion_service.JobIngestionService.init_kafka') as mock_kafka_init:
+    with patch(
+        "backend.services.job_ingestion_service.JobIngestionService.init_kafka"
+    ) as mock_kafka_init:
         mock_kafka_init.return_value = None
-        
+
     yield
+
 
 @pytest.fixture
 def client():
     """Create a test client for the FastAPI application"""
     import sys
-    
+
     # Remove any existing modules with conflicting prefixes
     for module_name in list(sys.modules.keys()):
         if module_name.startswith("backend.") or module_name in ["db", "api"]:
             del sys.modules[module_name]
-    
+
     from backend.db.database import Base
-    
+
     # Reset SQLAlchemy registry to prevent duplicate class errors
     Base.registry._class_registry.clear()
-    
+
     # Import models module first
-    from backend.db import models
-    
     from backend.api.main import app
-    
+    from backend.db import models
     # Clean database before each test
     from backend.db.database import engine
+
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
-    
+
     return TestClient(app)
+
 
 @pytest.fixture
 def mock_db_session():
     """Create a mock database session"""
     session = MagicMock()
     return session
+
 
 @pytest.fixture
 def mock_user():
@@ -72,6 +80,7 @@ def mock_user():
     user.email = "test@example.com"
     user.profile = MagicMock()
     return user
+
 
 @pytest.fixture
 def mock_job():
@@ -85,6 +94,7 @@ def mock_job():
     job.created_at = "2026-01-01T00:00:00"
     return job
 
+
 @pytest.fixture
 def mock_profile():
     """Create a mock candidate profile"""
@@ -97,6 +107,7 @@ def mock_profile():
     profile.skills = ["Python", "JavaScript"]
     profile.resume_file_url = "/path/to/resume.pdf"
     return profile
+
 
 @pytest.fixture
 def mock_application_task(mock_user, mock_job):
@@ -116,14 +127,8 @@ def test_data():
     """Create test data for authentication tests"""
     return {
         "users": [
-            {
-                "email": "test@example.com",
-                "password": "TestPass123!"
-            },
-            {
-                "email": "another@example.com",
-                "password": "AnotherPass456@"
-            }
+            {"email": "test@example.com", "password": "TestPass123!"},
+            {"email": "another@example.com", "password": "AnotherPass456@"},
         ],
         "jobs": [
             {
@@ -131,7 +136,7 @@ def test_data():
                 "title": "Software Engineer",
                 "company": "Tech Corp",
                 "location": "San Francisco",
-                "description": "Python, FastAPI, PostgreSQL"
+                "description": "Python, FastAPI, PostgreSQL",
             }
-        ]
+        ],
     }

@@ -2,13 +2,25 @@
 PII encryption utilities for JobSwipe
 """
 
-from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import base64
+import logging
 import os
 from typing import Optional
+
+from cryptography.fernet import Fernet, InvalidToken
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
+from backend.config import settings
 from backend.vault_secrets import get_encryption_key
+
+logger = logging.getLogger(__name__)
+
+
+class DecryptionError(Exception):
+    """Custom exception for decryption failures"""
+
+    pass
 
 
 class PIIEncryptor:
@@ -44,9 +56,9 @@ class PIIEncryptor:
             except Exception:
                 pass
 
-        # Generate a key from password (for development)
-        password = os.getenv("ENCRYPTION_PASSWORD", "dev-encryption-password-change-in-production").encode()
-        salt = os.getenv("ENCRYPTION_SALT", "dev-salt-change-in-production").encode()
+        # Generate a key from password
+        password = settings.encryption_password.encode()
+        salt = settings.encryption_salt.encode()
 
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
@@ -70,8 +82,14 @@ class PIIEncryptor:
         if not data:
             return data
 
-        encrypted = self.fernet.encrypt(data.encode())
-        return encrypted.decode()
+        try:
+            encrypted = self.fernet.encrypt(data.encode())
+            result = encrypted.decode()
+            logger.info(f"AUDIT: PII encryption successful - data length: {len(data)}")
+            return result
+        except Exception as e:
+            logger.error(f"AUDIT: PII encryption failed - {str(e)}")
+            raise
 
     def decrypt(self, encrypted_data: str) -> str:
         """
@@ -82,17 +100,26 @@ class PIIEncryptor:
 
         Returns:
             Decrypted string
+
+        Raises:
+            DecryptionError: If decryption fails
         """
         if not encrypted_data:
             return encrypted_data
 
         try:
             decrypted = self.fernet.decrypt(encrypted_data.encode())
-            return decrypted.decode()
+            result = decrypted.decode()
+            logger.info(
+                f"AUDIT: PII decryption successful - data length: {len(result)}"
+            )
+            return result
+        except InvalidToken as e:
+            logger.warning(f"AUDIT: PII decryption failed - Invalid token - {str(e)}")
+            raise DecryptionError("Failed to decrypt data: invalid token")
         except Exception as e:
-            # If decryption fails, return original data (for backward compatibility)
-            print(f"Decryption failed: {e}")
-            return encrypted_data
+            logger.warning(f"AUDIT: PII decryption failed - {str(e)}")
+            raise DecryptionError(f"Failed to decrypt data: {str(e)}")
 
 
 # Global encryptor instance
@@ -105,5 +132,20 @@ def encrypt_pii(data: str) -> str:
 
 
 def decrypt_pii(encrypted_data: str) -> str:
-    """Decrypt PII data"""
+    """
+    Decrypt PII data.
+
+    Args:
+        encrypted_data: Encrypted string (base64 encoded)
+
+    Returns:
+        Decrypted string
+
+    Raises:
+        DecryptionError: If decryption fails (e.g., invalid token, wrong key)
+    """
     return encryptor.decrypt(encrypted_data)
+
+
+# Re-export DecryptionError for external use
+__all__ = ["DecryptionError", "encrypt_pii", "decrypt_pii"]

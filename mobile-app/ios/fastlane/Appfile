@@ -1,0 +1,12 @@
+# Appfile for iOS
+app_identifier("com.jobswipe.jobswipe")       # The bundle identifier of your app
+apple_id("your-apple-id@example.com")         # Your Apple email address
+
+# App Store Connect Team ID
+itc_team_id("YOUR_TEAM_ID")                   # App Store Connect Team ID
+
+# Developer Portal Team ID
+team_id("YOUR_TEAM_ID")                       # Developer Portal Team ID
+
+# Path to the App Store Connect API key
+app_store_connect_api_key_path("./fastlane/app-store-connect-api-key.json")

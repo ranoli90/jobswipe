@@ -1,0 +1,188 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths: [ 'backend/**' ]
+  pull_request:
+    branches: [ main, develop ]
+    paths: [ 'backend/**' ]
+
+jobs:
+  secrets-scan:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Scan for secrets
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./
+        base: main
+        head: HEAD
+        extra_args: --debug --only-verified
+
+  dependency-review:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Dependency Review
+      uses: actions/dependency-review-action@v4
+      with:
+        fail-on-severity: critical
+        license-check: true
+        vulnerability-check: true
+
+  test:
+    needs: [secrets-scan, dependency-review]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libpq-dev curl gnupg
+        # Install Node.js for Playwright
+        curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+        sudo apt-get install -y nodejs
+        sudo npm install -g playwright@1.40.0
+        playwright install --with-deps chromium
+    - name: Install Python dependencies
+      run: |
+        cd backend
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: Run pip-audit for vulnerable dependencies
+      run: |
+        cd backend
+        pip install pip-audit
+        pip-audit --format json --output pip-audit-results.json
+    - name: Upload pip-audit results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: pip-audit-results
+        path: backend/pip-audit-results.json
+    - name: Run safety check for vulnerable dependencies
+      run: |
+        cd backend
+        pip install safety
+        safety check --full-report
+    - name: Run tests
+      run: |
+        cd backend
+        pytest tests/ --cov=. --cov-report=xml
+    - name: Test database migrations
+      run: |
+        cd backend
+        # Test migration upgrade and downgrade
+        alembic upgrade head
+        alembic downgrade base
+        alembic upgrade head
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./backend/coverage.xml
+
+  codeql-analysis:
+    needs: secrets-scan
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: python
+        queries: security-and-quality
+    - name: Build
+      run: |
+        cd backend
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+      with:
+        category: "/language:python"
+
+  security-scan:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: './backend'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  build:
+    needs: [test, security-scan]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build Docker image
+      run: |
+        cd backend
+        docker build -t jobswipe-backend:${{ github.sha }} .
+    - name: Scan Docker image for vulnerabilities
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'image'
+        scan-ref: 'jobswipe-backend:${{ github.sha }}'
+        format: 'sarif'
+        output: 'trivy-image-results.sarif'
+    - name: Upload image scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-image-results.sarif'
+
+  deploy-staging:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    environment: staging
+    steps:
+    - uses: actions/checkout@v4
+    - name: Deploy to Fly.io Staging
+      uses: superfly/flyctl-actions/setup-flyctl@master
+    - run: flyctl deploy --config fly.staging.toml --remote-only
+      working-directory: backend
+      env:
+        FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+    - name: Wait for staging deployment
+      run: sleep 30
+    - name: Run smoke tests against staging
+      run: |
+        # Basic health check
+        curl -f https://jobswipe-backend-staging.fly.dev/v1/health || exit 1
+        # API endpoint check
+        curl -f https://jobswipe-backend-staging.fly.dev/v1/jobs?limit=1 || exit 1
+        echo "Staging smoke tests passed"
+
+  deploy-production:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    steps:
+    - uses: actions/checkout@v4
+    - name: Deploy to Fly.io Production
+      uses: superfly/flyctl-actions/setup-flyctl@master
+    - run: flyctl deploy --remote-only
+      working-directory: backend
+      env:
+        FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

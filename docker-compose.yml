@@ -47,25 +47,6 @@ services:
       timeout: 30s
       retries: 3
 
-  # MinIO for storage
-  minio:
-    image: minio/minio:latest
-    container_name: jobswipe-minio
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    volumes:
-      - minio_data:/data
-    command: server /data --console-address ":9001"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
-
   # Backend API
   backend:
     build: ./backend
@@ -76,11 +57,6 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@postgres/jobswipe
       CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
       CELERY_RESULT_BACKEND: redis://redis:6379/0
-      MINIO_ENDPOINT: minio:9000
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
-      MINIO_BUCKET: jobswipe
-      MINIO_SECURE: "False"
       SECRET_KEY: "dev-secret-key-change-in-production"
     depends_on:
       postgres:
@@ -88,8 +64,6 @@ services:
       redis:
         condition: service_healthy
       rabbitmq:
-        condition: service_healthy
-      minio:
         condition: service_healthy
     volumes:
       - ./backend:/app
@@ -127,11 +101,6 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@postgres/jobswipe
       CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
       CELERY_RESULT_BACKEND: redis://redis:6379/0
-      MINIO_ENDPOINT: minio:9000
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
-      MINIO_BUCKET: jobswipe
-      MINIO_SECURE: "False"
       SECRET_KEY: "dev-secret-key-change-in-production"
       ENCRYPTION_PASSWORD: "dev-encryption-password-change-in-production"
       ENCRYPTION_SALT: "dev-salt-change-in-production"
@@ -148,8 +117,6 @@ services:
       redis:
         condition: service_healthy
       rabbitmq:
-        condition: service_healthy
-      minio:
         condition: service_healthy
     volumes:
       - ./backend:/app
@@ -296,8 +263,31 @@ services:
       timeout: 10s
       retries: 3
 
+  # Ollama for local LLM inference (cost-free alternative to OpenAI)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: jobswipe-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+      - OLLAMA_KEEP_ALIVE=5m
+      - OLLAMA_NUM_PARALLEL=2
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '2.0'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 volumes:
   postgres_data:
-  minio_data:
   opensearch_data:
   grafana_data:
+  ollama_data:

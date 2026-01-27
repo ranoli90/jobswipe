@@ -5,16 +5,118 @@ JobSwipe API - Main Entry Point
 FastAPI-based API for job search and application automation platform.
 """
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from backend.api.routers import auth, profile, jobs, applications, jobs_ingestion, analytics, application_automation, job_deduplication, job_categorization
-from backend.metrics import MetricsMiddleware, metrics_endpoint
-from backend.tracing import setup_tracing
-from backend.db.database import get_db
-from backend.services.embedding_service import EmbeddingService
-import redis
+import logging
+import logging.config
 import os
 import uuid
+from datetime import datetime, timedelta
+from logging.handlers import RotatingFileHandler
+
+import redis
+import redis.asyncio as redis
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi_limiter import FastAPILimiter
+from fastapi_limiter.depends import RateLimiter
+from fastapi_limiter.exceptions import RateLimitExceeded
+from pythonjsonlogger import jsonlogger
+
+from backend.api.middleware.compression import add_compression_middleware
+from backend.api.middleware.error_handling import add_error_handling_middleware
+from backend.api.middleware.file_validation import \
+    add_file_validation_middleware
+from backend.api.middleware.input_sanitization import \
+    InputSanitizationMiddleware
+from backend.api.middleware.output_encoding import OutputEncodingMiddleware
+from backend.api.routers import (analytics, application_automation,
+                                 applications, auth, job_categorization,
+                                 job_deduplication, jobs, jobs_ingestion,
+                                 notifications, profile)
+from backend.config import Settings
+from backend.db.database import get_db
+from backend.metrics import MetricsMiddleware, metrics_endpoint
+from backend.services.embedding_service import EmbeddingService
+from backend.tracing import setup_tracing
+
+# Configure structured logging
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+log_file = os.getenv("LOG_FILE", "logs/app.log")
+log_max_size = int(os.getenv("LOG_MAX_SIZE", 10485760))  # 10MB
+log_backup_count = int(os.getenv("LOG_BACKUP_COUNT", 5))
+
+# Ensure log directory exists
+os.makedirs(os.path.dirname(log_file), exist_ok=True)
+
+logging_config = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "json": {
+            "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
+            "format": "%(asctime)s %(name)s %(levelname)s %(message)s %(request_id)s %(service)s",
+        },
+        "json_security": {
+            "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
+            "format": "%(asctime)s SECURITY %(levelname)s %(message)s %(ip)s %(user)s %(path)s %(request_id)s %(service)s",
+        },
+    },
+    "handlers": {
+        "console": {
+            "level": log_level,
+            "class": "logging.StreamHandler",
+            "formatter": "json",
+            "stream": "ext://sys.stdout",
+        },
+        "file": {
+            "level": log_level,
+            "class": "logging.handlers.RotatingFileHandler",
+            "formatter": "json",
+            "filename": log_file,
+            "maxBytes": log_max_size,
+            "backupCount": log_backup_count,
+        },
+        "security_file": {
+            "level": "INFO",
+            "class": "logging.handlers.RotatingFileHandler",
+            "formatter": "json_security",
+            "filename": "logs/security.log",
+            "maxBytes": log_max_size,
+            "backupCount": log_backup_count,
+        },
+    },
+    "loggers": {
+        "": {  # root logger
+            "handlers": ["console", "file"],
+            "level": log_level,
+            "propagate": True,
+        },
+        "security": {
+            "handlers": ["security_file", "console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}
+
+
+class StructuredLoggingFilter(logging.Filter):
+    """Add structured fields to log records"""
+
+    def filter(self, record):
+        record.service = "jobswipe-api"
+        # Get request_id from thread local or context
+        record.request_id = getattr(record, "request_id", "unknown")
+        return True
+
+
+# Add filter to root logger
+logging.getLogger().addFilter(StructuredLoggingFilter())
+
+logging.config.dictConfig(logging_config)
+
+logger = logging.getLogger(__name__)
+security_logger = logging.getLogger("security")
 
 
 class CorrelationIdMiddleware:
@@ -36,72 +138,290 @@ class CorrelationIdMiddleware:
 
         async def wrapped_send(message):
             if message["type"] == "http.response.start":
-                message["headers"] = message.get("headers", []) + [(b"x-correlation-id", correlation_id)]
+                message["headers"] = message.get("headers", []) + [
+                    (b"x-correlation-id", correlation_id)
+                ]
             await send(message)
 
-        await self.app(scope, receive, wrapped_send)
+        # Set request_id in logging context
+        import logging
+
+        old_factory = logging.getLogRecordFactory()
+
+        def record_factory(*args, **kwargs):
+            record = old_factory(*args, **kwargs)
+            record.request_id = correlation_id.decode()
+            return record
+
+        logging.setLogRecordFactory(record_factory)
+
+        try:
+            await self.app(scope, receive, wrapped_send)
+        finally:
+            logging.setLogRecordFactory(old_factory)
 
 
-app = FastAPI(title="JobSwipe API", version="1.0.0")
+app = FastAPI(
+    title="JobSwipe API", version="1.0.0", max_request_size=10 * 1024 * 1024
+)  # 10MB limit
+
+settings = Settings()
+
+
+# Setup rate limiting with Redis
+@app.on_event("startup")
+async def startup():
+    # Validate environment configuration on startup
+    logger.info("Validating environment configuration...")
+    try:
+        # Settings are already validated during instantiation, but we log success
+        logger.info("Environment configuration validation successful")
+        logger.info(f"Environment: {settings.environment}")
+        logger.info(f"Debug mode: {settings.debug}")
+    except Exception as e:
+        logger.error(f"Environment configuration validation failed: {e}")
+        raise
+
+    redis_instance = redis.from_url(
+        settings.redis_url, encoding="utf8", decode_responses=True
+    )
+    await FastAPILimiter.init(redis_instance)
+
+
+# Rate limiters
+auth_limiter = RateLimiter(
+    times=5,
+    seconds=60,
+    identifier=lambda request: request.client.host if request.client else "unknown",
+)
+api_limiter = RateLimiter(
+    times=60,
+    seconds=60,
+    identifier=lambda request: getattr(
+        request.state, "user_id", request.client.host if request.client else "unknown"
+    ),
+)
+public_limiter = RateLimiter(
+    times=100,
+    seconds=60,
+    identifier=lambda request: request.client.host if request.client else "unknown",
+)
+
+
+# Rate limit exception handler
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
+    client_ip = request.client.host if request.client else "unknown"
+    user_id = (
+        getattr(request.state, "user_id", "anonymous")
+        if hasattr(request.state, "user_id")
+        else "anonymous"
+    )
+
+    # Log rate limit violation
+    security_logger.warning(
+        "Rate limit exceeded",
+        extra={
+            "ip": client_ip,
+            "user": user_id,
+            "path": str(request.url.path),
+            "method": request.method,
+        },
+    )
+
+    # Calculate retry-after (assume 60 seconds for simplicity, or get from exc if available)
+    retry_after = 60  # seconds
+
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Too many requests"},
+        headers={"Retry-After": str(retry_after)},
+    )
+
 
 # Setup OpenTelemetry tracing
 setup_tracing(app)
 
-# CORS configuration
+# CORS configuration - using settings from config
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=settings.cors_allow_origins,
+    allow_credentials=settings.cors_allow_credentials,
+    allow_methods=settings.cors_allow_methods,
+    allow_headers=settings.cors_allow_headers,
 )
 
 # Correlation ID middleware
 app.add_middleware(CorrelationIdMiddleware)
 
+
+# Security headers middleware
+class SecurityHeadersMiddleware:
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        async def wrapped_send(message):
+            if message["type"] == "http.response.start":
+                headers = message.get("headers", [])
+                # Add security headers
+                headers.extend(
+                    [
+                        (b"X-Content-Type-Options", b"nosniff"),
+                        (b"X-Frame-Options", b"DENY"),
+                        (b"X-XSS-Protection", b"1; mode=block"),
+                        (
+                            b"Strict-Transport-Security",
+                            b"max-age=31536000; includeSubDomains",
+                        ),
+                        (
+                            b"Content-Security-Policy",
+                            b"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'",
+                        ),
+                        (b"Referrer-Policy", b"strict-origin-when-cross-origin"),
+                    ]
+                )
+                message["headers"] = headers
+            await send(message)
+
+        await self.app(scope, receive, send)
+
+
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Input sanitization middleware
+app.add_middleware(InputSanitizationMiddleware)
+
+# Output encoding middleware
+app.add_middleware(OutputEncodingMiddleware)
+
 # Prometheus metrics middleware
 app.add_middleware(MetricsMiddleware)
 
-# Include routers
-app.include_router(auth.router, prefix="/v1/auth", tags=["auth"])
-app.include_router(profile.router, prefix="/v1/profile", tags=["profile"])
-app.include_router(jobs.router, prefix="/v1/jobs", tags=["jobs"])
-app.include_router(applications.router, prefix="/v1/applications", tags=["applications"])
-app.include_router(jobs_ingestion.router, prefix="/v1/ingestion", tags=["ingestion"])
-app.include_router(analytics.router, prefix="/v1/analytics", tags=["analytics"])
-app.include_router(application_automation.router, prefix="/v1/application-automation", tags=["application-automation"])
-app.include_router(job_deduplication.router, tags=["deduplication"])
-app.include_router(job_categorization.router, tags=["categorization"])
+# Response compression
+compression_type = os.getenv("COMPRESSION_TYPE", "gzip")
+add_compression_middleware(app, compression_type=compression_type)
+
+# Error handling middleware
+include_traceback = os.getenv("DEBUG", "false").lower() == "true"
+add_error_handling_middleware(app, include_traceback=include_traceback)
+
+# File upload validation middleware
+add_file_validation_middleware(app)
+
+# Include routers with rate limiting
+from fastapi import Depends
+
+app.include_router(
+    auth.router, prefix="/v1/auth", tags=["auth"], dependencies=[Depends(auth_limiter)]
+)
+app.include_router(
+    profile.router,
+    prefix="/v1/profile",
+    tags=["profile"],
+    dependencies=[Depends(api_limiter)],
+)
+app.include_router(
+    jobs.router, prefix="/v1/jobs", tags=["jobs"], dependencies=[Depends(api_limiter)]
+)
+app.include_router(
+    applications.router,
+    prefix="/v1/applications",
+    tags=["applications"],
+    dependencies=[Depends(api_limiter)],
+)
+app.include_router(
+    jobs_ingestion.router,
+    prefix="/v1/ingestion",
+    tags=["ingestion"],
+    dependencies=[Depends(api_limiter)],
+)
+app.include_router(
+    analytics.router,
+    prefix="/v1/analytics",
+    tags=["analytics"],
+    dependencies=[Depends(api_limiter)],
+)
+app.include_router(
+    application_automation.router,
+    prefix="/v1/application-automation",
+    tags=["application-automation"],
+    dependencies=[Depends(api_limiter)],
+)
+app.include_router(
+    job_deduplication.router,
+    tags=["deduplication"],
+    dependencies=[Depends(api_limiter)],
+)
+app.include_router(
+    job_categorization.router,
+    tags=["categorization"],
+    dependencies=[Depends(api_limiter)],
+)
+app.include_router(notifications.router, dependencies=[Depends(api_limiter)])
 
 
-@app.get("/")
+# Global exception handler for error logging
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc):
+    client_ip = request.client.host if request.client else "unknown"
+    user_id = (
+        getattr(request.state, "user_id", "anonymous")
+        if hasattr(request.state, "user_id")
+        else "anonymous"
+    )
+
+    # Log security events for authentication/authorization failures
+    if isinstance(exc, (ValueError, TypeError)) and "auth" in str(exc).lower():
+        security_logger.warning(
+            "Authentication failure",
+            extra={"ip": client_ip, "user": user_id, "path": str(request.url.path)},
+        )
+
+    logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"},
+    )
+
+
+@app.get("/", dependencies=[Depends(public_limiter)])
 async def root():
     """Root endpoint - health check"""
-    return {
-        "service": "JobSwipe API",
-        "version": "1.0.0",
-        "status": "healthy"
-    }
+    return {"service": "JobSwipe API", "version": "1.0.0", "status": "healthy"}
 
 
-@app.get("/health")
+@app.get("/health", dependencies=[Depends(public_limiter)])
 async def health_check():
-    """Comprehensive health check endpoint"""
+    """Basic health check endpoint - service availability"""
+    return {"status": "healthy", "service": "JobSwipe API", "version": "1.0.0"}
+
+
+@app.get("/ready")
+async def readiness_check():
+    """Readiness check endpoint - dependencies check"""
+    import datetime
+
     health_status = {
-        "status": "healthy",
-        "timestamp": "2026-01-25T00:00:00Z",
-        "services": {}
+        "status": "ready",
+        "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+        "services": {},
     }
 
     # Check database connectivity
     try:
         db = next(get_db())
         db.execute("SELECT 1")
-        health_status["services"]["database"] = "healthy"
+        health_status["services"]["database"] = "ready"
         db.close()
     except Exception as e:
-        health_status["services"]["database"] = f"unhealthy: {str(e)}"
-        health_status["status"] = "unhealthy"
+        logger.error(f"Database readiness check failed: {str(e)}", exc_info=True)
+        health_status["services"]["database"] = f"not ready: {str(e)}"
+        health_status["status"] = "not ready"
 
     # Check Redis connectivity
     try:
@@ -109,38 +429,32 @@ async def health_check():
         if redis_url.startswith("redis://"):
             redis_client = redis.from_url(redis_url)
             redis_client.ping()
-            health_status["services"]["redis"] = "healthy"
+            health_status["services"]["redis"] = "ready"
         else:
             health_status["services"]["redis"] = "unknown"
     except Exception as e:
-        health_status["services"]["redis"] = f"unhealthy: {str(e)}"
-        health_status["status"] = "unhealthy"
+        logger.error(f"Redis readiness check failed: {str(e)}", exc_info=True)
+        health_status["services"]["redis"] = f"not ready: {str(e)}"
+        health_status["status"] = "not ready"
 
-    # Check RabbitMQ connectivity (basic check)
+    # Check Ollama connectivity
     try:
-        # For a simple check, we can try to connect to RabbitMQ management API
         import httpx
-        async with httpx.AsyncClient() as client:
-            response = await client.get("http://rabbitmq:15672/api/overview", auth=("guest", "guest"), timeout=5.0)
-            if response.status_code == 200:
-                health_status["services"]["rabbitmq"] = "healthy"
-            else:
-                health_status["services"]["rabbitmq"] = f"unhealthy: HTTP {response.status_code}"
-                health_status["status"] = "unhealthy"
-    except Exception as e:
-        health_status["services"]["rabbitmq"] = f"unhealthy: {str(e)}"
-        health_status["status"] = "unhealthy"
 
-    # Check embedding service
-    try:
-        if EmbeddingService.is_available():
-            health_status["services"]["embedding_service"] = "healthy"
-        else:
-            health_status["services"]["embedding_service"] = "unhealthy"
-            health_status["status"] = "unhealthy"
+        ollama_url = os.getenv("OLLAMA_BASE_URL", "http://ollama:11434")
+        async with httpx.AsyncClient() as client:
+            response = await client.get(f"{ollama_url}/api/tags", timeout=5.0)
+            if response.status_code == 200:
+                health_status["services"]["ollama"] = "ready"
+            else:
+                health_status["services"][
+                    "ollama"
+                ] = f"not ready: HTTP {response.status_code}"
+                health_status["status"] = "not ready"
     except Exception as e:
-        health_status["services"]["embedding_service"] = f"unhealthy: {str(e)}"
-        health_status["status"] = "unhealthy"
+        logger.error(f"Ollama readiness check failed: {str(e)}", exc_info=True)
+        health_status["services"]["ollama"] = f"not ready: {str(e)}"
+        health_status["status"] = "not ready"
 
     return health_status
 

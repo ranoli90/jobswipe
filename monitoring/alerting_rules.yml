@@ -1,0 +1,65 @@
+groups:
+  - name: jobswipe
+    rules:
+      - alert: HighErrorRate
+        expr: rate(api_requests_total{status_code=~"5.."}[5m]) / rate(api_requests_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value }}% (5% threshold)"
+
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(api_request_duration_seconds_bucket[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API response time"
+          description: "95th percentile response time is {{ $value }}s (5s threshold)"
+
+      - alert: LowJobMatchingSuccess
+        expr: rate(job_matching_requests_total{result="error"}[5m]) / rate(job_matching_requests_total[5m]) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low job matching success rate"
+          description: "Job matching error rate is {{ $value }}% (10% threshold)"
+
+      - alert: ApplicationTaskFailures
+        expr: rate(application_tasks_total{status="failed"}[5m]) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High application task failure rate"
+          description: "Application tasks failing at rate of {{ $value }}/min (5/min threshold)"
+
+      - alert: DatabaseConnectionIssues
+        expr: database_connections_active < 1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database connection issues"
+          description: "Active database connections: {{ $value }} (should be > 0)"
+
+      - alert: BackendDown
+        expr: up{job="jobswipe-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backend service is down"
+          description: "JobSwipe backend is not responding"
+
+      - alert: BackendStagingDown
+        expr: up{job="jobswipe-backend-staging"} == 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Staging backend service is down"
+          description: "JobSwipe staging backend is not responding"

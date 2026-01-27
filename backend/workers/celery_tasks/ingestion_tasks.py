@@ -1,0 +1,264 @@
+"""
+Ingestion Background Tasks
+
+Celery tasks for handling job data ingestion and processing.
+"""
+
+import logging
+from datetime import datetime
+
+from backend.db.database import get_db
+from backend.db.models import Job, JobSource
+from backend.services.embedding_service import EmbeddingService
+from backend.services.job_ingestion_service import job_ingestion_service
+from backend.workers.celery_app import celery_app
+
+logger = logging.getLogger(__name__)
+
+
+@celery_app.task(bind=True, max_retries=3, time_limit=300)
+def ingest_jobs_from_source(self, source_name: str):
+    """
+    Ingest jobs from a specific source.
+
+    Args:
+        source_name: Name of the source (e.g., 'greenhouse', 'lever', 'rss')
+    """
+    db = next(get_db())
+    jobs_ingested = 0
+
+    try:
+        logger.info(f"Starting job ingestion from {source_name}")
+
+        if source_name == "greenhouse":
+            jobs = await job_ingestion_service.fetch_greenhouse_jobs()
+        elif source_name == "lever":
+            jobs = await job_ingestion_service.fetch_lever_jobs()
+        elif source_name == "rss":
+            jobs = await job_ingestion_service.fetch_rss_jobs()
+        else:
+            logger.error(f"Unknown source: {source_name}")
+            return {"status": "failed", "reason": "Unknown source"}
+
+        for job_data in jobs:
+            try:
+                # Check if job already exists
+                existing = (
+                    db.query(Job)
+                    .filter(
+                        Job.external_id == job_data.get("external_id"),
+                        Job.source == source_name,
+                    )
+                    .first()
+                )
+
+                if existing:
+                    logger.debug(
+                        f"Job {job_data.get('external_id')} already exists, skipping"
+                    )
+                    continue
+
+                # Create new job
+                job = Job(
+                    title=job_data.get("title"),
+                    company=job_data.get("company"),
+                    description=job_data.get("description"),
+                    location=job_data.get("location"),
+                    source=source_name,
+                    external_id=job_data.get("external_id"),
+                    apply_url=job_data.get("apply_url"),
+                    salary_range=job_data.get("salary_range"),
+                    job_type=job_data.get("job_type"),
+                    experience_level=job_data.get("experience_level"),
+                    skills=job_data.get("skills", []),
+                    remote_allowed=job_data.get("remote_allowed", False),
+                )
+                db.add(job)
+                jobs_ingested += 1
+
+            except Exception as e:
+                logger.error(f"Error processing job: {e}")
+                continue
+
+        db.commit()
+        logger.info(f"Ingested {jobs_ingested} jobs from {source_name}")
+        return {"status": "success", "jobs_ingested": jobs_ingested}
+
+    except Exception as e:
+        logger.error(f"Failed to ingest jobs from {source_name}: {e}")
+        raise self.retry(exc=e)
+    finally:
+        db.close()
+
+
+@celery_app.task(bind=True, max_retries=3)
+def process_job_embedding(self, job_id: str):
+    """
+    Generate and cache embedding for a job.
+
+    Args:
+        job_id: Job ID to process
+    """
+    db = next(get_db())
+
+    try:
+        job = db.query(Job).filter(Job.id == job_id).first()
+        if not job:
+            logger.warning(f"Job {job_id} not found for embedding")
+            return {"status": "failed", "reason": "Job not found"}
+
+        # Generate embedding
+        if EmbeddingService.is_available():
+            description = job.description or ""
+            embedding = await EmbeddingService.generate_job_embedding(description)
+
+            # Store embedding in cache
+            from backend.services.embedding_cache import EmbeddingCache
+
+            cache = EmbeddingCache()
+            await cache.set_embedding(f"job:{job_id}", embedding)
+
+            logger.info(f"Generated embedding for job {job_id}")
+            return {"status": "success", "job_id": job_id}
+        else:
+            logger.warning("Embedding service not available")
+            return {"status": "skipped", "reason": "Service unavailable"}
+
+    except Exception as e:
+        logger.error(f"Failed to process embedding for job {job_id}: {e}")
+        raise self.retry(exc=e)
+    finally:
+        db.close()
+
+
+@celery_app.task
+def refresh_job_embeddings():
+    """
+    Refresh embeddings for recently added jobs.
+
+    Returns:
+        Number of embeddings processed
+    """
+    db = next(get_db())
+    processed = 0
+
+    try:
+        # Get jobs without embeddings (last 24 hours)
+        from datetime import timedelta
+
+        yesterday = datetime.utcnow() - timedelta(days=1)
+
+        jobs = db.query(Job).filter(Job.created_at >= yesterday).all()
+
+        for job in jobs:
+            process_job_embedding.delay(job.id)
+            processed += 1
+
+        logger.info(f"Queued {processed} jobs for embedding refresh")
+        return processed
+
+    except Exception as e:
+        logger.error(f"Error refreshing job embeddings: {e}")
+        return 0
+    finally:
+        db.close()
+
+
+@celery_app.task(bind=True, max_retries=2)
+def deduplicate_jobs(self, batch_size: int = 1000):
+    """
+    Run job deduplication on recent jobs.
+
+    Args:
+        batch_size: Number of jobs to process per batch
+    """
+    db = next(get_db())
+
+    try:
+        from datetime import timedelta
+
+        from backend.services.job_deduplication import \
+            job_deduplication_service
+
+        # Get recent jobs for deduplication
+        week_ago = datetime.utcnow() - timedelta(days=7)
+
+        jobs = db.query(Job).filter(Job.created_at >= week_ago).limit(batch_size).all()
+
+        duplicates_found = 0
+        for job in jobs:
+            duplicates = await job_deduplication_service.find_duplicates(job)
+            if duplicates:
+                duplicates_found += len(duplicates)
+                # Mark duplicates for review
+                for dup in duplicates:
+                    dup.is_duplicate = True
+                    dup.duplicate_of = job.id
+
+        db.commit()
+        logger.info(f"Found {duplicates_found} potential duplicates")
+        return {"status": "success", "duplicates_found": duplicates_found}
+
+    except Exception as e:
+        logger.error(f"Error during job deduplication: {e}")
+        raise self.retry(exc=e)
+    finally:
+        db.close()
+
+
+@celery_app.task
+def sync_all_sources():
+    """
+    Trigger job ingestion from all configured sources.
+
+    Returns:
+        Summary of ingestion results
+    """
+    results = {}
+    sources = ["greenhouse", "lever", "rss"]
+
+    for source in sources:
+        task = ingest_jobs_from_source.delay(source)
+        results[source] = task.id
+
+    logger.info(f"Triggered ingestion for sources: {list(results.keys())}")
+    return {"status": "triggered", "tasks": results}
+
+
+@celery_app.task
+def cleanup_expired_jobs(days: int = 30):
+    """
+    Mark jobs older than specified days as expired.
+
+    Args:
+        days: Number of days after which jobs expire
+
+    Returns:
+        Number of jobs marked as expired
+    """
+    db = next(get_db())
+    expired = 0
+
+    try:
+        from datetime import timedelta
+
+        cutoff = datetime.utcnow() - timedelta(days=days)
+
+        # Mark jobs as expired
+        result = (
+            db.query(Job)
+            .filter(Job.created_at < cutoff, Job.is_active == True)
+            .update({"is_active": False})
+        )
+
+        db.commit()
+        expired = result
+        logger.info(f"Marked {expired} jobs as expired")
+        return expired
+
+    except Exception as e:
+        logger.error(f"Error marking expired jobs: {e}")
+        db.rollback()
+        return 0
+    finally:
+        db.close()

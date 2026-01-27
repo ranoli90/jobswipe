@@ -12,8 +12,4 @@ sys.path.insert(0, str(project_root))
 __version__ = "1.0.0"
 
 # Export submodules
-from . import db
-from . import api
-from . import services
-from . import workers
-
+from . import api, db, services, workers

@@ -1,0 +1,25 @@
+app = "jobswipe-prometheus"
+primary_region = "iad"
+
+[build]
+  image = "prom/prometheus:latest"
+
+[http_service]
+internal_port = 9090
+force_https = true
+auto_stop_machines = true
+auto_start_machines = true
+min_machines_running = 1
+processes = ["app"]
+
+[[vm]]
+cpu_kind = "shared"
+cpus = 1
+memory_mb = 1024
+
+[processes]
+app = "prometheus --web.listen-address=0.0.0.0:9090 --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus --web.console.libraries=/etc/prometheus/console_libraries --web.console.templates=/etc/prometheus/consoles --storage.tsdb.retention.time=200h --web.enable-lifecycle"
+
+[[mounts]]
+source = "prometheus_data"
+destination = "/prometheus"

@@ -1,0 +1,113 @@
+name: Deploy iOS to App Store
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      testflight_only:
+        description: 'Deploy to TestFlight only (skip App Store)'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  deploy-ios:
+    name: Deploy iOS App
+    runs-on: macos-latest
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.0'
+        channel: 'stable'
+
+    - name: Cache Flutter dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          mobile-app/.pub-cache
+          mobile-app/.flutter-plugins
+          mobile-app/.flutter-plugins-dependencies
+        key: ${{ runner.os }}-flutter-${{ hashFiles('mobile-app/pubspec.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-flutter-
+
+    - name: Install dependencies
+      working-directory: mobile-app
+      run: flutter pub get
+
+    - name: Set up Ruby for Fastlane
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.2'
+
+    - name: Install Fastlane
+      run: gem install fastlane
+
+    - name: Create App Store Connect API key
+      working-directory: mobile-app/ios/fastlane
+      run: |
+        mkdir -p private_keys
+        echo "${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}" > private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8
+
+    - name: Update Appfile with actual values
+      working-directory: mobile-app/ios/fastlane
+      run: |
+        sed -i '' "s/your-apple-id@example.com/${{ secrets.FASTLANE_USER }}/g" Appfile
+        sed -i '' "s/YOUR_TEAM_ID/${{ secrets.APP_STORE_CONNECT_TEAM_ID }}/g" Appfile
+
+    - name: Create API key JSON
+      working-directory: mobile-app/ios/fastlane
+      run: |
+        cat > app-store-connect-api-key.json << EOF
+        {
+          "key_id": "${{ secrets.APP_STORE_CONNECT_KEY_ID }}",
+          "issuer_id": "${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}",
+          "key": "private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8",
+          "in_house": false
+        }
+        EOF
+
+    - name: Install provisioning profiles and certificates
+      working-directory: mobile-app/ios
+      run: |
+        # Import certificates
+        echo "${{ secrets.IOS_DISTRIBUTION_CERTIFICATE }}" | base64 --decode > distribution.p12
+        security import distribution.p12 -P "${{ secrets.IOS_CERTIFICATE_PASSWORD }}" -T /usr/bin/codesign
+
+        # Install provisioning profiles
+        mkdir -p provisioning_profiles
+        echo "${{ secrets.IOS_PROVISIONING_PROFILE }}" | base64 --decode > provisioning_profiles/app.mobileprovision
+        # Additional profiles if needed
+
+    - name: Deploy to TestFlight
+      working-directory: mobile-app/ios
+      run: fastlane beta
+      env:
+        APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+        APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+
+    - name: Deploy to App Store
+      if: github.event.inputs.testflight_only != 'true'
+      working-directory: mobile-app/ios
+      run: fastlane deploy
+      env:
+        APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+        APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+
+    - name: Notify deployment success
+      if: success()
+      run: |
+        if [ "${{ github.event.inputs.testflight_only }}" = "true" ]; then
+          echo "iOS app deployed successfully to TestFlight"
+        else
+          echo "iOS app deployed successfully to App Store"
+        fi

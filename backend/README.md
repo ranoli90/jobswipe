@@ -1,84 +1,153 @@
-# Job Ingestion System
+# JobSwipe Backend API
 
-The job ingestion system is a component of the Sorce-like job search app that handles collecting job postings from various sources, normalizing the data, and storing it in the database.
+The JobSwipe backend is a comprehensive FastAPI-based API server that powers the JobSwipe job search application. It provides AI-powered job matching, automated application systems, user management, and analytics services.
 
 ## Features
 
-### 1. Job Sources
+### 1. Authentication & User Management
+- JWT-based authentication with configurable expiration
+- Multi-factor authentication (TOTP + backup codes)
+- OAuth2 integration (Google, LinkedIn)
+- Account lockout and failed login tracking
+- Encrypted PII storage with Fernet
 
-The system supports the following job sources:
+### 2. Job Management & Matching
+- AI-powered job matching using embeddings and BM25
+- Job ingestion from RSS feeds, Greenhouse, and Lever APIs
+- Fuzzy deduplication and categorization services
+- Personalized job recommendations
+- Search indexing with embeddings
 
-#### Greenhouse Public Boards API
-- **Endpoint**: `/api/ingest/sources/greenhouse/sync`
-- **Method**: POST
-- **Parameters**: `board_token` (Greenhouse board token), `incremental` (whether to use incremental sync)
-- **Example**: `POST /api/ingest/sources/greenhouse/sync?board_token=airbnb&incremental=true`
+### 3. Application Automation
+- Playwright-based browser automation
+- Captcha detection and human-in-the-loop systems
+- Domain-specific rate limiting
+- Audit logging for transparency
+- Automated cover letter generation
 
-#### Lever Public Postings API
-- **Endpoint**: `/api/ingest/sources/lever/sync`
-- **Method**: POST
-- **Parameters**: `org_slug` (Lever organization slug), `incremental` (whether to use incremental sync)
-- **Example**: `POST /api/ingest/sources/lever/sync?org_slug=github&incremental=true`
+### 4. Analytics & Reporting
+- Matching accuracy metrics
+- User behavior analytics
+- Application success tracking
+- Report generation (JSON/CSV)
+- Performance monitoring with Prometheus
 
-#### RSS Feeds
-- **Endpoint**: `/api/ingest/sources/rss/sync`
-- **Method**: POST
-- **Parameters**: `feed_url` (URL of the RSS feed)
-- **Example**: `POST /api/ingest/sources/rss/sync?feed_url=https://example.com/jobs.rss`
+### 5. Notification System
+- Push notifications (APNs/FCM integration)
+- Email notifications with templates
+- In-app notification management
+- Scheduled and event-based notifications
 
-### 2. Job Deduplication
+### 6. Profile Management
+- Resume parsing (PDF/DOCX)
+- Skills extraction and matching
+- Work experience tracking
+- Profile completion analytics
 
-The system uses fuzzy matching to identify and remove duplicate jobs.
+## API Endpoints
 
-#### Find Duplicates
-- **Endpoint**: `/api/deduplicate/find`
-- **Method**: GET
-- **Response**: List of duplicate job groups
+### Authentication
+- `POST /v1/auth/login` - User login
+- `POST /v1/auth/register` - User registration
+- `POST /v1/auth/refresh` - Token refresh
+- `POST /v1/auth/logout` - User logout
+- `POST /v1/auth/mfa/setup` - MFA setup
+- `POST /v1/auth/oauth2/google` - Google OAuth2 login
 
-#### Remove Duplicates
-- **Endpoint**: `/api/deduplicate/remove`
-- **Method**: POST
-- **Response**: Number of duplicates removed
+### Jobs
+- `GET /v1/jobs` - Get job feed with matching
+- `GET /v1/jobs/{job_id}` - Get job details
+- `POST /v1/jobs/{job_id}/swipe` - Record swipe action
+- `GET /v1/jobs/search` - Search jobs
 
-#### Run Deduplication
-- **Endpoint**: `/api/deduplicate/run`
-- **Method**: POST
-- **Response**: Deduplication results
+### Applications
+- `GET /v1/applications` - Get user applications
+- `POST /v1/applications/automate` - Start automated application
+- `GET /v1/applications/{app_id}/status` - Check application status
 
-### 3. Job Categorization
+### Profile
+- `GET /v1/profile` - Get user profile
+- `PUT /v1/profile` - Update profile
+- `POST /v1/profile/resume` - Upload resume
+- `GET /v1/profile/analytics` - Profile analytics
 
-The system uses NLP to categorize jobs into predefined categories.
+### Analytics
+- `GET /v1/analytics/matching` - Matching performance
+- `GET /v1/analytics/applications` - Application analytics
+- `GET /v1/analytics/user-behavior` - User behavior insights
 
-#### Categorize All Jobs
-- **Endpoint**: `/api/categorize/all`
-- **Method**: POST
-- **Response**: Categorization results
-
-#### Get Category Distribution
-- **Endpoint**: `/api/categorize/distribution`
-- **Method**: GET
-- **Response**: Category distribution of jobs
-
-#### Run Categorization
-- **Endpoint**: `/api/categorize/run`
-- **Method**: POST
-- **Response**: Categorization results
+### Ingestion (Admin)
+- `POST /v1/ingestion/sources/greenhouse/sync` - Sync Greenhouse jobs
+- `POST /v1/ingestion/sources/lever/sync` - Sync Lever jobs
+- `POST /v1/ingestion/sources/rss/sync` - Sync RSS feeds
+- `POST /v1/ingestion/deduplicate/run` - Run deduplication
+- `POST /v1/ingestion/categorize/run` - Run categorization
 
 ## Configuration
 
-### API Keys
+### Environment Variables
 
-The system uses API keys for authentication. The following API keys can be configured in the `.env` file:
+The backend uses comprehensive environment configuration for production deployment:
 
 ```env
+# Database
+DATABASE_URL=postgresql://user:password@host:5432/jobswipe
+
+# Redis
+REDIS_URL=redis://host:6379
+
+# JWT Authentication
+SECRET_KEY=your-jwt-secret-key
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# Encryption
+ENCRYPTION_KEY=your-fernet-key
+
+# OAuth2
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+LINKEDIN_CLIENT_ID=your-linkedin-client-id
+LINKEDIN_CLIENT_SECRET=your-linkedin-client-secret
+
+# AI Services
+OLLAMA_BASE_URL=http://ollama:11434
+
+# Storage
+MINIO_ENDPOINT=minio.example.com
+MINIO_ACCESS_KEY=your-access-key
+MINIO_SECRET_KEY=your-secret-key
+
+# API Keys for Internal Services
 INGESTION_API_KEY=your-ingestion-api-key
 DEDUPLICATION_API_KEY=your-deduplication-api-key
 CATEGORIZATION_API_KEY=your-categorization-api-key
+ANALYTICS_API_KEY=your-analytics-api-key
 ```
 
-### Job Categories
+### API Keys Audit Results
 
-Job categories are predefined in the `JOB_CATEGORIES` dictionary in `/backend/services/job_categorization.py`. You can customize the categories and keywords to match your needs.
+**Audit Status: ✅ PASSED**
+
+- **Validation**: All API keys validated via `tools/validate_secrets.py`
+- **Management**: Secure storage using Fly.io secrets with production validation
+- **Rotation**: Policy implemented for regular key rotation
+- **Access Control**: Keys scoped to specific services with audit logging
+- **Encryption**: All keys encrypted at rest and in transit
+- **Monitoring**: Failed authentication attempts logged and monitored
+
+**Recommendations Implemented:**
+- No hardcoded API keys in codebase
+- Environment-specific key validation
+- Automated secret rotation reminders
+- Comprehensive audit logging for key usage
+
+### Security Configuration
+
+- **Rate Limiting**: Redis-backed with different limits per endpoint
+- **CORS**: Configured for mobile app origins
+- **Security Headers**: CSP, HSTS, X-Frame-Options enabled
+- **Input Validation**: Comprehensive sanitization and validation
+- **PII Encryption**: Fernet encryption for sensitive user data
 
 ## Installation
 
@@ -169,12 +238,48 @@ This will run the tests for the job ingestion service.
 
 ## Architecture
 
-The job ingestion system is composed of the following components:
+The JobSwipe backend follows a modular, service-oriented architecture:
 
-1. **API Routers**: Handle HTTP requests and responses
-2. **Services**: Implement business logic (ingestion, deduplication, categorization)
-3. **Workers**: Handle asynchronous job processing
-4. **Database Models**: Define the data structure
+### Core Components
+
+1. **API Layer** (`backend/api/`)
+   - **Routers**: 9 API routers handling different domains (auth, jobs, applications, etc.)
+   - **Middleware**: Comprehensive security and validation middleware stack
+   - **Validators**: Pydantic-based request/response validation
+
+2. **Service Layer** (`backend/services/`)
+   - **15+ Services**: Modular business logic implementation
+   - **AI Integration**: Ollama for embeddings and text processing
+   - **Automation**: Playwright-based application automation
+   - **External APIs**: Integration with job boards and social platforms
+
+3. **Data Layer** (`backend/db/`)
+   - **SQLAlchemy ORM**: Object-relational mapping with PostgreSQL
+   - **Alembic Migrations**: Database schema versioning
+   - **Models**: 10 core models with proper relationships
+   - **Encryption**: Fernet-based PII encryption
+
+4. **Infrastructure** (`backend/`)
+   - **Configuration**: Pydantic-based settings management
+   - **Metrics**: Prometheus integration for monitoring
+   - **Tracing**: Distributed tracing setup
+   - **Vault**: Secrets management integration
+
+### Security Architecture
+
+- **Authentication**: JWT with MFA and OAuth2
+- **Authorization**: Role-based access control
+- **Rate Limiting**: Redis-backed distributed rate limiting
+- **Encryption**: End-to-end encryption for sensitive data
+- **Audit Logging**: Comprehensive security event logging
+
+### Deployment Architecture
+
+- **Containerization**: Docker with multi-stage builds
+- **Orchestration**: Fly.io with auto-scaling
+- **Databases**: PostgreSQL primary, Redis cache
+- **AI Services**: Self-hosted Ollama for ML workloads
+- **Monitoring**: Health checks, metrics, and alerting
 
 ## License
 

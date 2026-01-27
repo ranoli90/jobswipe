@@ -2,19 +2,27 @@
 OpenTelemetry tracing configuration for JobSwipe API
 """
 
+import logging
+import os
+
 from opentelemetry import trace
 from opentelemetry.exporter.jaeger.thrift import JaegerExporter
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
-import logging
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 logger = logging.getLogger(__name__)
 
 
 def setup_tracing(app=None):
-    """Setup OpenTelemetry tracing with Jaeger exporter"""
+    """Setup OpenTelemetry tracing with Jaeger exporter for production environments"""
+
+    # Only enable tracing in production and staging environments
+    environment = os.getenv("ENVIRONMENT", "development")
+    if environment not in ["production", "staging"]:
+        logger.info("Skipping OpenTelemetry tracing setup for development environment")
+        return
 
     # Set up tracer provider
     trace.set_tracer_provider(TracerProvider())

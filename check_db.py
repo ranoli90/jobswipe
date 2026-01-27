@@ -1,17 +1,23 @@
 #!/usr/bin/env python3
 
-from sqlalchemy import create_engine, MetaData
+import os
+import sys
 
-# Connect to SQLite database
-engine = create_engine('sqlite:///test.db')
-metadata = MetaData()
+# Add backend to path
+sys.path.append(os.path.join(os.path.dirname(__file__), "backend"))
+
+from backend.db import models
+from backend.db.database import Base, engine
 
 # Reflect existing tables
+metadata = Base.metadata
 metadata.reflect(bind=engine)
 
 # Get jobs table
-jobs_table = metadata.tables['jobs']
-
-print("Jobs table columns:")
-for column in jobs_table.columns:
-    print(f"- {column.name} ({column.type})")
+jobs_table = metadata.tables.get("jobs")
+if jobs_table:
+    print("Jobs table columns:")
+    for column in jobs_table.columns:
+        print(f"- {column.name} ({column.type})")
+else:
+    print("Jobs table not found")

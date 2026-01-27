@@ -1,0 +1,4 @@
+#include "Generated.xcconfig"
+
+PRODUCT_BUNDLE_IDENTIFIER = com.jobswipe.jobswipe.staging
+PRODUCT_NAME = JobSwipe Staging

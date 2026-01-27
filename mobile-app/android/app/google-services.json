@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "111270390054",
+    "project_id": "jobswipe-app",
+    "storage_bucket": "jobswipe-app.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:111270390054:android:3f726777835a0f5b",
+        "android_client_info": {
+          "package_name": "com.jobswipe.jobswipe_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyc0298053d61363d701c58ec23f408ab12aa49204d9"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

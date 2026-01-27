@@ -1,0 +1,40 @@
+# Fastfile for iOS deployment
+default_platform(:ios)
+
+platform :ios do
+  desc "Deploy a new version to the App Store"
+  lane :deploy do
+    # Build the app
+    build_app(
+      scheme: "Runner",
+      configuration: "Prod-Release",
+      export_method: "app-store",
+      clean: true
+    )
+
+    # Upload to App Store Connect
+    upload_to_app_store(
+      force: true,
+      skip_metadata: true,
+      skip_screenshots: true,
+      skip_binary_upload: false
+    )
+  end
+
+  desc "Deploy to TestFlight"
+  lane :beta do
+    # Build the app
+    build_app(
+      scheme: "Runner",
+      configuration: "Staging-Release",
+      export_method: "app-store",
+      clean: true
+    )
+
+    # Upload to TestFlight
+    upload_to_testflight(
+      skip_submission: true,
+      skip_waiting_for_build_processing: true
+    )
+  end
+end

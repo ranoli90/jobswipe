@@ -1,0 +1,93 @@
+# Automation Service Dockerfile for JobSwipe
+# Includes Playwright for browser automation
+
+FROM python:3.12-slim AS base
+
+# Stage 1: Build dependencies
+FROM base AS builder
+
+WORKDIR /app
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    libpq-dev \
+    curl \
+    gnupg \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir --target=/app/deps -r requirements.txt
+
+# Stage 2: Production image
+FROM base AS production
+
+WORKDIR /app
+
+# Install runtime dependencies including Playwright requirements
+RUN apt-get update && apt-get install -y \
+    libpq-dev \
+    curl \
+    gnupg \
+    # Playwright system dependencies
+    libnss3 \
+    libatk-bridge2.0-0 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    libgbm1 \
+    libxss1 \
+    libasound2 \
+    libgtk-3-0 \
+    libx11-xcb1 \
+    libxcb-dri3-0 \
+    libxcb-shm0 \
+    libxcb1 \
+    libxfixes3 \
+    libxext6 \
+    libxrender1 \
+    libfreetype6 \
+    libfontconfig1 \
+    libglib2.0-0 \
+    libgdk-pixbuf2.0-0 \
+    libcairo-gobject2 \
+    libpango-1.0-0 \
+    libgdk-pixbuf2.0-0 \
+    libcairo2 \
+    libpangocairo-1.0-0 \
+    fonts-liberation \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js for Playwright
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs
+
+# Install Playwright browsers
+RUN pip install playwright && \
+    python -m playwright install chromium && \
+    rm -rf /tmp/*
+
+# Create non-root user for security
+RUN useradd -m -u 1000 appuser
+RUN mkdir -p /app/logs /app/data && chown -R appuser:appuser /app
+
+# Copy dependencies from builder stage
+COPY --from=builder /app/deps /usr/local/lib/python3.12/site-packages
+
+# Copy application code
+COPY . .
+
+# Set permissions
+RUN chown -R appuser:appuser /app
+
+USER appuser
+
+# Healthcheck for automation service
+HEALTHCHECK --interval=60s --timeout=30s --start-period=120s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+# Run automation worker with Celery
+CMD ["celery", "-A", "workers.app_agent_worker", "worker", "--loglevel=info", "--concurrency=4"]

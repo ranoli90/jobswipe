@@ -2,13 +2,15 @@
 MFA (Multi-Factor Authentication) Service
 """
 
+import base64
+import io
+import secrets
+from datetime import datetime, timedelta
+from typing import Any, Dict, Optional
+
 import pyotp
 import qrcode
-import io
-import base64
-from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
-import secrets
+
 from backend.db.database import get_db
 from backend.db.models import User
 
@@ -36,8 +38,7 @@ class MFAService:
         """
         totp = pyotp.TOTP(secret)
         provisioning_uri = totp.provisioning_uri(
-            name=user_email,
-            issuer_name="JobSwipe"
+            name=user_email, issuer_name="JobSwipe"
         )
 
         qr = qrcode.QRCode(

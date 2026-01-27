@@ -1,0 +1,42 @@
+# Fastfile for Android deployment
+default_platform(:android)
+
+platform :android do
+  desc "Deploy a new version to the Google Play Store"
+  lane :deploy do
+    # Build the AAB (Android App Bundle)
+    gradle(
+      task: "bundle",
+      build_type: "Release",
+      flavor: "prod"
+    )
+
+    # Upload to Google Play Store
+    upload_to_play_store(
+      track: "production",
+      aab: "../build/app/outputs/bundle/prodRelease/app-prod-release.aab",
+      skip_upload_metadata: true,
+      skip_upload_changelogs: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  desc "Deploy to beta track"
+  lane :beta do
+    gradle(
+      task: "bundle",
+      build_type: "Release",
+      flavor: "staging"
+    )
+
+    upload_to_play_store(
+      track: "beta",
+      aab: "../build/app/outputs/bundle/stagingRelease/app-staging-release.aab",
+      skip_upload_metadata: true,
+      skip_upload_changelogs: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+end

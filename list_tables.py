@@ -1,30 +1,28 @@
-import sys
 import os
-import sqlite3
+import sys
 
 SORCE_DIR = os.path.abspath(os.path.dirname(__file__))
 sys.path.insert(0, SORCE_DIR)
-sys.path.insert(0, os.path.join(SORCE_DIR, 'backend'))
+sys.path.insert(0, os.path.join(SORCE_DIR, "backend"))
 
-from backend.db.database import engine, init_db
+from backend.db import models
+from backend.db.database import Base, engine, init_db
 
 # Call init_db() again
 init_db()
 
-conn = sqlite3.connect(os.path.join(SORCE_DIR, 'test.db'))
-cursor = conn.cursor()
+# Reflect tables
+metadata = Base.metadata
+metadata.reflect(bind=engine)
 
-print("Tables in test.db:")
-cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-tables = cursor.fetchall()
-for table in tables:
-    print("  -", table[0])
+print("Tables in database:")
+for table_name in metadata.tables:
+    print("  -", table_name)
 
 print("\nUsers table schema:")
-try:
-    cursor.execute("PRAGMA table_info(users);")
-    print(cursor.fetchall())
-except Exception as e:
-    print(f"Error: {e}")
-
-conn.close()
+users_table = metadata.tables.get("users")
+if users_table:
+    for column in users_table.columns:
+        print(f"  - {column.name}: {column.type}")
+else:
+    print("Users table not found")

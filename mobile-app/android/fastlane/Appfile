@@ -1,0 +1,8 @@
+# Appfile for Android
+package_name("com.jobswipe.jobswipe_mobile")
+
+# Google Play Store service account JSON file path
+json_key_file("./fastlane/play-store-credentials.json")
+
+# Google Play Store package name
+package_name("com.jobswipe.jobswipe_mobile")

@@ -1,0 +1,53 @@
+# fly.toml app configuration file generated for jobswipe-ollama on 2026-01-26T11:25:44-07:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'jobswipe-ollama'
+primary_region = 'iad'
+
+[build]
+  image = "ollama/ollama:latest"
+
+[env]
+  OLLAMA_HOST = "0.0.0.0:11434"
+  OLLAMA_MODELS = "/root/.ollama/models"
+  OLLAMA_KEEP_ALIVE = "24h"
+  OLLAMA_MAX_LOADED_MODELS = "2"
+  OLLAMA_MAX_QUEUE = "512"
+  OLLAMA_RUNNERS_DIR = "/root/.ollama/models"
+
+[[http_service]]
+  internal_port = 11434
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 1
+  max_machines_running = 2
+  processes = ['app']
+
+[[http_service.checks]]
+  interval = "30s"
+  timeout = "10s"
+  grace_period = "5s"
+  method = "GET"
+  path = "/api/tags"
+  protocol = "http"
+
+[http_service.concurrency]
+  type = "requests"
+  soft_limit = 50
+  hard_limit = 100
+
+[[mounts]]
+  source = "ollama_data"
+  destination = "/root/.ollama"
+
+[[vm]]
+  memory = '8gb'
+  cpu_kind = 'performance'
+  cpus = 2
+  memory_mb = 8192
+
+[processes]
+  app = "/bin/sh -c 'ollama serve & sleep 5 && ollama pull llama3.2:3b && ollama pull nomic-embed-text && wait'"

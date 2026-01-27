@@ -1,0 +1,85 @@
+name: Deploy Android to Play Store
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      track:
+        description: 'Release track (production, beta, alpha, internal)'
+        required: true
+        default: 'internal'
+        type: choice
+        options:
+          - internal
+          - alpha
+          - beta
+          - production
+
+jobs:
+  deploy-android:
+    name: Deploy Android App
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.0'
+        channel: 'stable'
+
+    - name: Cache Flutter dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          mobile-app/.pub-cache
+          mobile-app/.flutter-plugins
+          mobile-app/.flutter-plugins-dependencies
+        key: ${{ runner.os }}-flutter-${{ hashFiles('mobile-app/pubspec.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-flutter-
+
+    - name: Install dependencies
+      working-directory: mobile-app
+      run: flutter pub get
+
+    - name: Set up Ruby for Fastlane
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.2'
+
+    - name: Install Fastlane
+      run: gem install fastlane
+
+    - name: Set up keystore
+      working-directory: mobile-app/android
+      run: |
+        echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > app/keystore.jks
+        echo "storeFile=keystore.jks" >> gradle.properties
+        echo "storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" >> gradle.properties
+        echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" >> gradle.properties
+        echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> gradle.properties
+
+    - name: Create Play Store credentials
+      working-directory: mobile-app/android/fastlane
+      run: echo "${{ secrets.PLAY_STORE_CREDENTIALS_JSON }}" > play-store-credentials.json
+
+    - name: Deploy to Play Store
+      working-directory: mobile-app/android
+      run: |
+        if [ "${{ github.event.inputs.track || 'production' }}" = "production" ]; then
+          fastlane deploy
+        else
+          fastlane beta
+        fi
+      env:
+        SUPPLY_JSON_KEY_DATA: ${{ secrets.PLAY_STORE_CREDENTIALS_JSON }}
+
+    - name: Notify deployment success
+      if: success()
+      run: |
+        echo "Android app deployed successfully to ${{ github.event.inputs.track || 'production' }} track"

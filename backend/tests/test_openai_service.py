@@ -2,22 +2,28 @@
 Tests for OpenAI service integration.
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
+
 from backend.services.openai_service import OpenAIService
 
 
 class TestOpenAIService:
     """Tests for OpenAI integration service"""
     
-    def test_is_available_with_api_key(self):
-        """Test that service availability is correctly determined"""
-        # Test with API key available
-        with patch('backend.services.openai_service.OPENAI_API_KEY', 'test-key'):
+    def test_is_available_with_ollama(self):
+        """Test that service availability is correctly determined with Ollama"""
+        # Test with Ollama available
+        with patch('backend.services.openai_service.OpenAI') as mock_openai:
+            mock_client = MagicMock()
+            mock_client.models.list.return_value = []
+            mock_openai.return_value = mock_client
             assert OpenAIService.is_available() == True
-            
-        # Test without API key
-        with patch('backend.services.openai_service.OPENAI_API_KEY', None):
+
+        # Test without Ollama
+        with patch('backend.services.openai_service.OpenAI') as mock_openai:
+            mock_openai.side_effect = Exception("Ollama not available")
             assert OpenAIService.is_available() == False
             
     def test_profile_to_text_conversion(self):
@@ -45,42 +51,42 @@ class TestOpenAIService:
         
     @pytest.mark.asyncio
     @patch('backend.services.openai_service.client')
-    async def test_generate_job_embedding(self, mock_client):
+    @patch('backend.services.openai_service.OpenAIService.is_available', return_value=True)
+    async def test_generate_job_embedding(self, mock_is_available, mock_client):
         """Test job embedding generation"""
-        # Mock OpenAI API response
+        # Mock Ollama API response
         mock_embedding = [0.1, 0.2, 0.3]
         mock_response = MagicMock()
         mock_response.data = [MagicMock(embedding=mock_embedding)]
         mock_client.embeddings.create.return_value = mock_response
-        
-        with patch('backend.services.openai_service.OPENAI_API_KEY', 'test-key'):
-            embedding = await OpenAIService.generate_job_embedding("Test job description")
-            
-            assert len(embedding) == 3
-            assert embedding == mock_embedding
-            mock_client.embeddings.create.assert_called_once()
+
+        embedding = await OpenAIService.generate_job_embedding("Test job description")
+
+        assert len(embedding) == 3
+        assert embedding == mock_embedding
+        mock_client.embeddings.create.assert_called_once()
             
     @pytest.mark.asyncio
     @patch('backend.services.openai_service.client')
-    async def test_generate_profile_embedding(self, mock_client):
+    @patch('backend.services.openai_service.OpenAIService.is_available', return_value=True)
+    async def test_generate_profile_embedding(self, mock_is_available, mock_client):
         """Test profile embedding generation"""
-        # Mock OpenAI API response
+        # Mock Ollama API response
         mock_embedding = [0.4, 0.5, 0.6]
         mock_response = MagicMock()
         mock_response.data = [MagicMock(embedding=mock_embedding)]
         mock_client.embeddings.create.return_value = mock_response
-        
+
         profile = {
             "full_name": "John Doe",
             "skills": ["Python", "FastAPI"]
         }
-        
-        with patch('backend.services.openai_service.OPENAI_API_KEY', 'test-key'):
-            embedding = await OpenAIService.generate_profile_embedding(profile)
-            
-            assert len(embedding) == 3
-            assert embedding == mock_embedding
-            mock_client.embeddings.create.assert_called_once()
+
+        embedding = await OpenAIService.generate_profile_embedding(profile)
+
+        assert len(embedding) == 3
+        assert embedding == mock_embedding
+        mock_client.embeddings.create.assert_called_once()
             
     @pytest.mark.asyncio
     async def test_calculate_semantic_similarity(self):
@@ -104,9 +110,10 @@ class TestOpenAIService:
         
     @pytest.mark.asyncio
     @patch('backend.services.openai_service.client')
-    async def test_analyze_job_match(self, mock_client):
+    @patch('backend.services.openai_service.OpenAIService.is_available', return_value=True)
+    async def test_analyze_job_match(self, mock_is_available, mock_client):
         """Test job match analysis"""
-        # Mock OpenAI API response
+        # Mock Ollama API response
         mock_response = MagicMock()
         mock_response.choices = [
             MagicMock(
@@ -116,24 +123,23 @@ class TestOpenAIService:
             )
         ]
         mock_client.chat.completions.create.return_value = mock_response
-        
+
         profile = {
             "full_name": "John Doe",
             "skills": ["Python", "FastAPI"]
         }
-        
-        with patch('backend.services.openai_service.OPENAI_API_KEY', 'test-key'):
-            result = await OpenAIService.analyze_job_match(
-                profile,
-                "We need Python developers with React experience"
-            )
-            
-            assert "score" in result
-            assert result["score"] == 0.85
-            assert "analysis" in result
-            assert "Python" in result["matched_skills"]
-            assert "React" in result["missing_skills"]
-            assert "Learn React" in result["recommendations"]
+
+        result = await OpenAIService.analyze_job_match(
+            profile,
+            "We need Python developers with React experience"
+        )
+
+        assert "score" in result
+        assert result["score"] == 0.85
+        assert "analysis" in result
+        assert "Python" in result["matched_skills"]
+        assert "React" in result["missing_skills"]
+        assert "Learn React" in result["recommendations"]
             mock_client.chat.completions.create.assert_called_once()
             
     def test_parse_match_analysis(self):
@@ -155,12 +161,12 @@ class TestOpenAIService:
         assert "React" in parsed["missing_skills"]
         
     @pytest.mark.asyncio
-    async def test_openai_unavailable_fallback(self):
-        """Test that service falls back gracefully when OpenAI is unavailable"""
-        with patch('backend.services.openai_service.OPENAI_API_KEY', None):
-            # Should return fallback values
-            embedding = await OpenAIService.generate_job_embedding("Test")
-            assert embedding == []
-            
-            match_result = await OpenAIService.analyze_job_match({}, "Test")
-            assert match_result["score"] == 0.5
+    @patch('backend.services.openai_service.OpenAIService.is_available', return_value=False)
+    async def test_ollama_unavailable_fallback(self, mock_is_available):
+        """Test that service falls back gracefully when Ollama is unavailable"""
+        # Should return fallback values
+        embedding = await OpenAIService.generate_job_embedding("Test")
+        assert embedding == []
+
+        match_result = await OpenAIService.analyze_job_match({}, "Test")
+        assert match_result["score"] == 0.5
