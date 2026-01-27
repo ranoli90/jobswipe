@@ -14,9 +14,20 @@ from backend.workers.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
 
+# Cleanup configuration constants
+DEFAULT_EXPIRED_TOKENS_DAYS = 1
+DEFAULT_OLD_SESSIONS_DAYS = 7
+DEFAULT_EXPIRED_OAUTH_STATES_HOURS = 1
+DEFAULT_OLD_INTERACTIONS_DAYS = 90
+DEFAULT_ORPHAN_NOTIFICATIONS_DAYS = 30
+DEFAULT_TEMP_FILES_HOURS = 24
+TEMPORARY_DIRECTORIES = ["/tmp/reports", "/tmp/uploads", "/tmp/cache"]
+MAX_INTERACTIONS_TO_ARCHIVE = 10000
+CELERY_TASK_TIMEOUT = 60
+
 
 @celery_app.task
-def cleanup_expired_tokens(days: int = 1):
+def cleanup_expired_tokens(days: int = DEFAULT_EXPIRED_TOKENS_DAYS):
     """
     Clean up expired JWT refresh tokens.
 
@@ -51,7 +62,7 @@ def cleanup_expired_tokens(days: int = 1):
 
 
 @celery_app.task
-def cleanup_old_sessions(days: int = 7):
+def cleanup_old_sessions(days: int = DEFAULT_OLD_SESSIONS_DAYS):
     """
     Clean up old user sessions.
 
@@ -84,7 +95,7 @@ def cleanup_old_sessions(days: int = 7):
 
 
 @celery_app.task
-def cleanup_expired_oauth_states(hours: int = 1):
+def cleanup_expired_oauth_states(hours: int = DEFAULT_EXPIRED_OAUTH_STATES_HOURS):
     """
     Clean up expired OAuth2 state tokens.
 
@@ -117,7 +128,7 @@ def cleanup_expired_oauth_states(hours: int = 1):
 
 
 @celery_app.task
-def cleanup_old_interactions(days: int = 90):
+def cleanup_old_interactions(days: int = DEFAULT_OLD_INTERACTIONS_DAYS):
     """
     Archive or delete old user interactions.
 
@@ -137,7 +148,7 @@ def cleanup_old_interactions(days: int = 90):
         interactions = (
             db.query(UserJobInteraction)
             .filter(UserJobInteraction.created_at < cutoff)
-            .limit(10000)
+            .limit(MAX_INTERACTIONS_TO_ARCHIVE)
             .all()
         )
 
@@ -165,7 +176,7 @@ def cleanup_old_interactions(days: int = 90):
 
 
 @celery_app.task
-def cleanup_orphan_notifications(days: int = 30):
+def cleanup_orphan_notifications(days: int = DEFAULT_ORPHAN_NOTIFICATIONS_DAYS):
     """
     Clean up notifications for deleted users.
 
@@ -207,7 +218,7 @@ def cleanup_orphan_notifications(days: int = 30):
 
 
 @celery_app.task
-def cleanup_temp_files(hours: int = 24):
+def cleanup_temp_files(hours: int = DEFAULT_TEMP_FILES_HOURS):
     """
     Clean up temporary files older than specified hours.
 
@@ -223,7 +234,7 @@ def cleanup_temp_files(hours: int = 24):
     deleted = 0
     cutoff = datetime.utcnow() - timedelta(hours=hours)
 
-    temp_dirs = ["/tmp/reports", "/tmp/uploads", "/tmp/cache"]
+    temp_dirs = TEMPORARY_DIRECTORIES
 
     for temp_dir in temp_dirs:
         if not os.path.exists(temp_dir):
@@ -256,13 +267,13 @@ def run_all_cleanup_tasks():
     results = {}
 
     try:
-        results["expired_tokens"] = cleanup_expired_tokens.delay().get(timeout=60)
-        results["old_sessions"] = cleanup_old_sessions.delay().get(timeout=60)
-        results["oauth_states"] = cleanup_expired_oauth_states.delay().get(timeout=60)
+        results["expired_tokens"] = cleanup_expired_tokens.delay().get(timeout=CELERY_TASK_TIMEOUT)
+        results["old_sessions"] = cleanup_old_sessions.delay().get(timeout=CELERY_TASK_TIMEOUT)
+        results["oauth_states"] = cleanup_expired_oauth_states.delay().get(timeout=CELERY_TASK_TIMEOUT)
         results["orphan_notifications"] = cleanup_orphan_notifications.delay().get(
-            timeout=60
+            timeout=CELERY_TASK_TIMEOUT
         )
-        results["temp_files"] = cleanup_temp_files.delay().get(timeout=60)
+        results["temp_files"] = cleanup_temp_files.delay().get(timeout=CELERY_TASK_TIMEOUT)
 
         logger.info(f"Completed all cleanup tasks: {results}")
         return results
