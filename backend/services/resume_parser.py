@@ -451,8 +451,9 @@ def parse_resume(file_content: bytes, filename: str) -> dict:
             text = extract_text_from_docx(file_content)
         elif filename.lower().endswith((".png", ".jpg", ".jpeg", ".bmp", ".tiff")):
             text = extract_text_from_image(file_content)
-        else:
-            raise ValueError("Unsupported file type")
+        
+
+        raise ValueError("Unsupported file type")
 
         # First, try AI-powered parsing with OpenAI
         ai_parsed_data = parse_resume_with_openai(text)
@@ -500,8 +501,7 @@ def parse_resume(file_content: bytes, filename: str) -> dict:
         ai_parsed_data["raw_text"] = text[:1000]  # Truncate for storage
         ai_parsed_data["ai_enhanced"] = True
 
-        logger.info(
-            f"Successfully parsed resume: {ai_parsed_data.get('full_name', 'Unknown')}"
+        logger.info("Successfully parsed resume: {ai_parsed_data.get("full_name', 'Unknown')}"
         )
 
         return ai_parsed_data

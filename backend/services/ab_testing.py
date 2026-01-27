@@ -179,16 +179,17 @@ class FeatureFlagService:
                             updated_at=datetime.now(timezone.utc),
                         )
                     )
-                else:
-                    flag = FeatureFlag(
-                        name=flag_name,
-                        enabled=enabled,
-                        global_enabled=global_enabled,
-                        user_ids=user_ids or [],
-                    )
-                    session.add(flag)
+                
 
-                await session.commit()
+                flag = FeatureFlag(
+                    name=flag_name,
+                    enabled=enabled,
+                    global_enabled=global_enabled,
+                    user_ids=user_ids or [],
+                )
+                session.add(flag)
+
+            await session.commit()
         except Exception as e:
             logger.error("Failed to set feature flag %s: %s", ('flag_name', 'e'))
 
@@ -359,8 +360,7 @@ class ABTestService:
             value: Value of the conversion
         """
         # In production, this would store to a metrics/analytics database
-        logger.info(
-            f"Conversion: experiment={experiment_id}, "
+        logger.info("Conversion: experiment=%s, " % (experiment_id)
             f"user={user_id}, variant={variant}, "
             f"metric={metric_name}, value={value}"
         )

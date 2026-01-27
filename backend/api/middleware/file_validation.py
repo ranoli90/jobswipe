@@ -207,8 +207,7 @@ class FileValidationMiddleware(BaseHTTPMiddleware):
 
         # Check file size (read entire body for validation)
         if len(body) > self.max_file_size:
-            logger.warning(
-                f"File upload rejected: size {len(body)} exceeds max {self.max_file_size}"
+            logger.warning("File upload rejected: size %s exceeds max %s" % (len(body), self.max_file_size)
             )
             return JSONResponse(
                 status_code=413,

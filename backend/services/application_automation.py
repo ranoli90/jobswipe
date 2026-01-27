@@ -511,8 +511,7 @@ class ApplicationAutomationService:
 
                 # Queue for human resolution
                 if "human_task_id" in captcha_details:
-                    logger.info(
-                        f"CAPTCHA queued for human resolution (Task ID: {captcha_details['human_task_id']})"
+                    logger.info("CAPTCHA queued for human resolution (Task ID: {captcha_details["human_task_id']})"
                     )
 
                 # Send notification to user
@@ -553,10 +552,11 @@ class ApplicationAutomationService:
                 logger.info("Application completed successfully")
                 # Record successful request
                 domain_service.record_request(job.apply_url, success=True)
-            else:
-                result["status"] = "failed"
-                result["message"] = "Form validation failed"
-                logger.warning("Application failed validation")
+            
+
+            result["status"] = "failed"
+            result["message"] = "Form validation failed"
+            logger.warning("Application failed validation")
                 # Record failed request
                 domain_service.record_request(job.apply_url, success=False)
 
@@ -613,8 +613,7 @@ class ApplicationAutomationService:
 
         except ImportError:
             # If notification service doesn't exist yet, just log
-            logger.info(
-                f"Notification: User {user_id}, Task {task_id}, Type {notification_type}, Message: {message}"
+            logger.info("Notification: User %s, Task %s, Type %s, Message: %s" % (user_id, task_id, notification_type, message)
             )
         except Exception as e:
             logger.error("Failed to send notification: %s", e)

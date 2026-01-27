@@ -85,8 +85,7 @@ class MigrationValidator:
                 ["python3", "-m", "py_compile", str(migration_file)]
             )
             if not success:
-                logger.error(
-                    f"Syntax error in migration file {migration_file.name}: {stderr}"
+                logger.error("Syntax error in migration file %s: %s" % (migration_file.name, stderr)
                 )
                 return False
 
@@ -97,8 +96,7 @@ class MigrationValidator:
             required_functions = ["upgrade", "downgrade"]
             for func in required_functions:
                 if f"def {func}(" not in content:
-                    logger.error(
-                        f"Missing required function '{func}' in {migration_file.name}"
+                    logger.error("Missing required function "{func}' in {migration_file.name}"
                     )
                     return False
 
@@ -218,8 +216,9 @@ class MigrationValidator:
 
         if all_passed:
             logger.info("✅ All pre-deployment validations passed!")
-        else:
-            logger.error("❌ Some validations failed. Deployment blocked.")
+        
+
+        logger.error("❌ Some validations failed. Deployment blocked.")
 
         return all_passed
 

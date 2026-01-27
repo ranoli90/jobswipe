@@ -287,8 +287,9 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
             logger.info(log_message, extra=context)
         elif log_level == "WARNING":
             logger.warning(log_message, extra=context)
-        else:
-            logger.error(log_message, extra=context, exc_info=True)
+        
+
+        logger.error(log_message, extra=context, exc_info=True)
 
         # Log security-related errors to security logger
         if status_code in (401, 403):

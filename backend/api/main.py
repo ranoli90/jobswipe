@@ -403,8 +403,9 @@ async def readiness_check():
             redis_client = redis.from_url(redis_url)
             redis_client.ping()
             health_status["services"]["redis"] = "ready"
-        else:
-            health_status["services"]["redis"] = "unknown"
+        
+
+        health_status["services"]["redis"] = "unknown"
     except Exception as e:
         logger.error("Redis readiness check failed: %s", exc_info=True)
         health_status["services"]["redis"] = f"not ready: %s"

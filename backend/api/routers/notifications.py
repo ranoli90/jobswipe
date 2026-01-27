@@ -175,8 +175,9 @@ async def update_notification_preferences(
         )
         if success:
             return {"message": "Notification preferences updated successfully"}
-        else:
-            raise HTTPException(status_code=500, detail="Failed to update preferences")
+        
+
+        raise HTTPException(status_code=500, detail="Failed to update preferences")
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -214,10 +215,11 @@ async def register_device_token(
 
         if success:
             return {"message": "Device token registered successfully"}
-        else:
-            raise HTTPException(
-                status_code=500, detail="Failed to register device token"
-            )
+        
+
+        raise HTTPException(
+            status_code=500, detail="Failed to register device token"
+        )
     except HTTPException:
         raise
     except Exception as e:
@@ -245,8 +247,9 @@ async def unregister_device_token(
 
         if success:
             return {"message": "Device token unregistered successfully"}
-        else:
-            raise HTTPException(status_code=404, detail="Device token not found")
+        
+
+        raise HTTPException(status_code=404, detail="Device token not found")
     except HTTPException:
         raise
     except Exception as e:

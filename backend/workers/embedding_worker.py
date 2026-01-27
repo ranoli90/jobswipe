@@ -335,15 +335,15 @@ class EmbeddingQueue:
             # Remove from processing set
             await self._client.zrem(self.PROCESSING_SET, task_id)
 
-            logger.debug(
-                f"Requeued embedding task for retry: {task_id} (attempt {retry_count + 1})"
+            logger.debug("Requeued embedding task for retry: %s (attempt %s)" % (task_id, retry_count + 1)
             )
             return True
-        else:
-            # Mark as failed
-            task.status = TaskStatus.FAILED
-            task.completed_at = datetime.now(timezone.utc)
-            task.error = error
+        
+
+        # Mark as failed
+        task.status = TaskStatus.FAILED
+        task.completed_at = datetime.now(timezone.utc)
+        task.error = error
 
             # Remove from processing set
             await self._client.zrem(self.PROCESSING_SET, task_id)
@@ -438,9 +438,10 @@ class EmbeddingQueue:
 
                 if task:
                     await self._process_task(task, embedding_service)
-                else:
-                    # No tasks available, wait
-                    await asyncio.sleep(0.1)
+                
+
+                # No tasks available, wait
+                await asyncio.sleep(0.1)
 
             except Exception as e:
                 logger.error("Worker error: %s", e)

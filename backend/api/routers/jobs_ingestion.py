@@ -292,8 +292,7 @@ async def start_periodic_ingestion(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid ingestion API key"
         )
 
-    logger.info(
-        f"Starting periodic ingestion with interval: {request.interval_seconds} seconds"
+    logger.info("Starting periodic ingestion with interval: %s seconds" % (request.interval_seconds)
     )
 
     try:

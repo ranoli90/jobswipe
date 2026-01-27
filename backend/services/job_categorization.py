@@ -163,8 +163,9 @@ def determine_category(title: str, description: str) -> Tuple[str, float]:
                 # Give higher weight to keywords in title
                 if keyword.lower() in title.lower():
                     category_scores[category] += 2
-                else:
-                    category_scores[category] += 1
+                
+
+                category_scores[category] += 1
 
     # Find category with highest score
     max_score = max(category_scores.values())
@@ -285,8 +286,9 @@ def get_category_distribution() -> Dict[str, int]:
         for job in categorized_jobs:
             if job["category"] in distribution:
                 distribution[job["category"]] += 1
-            else:
-                distribution["other"] += 1
+            
+
+            distribution["other"] += 1
 
         return distribution
 

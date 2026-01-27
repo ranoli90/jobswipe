@@ -153,8 +153,7 @@ async def get_job_matches(
         return job_matches
 
     except Exception as e:
-        logger.error(
-            f"Error retrieving job matches for user {current_user.id}: {str(e)}"
+        logger.error("Error retrieving job matches for user %s: %s" % (current_user.id, str(e))
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -190,8 +189,7 @@ async def get_feed(
                 cached_cards = json.loads(cached_result)
                 return [JobCard(**card) for card in cached_cards]
         except Exception as cache_error:
-            logger.warning(
-                f"Failed to read from cache: {str(cache_error)}. Continuing to fetch fresh data."
+            logger.warning("Failed to read from cache: %s. Continuing to fetch fresh data." % (str(cache_error))
             )
 
         scored_jobs = await get_personalized_jobs(
@@ -222,8 +220,7 @@ async def get_feed(
                 cache_key, 300, json.dumps([card.dict() for card in job_cards])
             )
         except Exception as cache_error:
-            logger.warning(
-                f"Failed to cache job feed: {str(cache_error)}. Continuing without caching."
+            logger.warning("Failed to cache job feed: %s. Continuing without caching." % (str(cache_error))
             )
 
         return job_cards

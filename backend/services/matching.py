@@ -181,9 +181,10 @@ async def get_personalized_jobs(
         if not profile:
             # If no profile, return latest jobs
             query = db.query(Job).order_by(Job.created_at.desc())
-        else:
-            # Hybrid matching approach
-            query = db.query(Job)
+        
+
+        # Hybrid matching approach
+        query = db.query(Job)
 
             # Rule-based filters
             if profile.skills:
@@ -403,8 +404,7 @@ async def get_job_matches_for_profile(
             span.set_attribute("matches.found", len(paginated_jobs))
             span.set_attribute("matches.total", len(scored_jobs))
 
-            logger.info(
-                f"Found {len(paginated_jobs)} matches out of {len(scored_jobs)} total jobs for profile {profile.id}"
+            logger.info("Found %s matches out of %s total jobs for profile %s" % (len(paginated_jobs), len(scored_jobs), profile.id)
             )
 
             return paginated_jobs
@@ -418,8 +418,7 @@ async def get_job_matches_for_profile(
             span.record_exception(e)
             span.set_status(trace.Status(trace.StatusCode.ERROR, str(e)))
 
-            logger.error(
-                f"Error getting job matches for profile {profile.id}: {str(e)}"
+            logger.error("Error getting job matches for profile %s: %s" % (profile.id, str(e))
             )
             raise
 
@@ -454,8 +453,7 @@ def get_job_recommendations_for_profile(
         return recommended_jobs[:limit]
 
     except Exception as e:
-        logger.error(
-            f"Error getting recommendations for profile {profile.id}: {str(e)}"
+        logger.error("Error getting recommendations for profile %s: %s" % (profile.id, str(e))
         )
         raise
     finally:

@@ -65,8 +65,7 @@ def generate_hourly_snapshot():
         r = redis.Redis(host="redis", port=6379, decode_responses=True)
         r.setex("analytics:hourly_snapshot", 3600, json.dumps(snapshot))
 
-        logger.info(
-            f"Generated hourly snapshot: {interactions} interactions, {applications} applications"
+        logger.info("Generated hourly snapshot: %s interactions, %s applications" % (interactions, applications)
         )
         return snapshot
 
@@ -256,8 +255,9 @@ def export_analytics_report(report_type: str = "daily", format: str = "json"):
             metrics = aggregate_engagement_metrics(days=7)
         elif report_type == "monthly":
             metrics = aggregate_engagement_metrics(days=30)
-        else:
-            raise ValueError(f"Unknown report type: {report_type}")
+        
+
+        raise ValueError(f"Unknown report type: {report_type}")
 
         # Generate file
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
@@ -327,13 +327,14 @@ def calculate_user_engagement_scores():
             # Store score in user metadata (in a real app, this would be a separate field)
             if user.metadata:
                 user.metadata["engagement_score"] = engagement_score
-            else:
-                user.metadata = {"engagement_score": engagement_score}
+            
 
-            processed += 1
+            user.metadata = {"engagement_score": engagement_score}
 
-        db.commit()
-        logger.info("Calculated engagement scores for %s users", processed)
+        processed += 1
+
+    db.commit()
+    logger.info("Calculated engagement scores for %s users", processed)
         return processed
 
     except Exception as e:

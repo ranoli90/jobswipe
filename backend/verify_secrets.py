@@ -75,8 +75,9 @@ def check_optional_secrets() -> list[tuple[str, str, bool]]:
         value = os.getenv(name)
         if value:
             results.append((name, description, True))
-        else:
-            results.append((name, description, False))
+        
+
+        results.append((name, description, False))
     
     return results
 
@@ -123,15 +124,16 @@ def main():
     if all_passed:
         print(\"✅ All required secrets are properly configured!\")
         return 0
-    else:
-        print(\"❌ Some required secrets are missing or invalid!\")
-        print()
-        print(\"To fix, set the missing secrets:\")
-        print(\"  export SECRET_KEY='your-secure-secret-key'\")
-        print(\"  # ... etc\")
-        print()
-        print(\"For Fly.io deployment:\")
-        print(\"  flyctl secrets set SECRET_KEY='your-secure-secret-key' ...\")
+    
+
+    print(\"❌ Some required secrets are missing or invalid!\")
+    print()
+    print(\"To fix, set the missing secrets:\")
+    print(\"  export SECRET_KEY='your-secure-secret-key'\")
+    print(\"  # ... etc\")
+    print()
+    print(\"For Fly.io deployment:\")
+    print(\"  flyctl secrets set SECRET_KEY='your-secure-secret-key' ...\")
         return 1
 
 

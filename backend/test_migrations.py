@@ -269,14 +269,15 @@ def main():
     """Main entry point for migration testing."""
     if len(sys.argv) > 1:
         database_url = sys.argv[1]
-    else:
-        database_url = settings.database_url
+    
 
-    tester = MigrationTester(database_url)
+    database_url = settings.database_url
 
-    success = tester.run_full_test_suite()
+tester = MigrationTester(database_url)
 
-    sys.exit(0 if success else 1)
+success = tester.run_full_test_suite()
+
+sys.exit(0 if success else 1)
 
 
 if __name__ == "__main__":

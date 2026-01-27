@@ -132,8 +132,7 @@ async def generate_report(
         )
 
     try:
-        logger.info(
-            f"Generating {request.report_type} report in {request.format} format"
+        logger.info("Generating %s report in %s format" % (request.report_type, request.format)
         )
 
         # Generate report

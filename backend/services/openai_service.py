@@ -45,8 +45,7 @@ def get_client():
             logger.info("Ollama service initialized successfully")
             return ollama_client
         except Exception as e:
-            logger.warning(
-                f"Ollama not available: {str(e)}. Falling back to rule-based matching."
+            logger.warning("Ollama not available: %s. Falling back to rule-based matching." % (str(e))
             )
             ollama_client = None
 
@@ -296,8 +295,9 @@ class OpenAIService:
             if json_start != -1 and json_end != -1:
                 json_str = analysis[json_start:json_end]
                 return json.loads(json_str)
-            else:
-                raise ValueError("No JSON found in response")
+            
+
+            raise ValueError("No JSON found in response")
 
         except Exception as e:
             logger.error("Error parsing match analysis: %s", str(e))

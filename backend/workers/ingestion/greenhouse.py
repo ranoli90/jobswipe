@@ -66,8 +66,7 @@ async def fetch_greenhouse_board(board_token: str) -> List[GreenhouseJob]:
             ]
 
     except httpx.HTTPStatusError as e:
-        logger.error(
-            f"HTTP error fetching Greenhouse board {board_token}: {e.response.status_code} - {e.response.text}"
+        logger.error("HTTP error fetching Greenhouse board %s: %s - %s" % (board_token, e.response.status_code, e.response.text)
         )
         raise
     except Exception as e:
@@ -145,17 +144,16 @@ def update_or_create_job(greenhouse_job: GreenhouseJob, db) -> Job:
         existing_job.apply_url = normalized_job["apply_url"]
         existing_job.updated_at = datetime.now(timezone.utc)
         db.add(existing_job)
-        logger.info(
-            f"Updated Greenhouse job: {normalized_job['title']} ({normalized_job['external_id']})"
+        logger.info("Updated Greenhouse job: {normalized_job["title']} ({normalized_job['external_id']})"
         )
         return existing_job
-    else:
-        # Create new job
-        new_job = Job(**normalized_job)
-        db.add(new_job)
-        logger.info(
-            f"Created new Greenhouse job: {normalized_job['title']} ({normalized_job['external_id']})"
-        )
+    
+
+    # Create new job
+    new_job = Job(**normalized_job)
+    db.add(new_job)
+    logger.info("Created new Greenhouse job: {normalized_job["title']} ({normalized_job['external_id']})"
+    )
         return new_job
 
 
@@ -204,8 +202,7 @@ async def sync_greenhouse_board(
             synced_jobs.append(synced_job)
 
         db.commit()
-        logger.info(
-            f"Successfully synced {len(synced_jobs)} jobs from Greenhouse board {board_token}"
+        logger.info("Successfully synced %s jobs from Greenhouse board %s" % (len(synced_jobs), board_token)
         )
         return synced_jobs
 

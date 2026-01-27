@@ -244,18 +244,19 @@ def main():
             issues = creator.validate_migration(latest_migration)
 
             if issues:
-                logging.error(f"Validation issues found in {latest_migration.name}:")
+                logging.error("Validation issues found in %s:" % (latest_migration.name))
                 for issue in issues:
-                    logging.error(f"  - {issue}")
+                    logging.error("  - %s" % (issue))
                 sys.exit(1)
-            else:
-                logging.info(f"✅ Migration {latest_migration.name} validated successfully")
+            
+
+            logging.info("✅ Migration %s validated successfully" % (latest_migration.name))
 
         else:
             # Create new migration
             migration_file = creator.create_migration(args.message, args.data_migration)
 
-            logging.info(f"✅ Created migration: {migration_file}")
+            logging.info("✅ Created migration: %s" % (migration_file))
 
             if args.data_migration:
                 logging.info("📝 Data migration template included")
@@ -264,7 +265,7 @@ def main():
                 )
 
     except Exception as e:
-        logging.error(f"❌ Error: {e}")
+        logging.error("❌ Error: %s" % (e))
         sys.exit(1)
 
 

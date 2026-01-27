@@ -451,24 +451,25 @@ class JobIngestionService:
                 db.commit()
                 logger.info("Updated job: %s", job_data['title'])
 
-            else:
-                # Create new job
-                new_job = Job(
-                    external_id=job_data["id"],
-                    title=job_data["title"],
-                    company=job_data["company"],
-                    location=job_data["location"],
-                    description=job_data["description"],
-                    apply_url=job_data["url"],
-                    source=job_data["source"],
-                    salary_range=job_data.get("salary_range", ""),
-                    type=job_data.get("type", ""),
-                    created_at=datetime.now(),
-                )
+            
 
-                db.add(new_job)
-                db.commit()
-                logger.info("Created new job: %s", job_data['title'])
+            # Create new job
+            new_job = Job(
+                external_id=job_data["id"],
+                title=job_data["title"],
+                company=job_data["company"],
+                location=job_data["location"],
+                description=job_data["description"],
+                apply_url=job_data["url"],
+                source=job_data["source"],
+                salary_range=job_data.get("salary_range", ""),
+                type=job_data.get("type", ""),
+                created_at=datetime.now(),
+            )
+
+            db.add(new_job)
+            db.commit()
+            logger.info("Created new job: %s", job_data['title'])
 
             return True
 
@@ -496,20 +497,19 @@ class JobIngestionService:
                     # Send to Kafka for real-time processing
                     self.kafka_producer.send(KAFKA_JOB_TOPIC, job)
                     logger.debug("Sent job to Kafka: %s", job['title'])
-                else:
-                    # Process directly if Kafka not available
-                    await self.process_job(job)
+                
 
-                success_count += 1
+                # Process directly if Kafka not available
+                await self.process_job(job)
+
+            success_count += 1
 
             except Exception as e:
-                logger.error(
-                    f"Failed to process job {job.get('title', 'Unknown')}: {e}"
+                logger.error("Failed to process job {job.get("title', 'Unknown')}: {e}"
                 )
                 failed_count += 1
 
-        logger.info(
-            f"Batch processed: {success_count} succeeded, {failed_count} failed"
+        logger.info("Batch processed: %s succeeded, %s failed" % (success_count, failed_count)
         )
         return success_count, failed_count
 
@@ -542,8 +542,7 @@ class JobIngestionService:
         """Run periodic job ingestion at specified interval"""
         self.init_kafka()
 
-        logger.info(
-            f"Starting periodic job ingestion with interval: {interval_seconds} seconds"
+        logger.info("Starting periodic job ingestion with interval: %s seconds" % (interval_seconds)
         )
 
         while True:
@@ -554,11 +553,12 @@ class JobIngestionService:
                 if jobs:
                     logger.info("Ingested %s jobs for processing", len(jobs))
                     await self.process_jobs_batch(jobs)
-                else:
-                    logger.info("No new jobs to ingest")
+                
 
-                logger.info("Next ingestion in %s seconds", interval_seconds)
-                await asyncio.sleep(interval_seconds)
+                logger.info("No new jobs to ingest")
+
+            logger.info("Next ingestion in %s seconds", interval_seconds)
+            await asyncio.sleep(interval_seconds)
 
             except Exception as e:
                 logger.error("Periodic ingestion error: %s", e)
@@ -576,8 +576,7 @@ class JobIngestionService:
             if jobs:
                 logger.info("Ingested %s jobs", len(jobs))
                 success, failed = await self.process_jobs_batch(jobs)
-                logger.info(
-                    f"Processing complete: {success} succeeded, {failed} failed"
+                logger.info("Processing complete: %s succeeded, %s failed" % (success, failed)
                 )
             else:
                 logger.info("No new jobs to ingest")

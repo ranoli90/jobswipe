@@ -131,10 +131,11 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
-    else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire, "type": "access"})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    
+
+    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+to_encode.update({"exp": expire, "type": "access"})
+encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
 
@@ -143,10 +144,11 @@ def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
-    else:
-        expire = datetime.now(timezone.utc) + timedelta(days=settings.refresh_token_expire_days)
-    to_encode.update({"exp": expire, "type": "refresh"})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    
+
+    expire = datetime.now(timezone.utc) + timedelta(days=settings.refresh_token_expire_days)
+to_encode.update({"exp": expire, "type": "refresh"})
+encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
 
@@ -206,8 +208,7 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
         # Check if user already exists
         existing_user = db.query(User).filter(User.email == user.email).first()
         if existing_user:
-            logger.warning(
-                f"Registration failed - email already registered: {user.email}"
+            logger.warning("Registration failed - email already registered: %s" % (user.email)
             )
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -290,8 +291,7 @@ async def login(
         )
 
         if recent_attempts_from_ip > 10:
-            logger.warning(
-                f"Suspicious activity: {recent_attempts_from_ip} failed attempts from IP {ip_address} in last hour"
+            logger.warning("Suspicious activity: %s failed attempts from IP %s in last hour" % (recent_attempts_from_ip, ip_address)
             )
             # Could send alert here
 
@@ -299,8 +299,7 @@ async def login(
 
         # Check if account is locked
         if user and user.lockout_until and datetime.now(timezone.utc) < user.lockout_until:
-            logger.warning(
-                f"Login attempt on locked account: {email} from IP: {ip_address}"
+            logger.warning("Login attempt on locked account: %s from IP: %s" % (email, ip_address)
             )
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -337,8 +336,7 @@ async def login(
                 lockout_until = datetime.now(timezone.utc) + timedelta(minutes=lockout_minutes)
                 if user:
                     user.lockout_until = lockout_until
-                    logger.warning(
-                        f"Account locked for user {email} until {lockout_until}"
+                    logger.warning("Account locked for user %s until %s" % (email, lockout_until)
                     )
                 db.commit()  # Commit the failed attempt and lockout
 
@@ -349,8 +347,7 @@ async def login(
 
             db.commit()  # Commit the failed attempt
 
-            logger.warning(
-                f"Login failed - invalid credentials for: {email} from IP: {ip_address}"
+            logger.warning("Login failed - invalid credentials for: %s from IP: %s" % (email, ip_address)
             )
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -803,8 +800,7 @@ async def oauth2_callback(
 
     # Validate state for CSRF protection
     if not oauth2_service.validate_state(state):
-        logger.warning(
-            f"OAuth2 state validation failed for provider {provider}, state: {state}, IP: {request.client.host}, User-Agent: {request.headers.get('user-agent')}"
+        logger.warning("OAuth2 state validation failed for provider %s, state: %s, IP: %s, User-Agent: {request.headers.get(" % (provider, state, request.client.host)user-agent')}"
         )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid state parameter"

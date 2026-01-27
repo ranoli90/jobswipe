@@ -163,8 +163,7 @@ def cleanup_old_interactions(days: int = DEFAULT_OLD_INTERACTIONS_DAYS):
             # Mark as archived (you might add an is_archived field)
             archived += 1
 
-        logger.info(
-            f"Archived {archived} old interactions (dry run - not actually deleted)"
+        logger.info("Archived %s old interactions (dry run - not actually deleted)" % (archived)
         )
         return archived
 

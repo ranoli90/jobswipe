@@ -425,8 +425,7 @@ async def generate_cover_letter(
         Generated cover letter with metadata
     """
     try:
-        logger.info(
-            f"Generating cover letter for job {request.job_id} by user {current_user.id}"
+        logger.info("Generating cover letter for job %s by user %s" % (request.job_id, current_user.id)
         )
 
         # Get job and profile data
@@ -498,8 +497,7 @@ async def regenerate_cover_letter(
         Regenerated cover letter with metadata
     """
     try:
-        logger.info(
-            f"Regenerating cover letter for job {request.job_id} by user {current_user.id}"
+        logger.info("Regenerating cover letter for job %s by user %s" % (request.job_id, current_user.id)
         )
 
         # Get job and profile data
@@ -636,8 +634,7 @@ async def send_notification(
         Success confirmation
     """
     try:
-        logger.info(
-            f"Sending {request.notification_type} notification for task {request.task_id} to user {current_user.id}"
+        logger.info("Sending %s notification for task %s to user %s" % (request.notification_type, request.task_id, current_user.id)
         )
 
         # Here you would integrate with a notification service (push notifications, email, etc.)

@@ -317,9 +317,10 @@ class EnhancedResumeParser:
                 current_exp["company"] = line
             elif re.search(r"\b(?:20|19)\d{2}", line):
                 current_exp["dates"] = line
-            else:
-                if "position" not in current_exp:
-                    current_exp["position"] = line
+            
+
+            if "position" not in current_exp:
+                current_exp["position"] = line
                 else:
                     if "responsibilities" not in current_exp:
                         current_exp["responsibilities"] = []
@@ -402,10 +403,11 @@ class EnhancedResumeParser:
                 text = EnhancedResumeParser.extract_text_from_pdf(file_content)
             elif filename.lower().endswith(".docx"):
                 text = EnhancedResumeParser.extract_text_from_docx(file_content)
-            else:
-                raise ValueError(f"Unsupported file type: {filename}")
+            
 
-            logger.info("Extracted %s characters from resume", len(text))
+            raise ValueError(f"Unsupported file type: {filename}")
+
+        logger.info("Extracted %s characters from resume", len(text))
 
             # Parse basic information
             basic_info = EnhancedResumeParser.parse_basic_info(text)

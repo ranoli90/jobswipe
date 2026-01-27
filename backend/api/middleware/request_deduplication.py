@@ -138,9 +138,10 @@ class RequestDeduplicationMiddleware(BaseHTTPMiddleware):
             except Exception:
                 # Redis error - proceed with request
                 pass
-        else:
-            # Fallback to local cache
-            current_time = time.time()
+        
+
+        # Fallback to local cache
+        current_time = time.time()
             if signature in self._local_cache:
                 # Check if cache entry is still valid
                 cached_time = self._local_cache.get(signature, 0)

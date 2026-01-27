@@ -293,10 +293,11 @@ class PushNotificationService:
         for token in tokens:
             if token.platform == Platform.IOS.value:
                 result = await self.apns.send(token.token, payload)
-            else:
-                result = await self.fcm.send(token.token, payload)
+            
 
-            results.append(result)
+            result = await self.fcm.send(token.token, payload)
+
+        results.append(result)
 
             # Update device token if invalid
             if not result.success and result.error_code in (
@@ -350,8 +351,9 @@ class PushNotificationService:
                 if isinstance(result, Exception):
                     logger.error("Failed to send to %s: %s", ('user_id', 'result'))
                     results[user_id] = []
-                else:
-                    results[user_id] = result
+                
+
+                results[user_id] = result
 
         return results
 
@@ -403,18 +405,19 @@ class PushNotificationService:
                         last_used=datetime.now(timezone.utc),
                     )
                 )
-            else:
-                # Create new token
-                device = DeviceToken(
-                    user_id=user_id,
-                    device_id=device_id,
-                    platform=platform.value,
-                    token=token,
-                    app_version=app_version,
-                )
-                session.add(device)
+            
 
-            await session.commit()
+            # Create new token
+            device = DeviceToken(
+                user_id=user_id,
+                device_id=device_id,
+                platform=platform.value,
+                token=token,
+                app_version=app_version,
+            )
+            session.add(device)
+
+        await session.commit()
             return device
 
     async def unregister_device(self, device_id: str) -> bool:

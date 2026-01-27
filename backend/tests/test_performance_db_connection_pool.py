@@ -222,9 +222,10 @@ class TestDatabaseConnectionPoolStress:
                 if call_count <= 2:
                     # First two connections fail
                     raise psycopg2.OperationalError("Connection failed")
-                else:
-                    # Subsequent connections succeed
-                    mock_connection = MagicMock()
+                
+
+                # Subsequent connections succeed
+                mock_connection = MagicMock()
                     return mock_connection
 
             mock_connect.side_effect = mock_connect_func

@@ -60,8 +60,7 @@ def ingest_jobs_from_source(self, source_name: str):
                 )
 
                 if existing:
-                    logger.debug(
-                        f"Job {job_data.get('external_id')} already exists, skipping"
+                    logger.debug("Job {job_data.get("external_id')} already exists, skipping"
                     )
                     continue
 
@@ -137,8 +136,9 @@ def process_job_embedding(self, job_id: str):
                 return {"status": "success", "job_id": job_id}
             finally:
                 loop.close()
-        else:
-            logger.warning("Embedding service not available")
+        
+
+        logger.warning("Embedding service not available")
             return {"status": "skipped", "reason": "Service unavailable"}
 
     except Exception as e:

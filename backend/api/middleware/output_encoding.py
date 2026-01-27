@@ -44,5 +44,6 @@ class OutputEncodingMiddleware(BaseHTTPMiddleware):
             return [self._encode_html_in_data(item) for item in data]
         elif isinstance(data, str):
             return html.escape(data, quote=False)  # Don't escape quotes in JSON
-        else:
-            return data
+        
+
+        return data

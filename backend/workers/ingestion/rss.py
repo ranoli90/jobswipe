@@ -67,8 +67,7 @@ async def fetch_rss_feed(feed_url: str) -> List[RSSJob]:
             return jobs
 
     except httpx.HTTPStatusError as e:
-        logger.error(
-            f"HTTP error fetching RSS feed {feed_url}: {e.response.status_code} - {e.response.text}"
+        logger.error("HTTP error fetching RSS feed %s: %s - %s" % (feed_url, e.response.status_code, e.response.text)
         )
         raise
     except Exception as e:
@@ -142,17 +141,16 @@ def update_or_create_job(rss_job: RSSJob, db) -> Job:
         existing_job.apply_url = normalized_job["apply_url"]
         existing_job.updated_at = datetime.now(timezone.utc)
         db.add(existing_job)
-        logger.info(
-            f"Updated RSS job: {normalized_job['title']} ({normalized_job['external_id']})"
+        logger.info("Updated RSS job: {normalized_job["title']} ({normalized_job['external_id']})"
         )
         return existing_job
-    else:
-        # Create new job
-        new_job = Job(**normalized_job)
-        db.add(new_job)
-        logger.info(
-            f"Created new RSS job: {normalized_job['title']} ({normalized_job['external_id']})"
-        )
+    
+
+    # Create new job
+    new_job = Job(**normalized_job)
+    db.add(new_job)
+    logger.info("Created new RSS job: {normalized_job["title']} ({normalized_job['external_id']})"
+    )
         return new_job
 
 
@@ -176,8 +174,7 @@ async def sync_rss_feed(feed_url: str) -> List[Job]:
             synced_jobs.append(synced_job)
 
         db.commit()
-        logger.info(
-            f"Successfully synced {len(synced_jobs)} jobs from RSS feed {feed_url}"
+        logger.info("Successfully synced %s jobs from RSS feed %s" % (len(synced_jobs), feed_url)
         )
         return synced_jobs
 

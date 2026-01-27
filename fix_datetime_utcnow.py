@@ -1,72 +1,81 @@
 #!/usr/bin/env python3
 """
-Script to fix datetime.utcnow() usage with timezone-aware alternatives.
-Replaces datetime.utcnow() with datetime.now(timezone.utc)
+Automated script to fix datetime.utcnow() usage with timezone-aware alternatives.
 """
 
-import os
 import re
+import os
+import sys
 from pathlib import Path
 
-def fix_datetime_utcnow(file_path):
+def fix_datetime_utcnow_antipatterns(file_path):
     """Fix datetime.utcnow() usage in a single file."""
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             content = f.read()
-    except UnicodeDecodeError:
+        
+        # Pattern to match datetime.utcnow() calls
+        pattern = r'(\bdatetime\.utcnow\s*\()\s*\)'
+        
+        # Replacement with timezone-aware alternative
+        replacement = r'\1datetime.now(timezone.utc))'
+        
+        # Check if datetime and timezone are imported
+        has_datetime_import = re.search(r'\bimport\s+datetime', content)
+        has_timezone_import = re.search(r'\bfrom\s+datetime\s+import.*\btimezone\b', content)
+        
+        # Add imports if needed
+        if has_datetime_import and not has_timezone_import:
+            # Add timezone import after datetime import
+            content = re.sub(r'(\bimport\s+datetime\s*)', r'\1\nfrom datetime import timezone', content)
+        elif not has_datetime_import:
+            # Add both imports at the top
+            content = 'import datetime\nfrom datetime import timezone\n' + content
+        
+        # Replace all datetime.utcnow() calls
+        new_content = re.sub(pattern, replacement, content)
+        
+        if new_content != content:
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(new_content)
+            return True
+        
+        return False
+        
+    except Exception as e:
+        print(f"Error processing {file_path}: {e}")
         return False
 
-    original_content = content
-
-    # Replace datetime.utcnow() with datetime.now(timezone.utc)
-    # But we need to make sure timezone is imported
-    content = re.sub(r'\bdatetime\.utcnow\(\)', 'datetime.now(timezone.utc)', content)
-
-    # Also handle the full path
-    content = re.sub(r'\bdatetime\.datetime\.utcnow\(\)', 'datetime.now(timezone.utc)', content)
-
-    # Check if we need to add timezone import
-    if 'datetime.now(timezone.utc)' in content and 'from datetime import' not in content:
-        # Look for existing datetime imports
-        datetime_import_pattern = r'^(from datetime import.*|import datetime)'
-        lines = content.split('\n')
-        for i, line in enumerate(lines):
-            if re.match(datetime_import_pattern, line.strip()):
-                # Add timezone to the import
-                if 'timezone' not in line:
-                    lines[i] = line.rstrip() + ', timezone'
-                    content = '\n'.join(lines)
-                break
-        else:
-            # No datetime import found, add one
-            lines.insert(0, 'from datetime import datetime, timezone')
-            content = '\n'.join(lines)
-
-    if content != original_content:
-        with open(file_path, 'w', encoding='utf-8') as f:
-            f.write(content)
-        return True
-    return False
-
 def main():
-    """Main function to fix datetime.utcnow() usage in all Python files."""
-    # Find all Python files in backend directory (exclude venv)
+    """Main function to process all Python files."""
+    # Get all Python files in the backend directory
+    backend_dir = Path("backend")
+    
+    if not backend_dir.exists():
+        print(f"Directory {backend_dir} does not exist")
+        return
+    
     python_files = []
-    for root, dirs, files in os.walk('backend'):
-        # Skip venv directory
-        if 'venv' in dirs:
-            dirs.remove('venv')
+    
+    # Find all Python files
+    for root, _, files in os.walk(backend_dir):
         for file in files:
             if file.endswith('.py'):
                 python_files.append(os.path.join(root, file))
-
-    fixed_count = 0
+    
+    print(f"Found {len(python_files)} Python files to process")
+    
+    modified_count = 0
+    
+    # Process each file
     for file_path in python_files:
-        if fix_datetime_utcnow(file_path):
-            print(f"Fixed datetime.utcnow in: {file_path}")
-            fixed_count += 1
+        if fix_datetime_utcnow_antipatterns(file_path):
+            modified_count += 1
+            print(f"Modified: {file_path}")
+    
+    print(f"\nCompleted. Modified {modified_count} files.")
+    print("\nNote: This script replaces datetime.utcnow() with datetime.now(timezone.utc).")
+    print("Manual review is recommended to ensure the timezone handling is appropriate.")
 
-    print(f"Fixed datetime.utcnow usage in {fixed_count} files")
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

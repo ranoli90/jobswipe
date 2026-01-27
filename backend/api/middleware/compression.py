@@ -163,6 +163,5 @@ def add_compression_middleware(
         CompressionMiddleware, compression_type=compression_type, min_size=min_size
     )
 
-    logger.info(
-        f"Compression middleware added with {compression_type} (min_size: {min_size} bytes)"
+    logger.info("Compression middleware added with %s (min_size: %s bytes)" % (compression_type, min_size)
     )

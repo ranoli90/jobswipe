@@ -65,8 +65,7 @@ async def fetch_lever_postings(org_slug: str) -> List[LeverJob]:
             ]
 
     except httpx.HTTPStatusError as e:
-        logger.error(
-            f"HTTP error fetching Lever postings for {org_slug}: {e.response.status_code} - {e.response.text}"
+        logger.error("HTTP error fetching Lever postings for %s: %s - %s" % (org_slug, e.response.status_code, e.response.text)
         )
         raise
     except Exception as e:
@@ -135,17 +134,16 @@ def update_or_create_job(lever_job: LeverJob, db) -> Job:
         existing_job.apply_url = normalized_job["apply_url"]
         existing_job.updated_at = datetime.now(timezone.utc)
         db.add(existing_job)
-        logger.info(
-            f"Updated Lever job: {normalized_job['title']} ({normalized_job['external_id']})"
+        logger.info("Updated Lever job: {normalized_job["title']} ({normalized_job['external_id']})"
         )
         return existing_job
-    else:
-        # Create new job
-        new_job = Job(**normalized_job)
-        db.add(new_job)
-        logger.info(
-            f"Created new Lever job: {normalized_job['title']} ({normalized_job['external_id']})"
-        )
+    
+
+    # Create new job
+    new_job = Job(**normalized_job)
+    db.add(new_job)
+    logger.info("Created new Lever job: {normalized_job["title']} ({normalized_job['external_id']})"
+    )
         return new_job
 
 
@@ -189,8 +187,7 @@ async def sync_lever_postings(org_slug: str, incremental: bool = True) -> List[J
             synced_jobs.append(synced_job)
 
         db.commit()
-        logger.info(
-            f"Successfully synced {len(synced_jobs)} jobs from Lever organization {org_slug}"
+        logger.info("Successfully synced %s jobs from Lever organization %s" % (len(synced_jobs), org_slug)
         )
         return synced_jobs
 

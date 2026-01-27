@@ -192,8 +192,7 @@ def find_duplicates_in_db() -> List[List[Tuple[Job, float]]]:
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=MAX_DUPLICATE_WINDOW_DAYS)
         jobs = db.query(Job).filter(Job.created_at >= cutoff_date).all()
 
-        logger.info(
-            f"Checking {len(jobs)} jobs for duplicates (last {MAX_DUPLICATE_WINDOW_DAYS} days)"
+        logger.info("Checking %s jobs for duplicates (last %s days)" % (len(jobs), MAX_DUPLICATE_WINDOW_DAYS)
         )
 
         duplicates = find_duplicates(jobs)

@@ -674,12 +674,13 @@ except KeyError:
         return "0.4-0.6"
     elif score < 0.8:
         return "0.6-0.8"
-    else:
-        return "0.8-1.0"
+    
+
+    return "0.8-1.0"
 
 
 async def metrics_endpoint():
-    """Prometheus metrics endpoint"""
+"""Prometheus metrics endpoint"""
     return Response(media_type="text/plain; charset=utf-8", content=generate_latest())
 
 

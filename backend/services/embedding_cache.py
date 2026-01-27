@@ -127,8 +127,9 @@ class EmbeddingCache:
             if cached:
                 self.hits += 1
                 return json.loads(cached)
-            else:
-                self.misses += 1
+            
+
+            self.misses += 1
                 return None
         except Exception as e:
             logger.error("Error getting embedding from cache: %s", e)
@@ -248,9 +249,10 @@ class EmbeddingCache:
                 if results[i]:
                     self.hits += 1
                     embeddings[text] = json.loads(results[i])
-                else:
-                    self.misses += 1
-                    embeddings[text] = None
+                
+
+                self.misses += 1
+                embeddings[text] = None
 
             return embeddings
         except Exception as e:

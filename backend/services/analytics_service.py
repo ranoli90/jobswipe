@@ -98,8 +98,9 @@ class AnalyticsService:
                         matches_by_score_range["medium"] += 1
                     elif score < 0.9:
                         matches_by_score_range["high"] += 1
-                    else:
-                        matches_by_score_range["very_high"] += 1
+                    
+
+                    matches_by_score_range["very_high"] += 1
 
                     # Count accurate matches (score > 0.7 for 'like' or 'apply' actions)
                     if interaction.action in ["like", "apply"] and score > 0.7:
@@ -397,15 +398,16 @@ class AnalyticsService:
             return "Sales"
         elif "manager" in title_lower:
             return "Other"
-        else:
-            return "Other"
+        
 
-    async def export_report(self, report_type: str, format: str = "json") -> str:
-        """
-        Export report in specified format.
+        return "Other"
 
-        Args:
-            report_type: Type of report to export
+async def export_report(self, report_type: str, format: str = "json") -> str:
+    """
+    Export report in specified format.
+
+    Args:
+        report_type: Type of report to export
             format: Export format (json, csv, html)
 
         Returns:
@@ -495,9 +497,10 @@ class AnalyticsService:
                     if isinstance(item, dict):
                         item_html = ", ".join([f"{k}: {v}" for k, v in item.items()])
                         html += f"<li>{item_html}</li>"
-                    else:
-                        html += f"<li>{item}</li>"
-                html += "</ul>"
+                    
+
+                    html += f"<li>{item}</li>"
+            html += "</ul>"
             else:
                 html += f"""
                 <div class="metric">

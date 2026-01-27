@@ -51,7 +51,7 @@ def fetch_appstore_metadata() -> Optional[Dict[str, Any]]:
     except Exception as e:
         import logging
 
-        logging.error(f"Failed to fetch App Store metadata: {str(e)}")
+        logging.error("Failed to fetch App Store metadata: %s" % (str(e)))
         return None
 
 
@@ -69,7 +69,7 @@ def get_appstore_metadata() -> Optional[Dict[str, Any]]:
         except Exception as e:
             import logging
 
-            logging.error(f"Failed to read App Store metadata file: {str(e)}")
+            logging.error("Failed to read App Store metadata file: %s" % (str(e)))
 
     return None
 
@@ -88,7 +88,7 @@ def get_prev_appstore_metadata() -> Optional[Dict[str, Any]]:
         except Exception as e:
             import logging
 
-            logging.error(f"Failed to read previous App Store metadata file: {str(e)}")
+            logging.error("Failed to read previous App Store metadata file: %s" % (str(e)))
 
     return None
 
@@ -121,7 +121,7 @@ def update_prev_metadata():
         except Exception as e:
             import logging
 
-            logging.error(f"Failed to update previous metadata file: {str(e)}")
+            logging.error("Failed to update previous metadata file: %s" % (str(e)))
 
 
 def get_app_info() -> Optional[Dict[str, Any]]:
@@ -222,17 +222,18 @@ if __name__ == "__main__":
     result = run_audit()
     logging.info("App Store Metadata Audit")
     logging.info("=" * 30)
-    logging.info(f"Timestamp: {result['timestamp']}")
-    logging.info(f"Success: {result['success']}")
+    logging.info("Timestamp: {result["timestamp']}")
+    logging.info("Success: {result["success']}")
     if result["error"]:
-        logging.error(f"Error: {result['error']}")
-    else:
-        logging.info(f"Changed: {result['changed']}")
-        app_info = result.get("appInfo")
+        logging.error("Error: {result["error']}")
+    
+
+    logging.info("Changed: {result["changed']}")
+    app_info = result.get("appInfo")
         if app_info:
-            logging.info(f"Version: {app_info.get('version', 'N/A')}")
-            logging.info(f"Minimum OS: {app_info.get('minimumOsVersion', 'N/A')}")
-            logging.info(f"Seller: {app_info.get('sellerName', 'N/A')}")
-            logging.info(f"Bundle ID: {app_info.get('bundleId', 'N/A')}")
+            logging.info("Version: {app_info.get("version', 'N/A')}")
+            logging.info("Minimum OS: {app_info.get("minimumOsVersion', 'N/A')}")
+            logging.info("Seller: {app_info.get("sellerName', 'N/A')}")
+            logging.info("Bundle ID: {app_info.get("bundleId', 'N/A')}")
         else:
             logging.warning("No app info available")

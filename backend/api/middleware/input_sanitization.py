@@ -107,8 +107,9 @@ class InputSanitizationMiddleware(BaseHTTPMiddleware):
         for key, value in query_params.items():
             if isinstance(value, str):
                 sanitized[key] = self._sanitize_string(value)
-            else:
-                sanitized[key] = value
+            
+
+            sanitized[key] = value
         return sanitized
 
     def _sanitize_json_data(self, data: Any) -> Any:
@@ -119,8 +120,9 @@ class InputSanitizationMiddleware(BaseHTTPMiddleware):
             return [self._sanitize_json_data(item) for item in data]
         elif isinstance(data, str):
             return self._sanitize_string(data)
-        else:
-            return data
+        
+
+        return data
 
     def _sanitize_string(self, text: str) -> str:
         """Sanitize a string by removing dangerous content and encoding HTML"""

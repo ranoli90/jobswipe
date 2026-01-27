@@ -116,7 +116,7 @@ def generate_cover_letter(job_desc: str, profile: dict) -> Optional[str]:
     except Exception as e:
         import logging
 
-        logging.error(f"Error generating cover letter: {str(e)}")
+        logging.error("Error generating cover letter: %s" % (str(e)))
         return None
 
 
@@ -169,5 +169,5 @@ def generate_cover_letter_from_template(
     except Exception as e:
         import logging
 
-        logging.error(f"Error generating cover letter from template: {str(e)}")
+        logging.error("Error generating cover letter from template: %s" % (str(e)))
         return None

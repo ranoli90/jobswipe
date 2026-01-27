@@ -156,20 +156,21 @@ class ApiKeyAuthMiddleware(BaseHTTPMiddleware):
                         error_type = "rate_limit"
                     elif response.status_code >= 500:
                         error_type = "server_error"
-                    else:
-                        error_type = "client_error"
+                    
 
-                service.log_usage(
-                    api_key=api_key_record,
-                    endpoint=path,
-                    method=request.method,
-                    status_code=response.status_code,
-                    request_size=int(request.headers.get("content-length", 0)),
-                    duration_ms=duration_ms,
-                    ip_address=client_ip,
-                    user_agent=user_agent,
-                    error_type=error_type,
-                )
+                    error_type = "client_error"
+
+            service.log_usage(
+                api_key=api_key_record,
+                endpoint=path,
+                method=request.method,
+                status_code=response.status_code,
+                request_size=int(request.headers.get("content-length", 0)),
+                duration_ms=duration_ms,
+                ip_address=client_ip,
+                user_agent=user_agent,
+                error_type=error_type,
+            )
             except Exception as e:
                 # Don't fail the request if logging fails
                 pass

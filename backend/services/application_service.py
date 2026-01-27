@@ -46,8 +46,7 @@ async def create_application_task(
         )
 
         if existing_task:
-            logger.warning(
-                f"Application task already exists for user {user_id} and job {job_id}"
+            logger.warning("Application task already exists for user %s and job %s" % (user_id, job_id)
             )
             return existing_task
 
@@ -163,11 +162,12 @@ async def run_application_task(task_id: str, db=None):
                 resume_path,
                 audit_logger,
             )
-        else:
-            logger.warning("Unknown job source: %s", job.source)
-            task.status = "needs_review"
-            db.add(task)
-            db.commit()
+        
+
+        logger.warning("Unknown job source: %s", job.source)
+        task.status = "needs_review"
+        db.add(task)
+        db.commit()
             return False
 
         # Update task status
@@ -176,8 +176,9 @@ async def run_application_task(task_id: str, db=None):
         if success:
             task.status = "success"
             logger.info("Application task completed successfully: %s", task_id)
-        else:
-            # Check if error is CAPTCHA-related
+        
+
+        # Check if error is CAPTCHA-related
             if "CAPTCHA" in error or "captcha" in error:
                 task.status = "waiting_human"
                 task.last_error = error

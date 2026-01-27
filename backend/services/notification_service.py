@@ -159,20 +159,20 @@ class NotificationService:
             # Get notification template
             template = await self._get_notification_template(notification_type)
             if not template:
-                logger.warning(
-                    f"No template found for notification type: {notification_type}"
+                logger.warning("No template found for notification type: %s" % (notification_type)
                 )
                 # Fall back to basic notification without template
                 rendered_title = self._get_notification_title(notification_type)
                 rendered_message = message
-            else:
-                # Render template with metadata
-                rendered_title = self._render_template(
-                    template.title_template, metadata
-                )
-                rendered_message = self._render_template(
-                    template.message_template, metadata
-                )
+            
+
+            # Render template with metadata
+            rendered_title = self._render_template(
+                template.title_template, metadata
+            )
+            rendered_message = self._render_template(
+                template.message_template, metadata
+            )
 
             # Get user preferences
             preferences = await self._get_user_preferences(user_id)
@@ -238,8 +238,9 @@ class NotificationService:
             if start_time <= end_time:
                 # Same day range
                 return start_time <= now <= end_time
-            else:
-                # Overnight range
+            
+
+            # Overnight range
                 return now >= start_time or now <= end_time
         except Exception as e:
             logger.error("Error checking quiet hours: %s", e)
@@ -351,8 +352,7 @@ class NotificationService:
                     logger.debug("APNs notification sent to device %s", token.device_id)
 
                 except Exception as e:
-                    logger.error(
-                        f"Failed to send APNs notification to device {token.device_id}: {e}"
+                    logger.error("Failed to send APNs notification to device %s: %s" % (token.device_id, e)
                     )
 
         except Exception as e:
@@ -400,8 +400,7 @@ class NotificationService:
             tokens = [token.token for token in device_tokens]
             response = messaging.send_multicast(fcm_message, tokens)
 
-            logger.debug(
-                f"FCM notifications sent: {response.success_count} successful, {response.failure_count} failed"
+            logger.debug("FCM notifications sent: %s successful, %s failed" % (response.success_count, response.failure_count)
             )
 
             # Handle failures (token cleanup, etc.)
@@ -409,8 +408,7 @@ class NotificationService:
                 for i, result in enumerate(response.responses):
                     if not result.success:
                         token = device_tokens[i]
-                        logger.warning(
-                            f"FCM notification failed for device {token.device_id}: {result.exception}"
+                        logger.warning("FCM notification failed for device %s: %s" % (token.device_id, result.exception)
                         )
 
         except Exception as e:
@@ -441,10 +439,11 @@ class NotificationService:
                 html_content = self._render_template(
                     template.email_html_template, metadata
                 )
-            else:
-                subject, html_content = self._get_email_template(
-                    notification_type, message, metadata
-                )
+            
+
+            subject, html_content = self._get_email_template(
+                notification_type, message, metadata
+            )
 
             # Create email
             from_email = Email(os.getenv("FROM_EMAIL", "noreply@jobswipe.com"))
@@ -458,8 +457,7 @@ class NotificationService:
             if response.status_code == 202:
                 logger.debug("Email notification sent to user %s", user_id)
             else:
-                logger.error(
-                    f"Failed to send email to user {user_id}: {response.status_code} - {response.body}"
+                logger.error("Failed to send email to user %s: %s - %s" % (user_id, response.status_code, response.body)
                 )
 
         except Exception as e:
@@ -613,13 +611,12 @@ class NotificationService:
                 notification.read = True
                 notification.read_at = datetime.now()
                 db.commit()
-                logger.debug(
-                    f"Marked notification {notification_id} as read for user {user_id}"
+                logger.debug("Marked notification %s as read for user %s" % (notification_id, user_id)
                 )
-            else:
-                logger.warning(
-                    f"Notification {notification_id} not found for user {user_id}"
-                )
+            
+
+            logger.warning("Notification %s not found for user %s" % (notification_id, user_id)
+            )
         except Exception as e:
             db.rollback()
             logger.error("Failed to mark notification as read: %s", e)
@@ -698,21 +695,21 @@ class NotificationService:
                 existing_token.platform = platform
                 existing_token.app_version = app_version
                 existing_token.last_used = datetime.now()
-            else:
-                # Create new token
-                device_token = DeviceToken(
-                    user_id=user_id,
-                    device_id=device_id,
-                    platform=platform,
-                    token=token,
-                    app_version=app_version,
-                )
-                db.add(device_token)
+            
 
-            db.commit()
-            logger.debug(
-                f"Device token registered for user {user_id}, device {device_id}"
+            # Create new token
+            device_token = DeviceToken(
+                user_id=user_id,
+                device_id=device_id,
+                platform=platform,
+                token=token,
+                app_version=app_version,
             )
+            db.add(device_token)
+
+        db.commit()
+        logger.debug("Device token registered for user %s, device %s" % (user_id, device_id)
+        )
             return True
 
         except Exception as e:
@@ -746,14 +743,13 @@ class NotificationService:
             if token:
                 db.delete(token)
                 db.commit()
-                logger.debug(
-                    f"Device token unregistered for user {user_id}, device {device_id}"
+                logger.debug("Device token unregistered for user %s, device %s" % (user_id, device_id)
                 )
                 return True
-            else:
-                logger.warning(
-                    f"Device token not found for user {user_id}, device {device_id}"
-                )
+            
+
+            logger.warning("Device token not found for user %s, device %s" % (user_id, device_id)
+            )
                 return False
 
         except Exception as e:
@@ -823,13 +819,14 @@ class NotificationService:
                 for key, value in preferences.items():
                     if hasattr(existing_prefs, key):
                         setattr(existing_prefs, key, value)
-            else:
-                # Create new preferences
-                new_prefs = UserNotificationPreferences(user_id=user_id, **preferences)
-                db.add(new_prefs)
+            
 
-            db.commit()
-            logger.debug("Notification preferences updated for user %s", user_id)
+            # Create new preferences
+            new_prefs = UserNotificationPreferences(user_id=user_id, **preferences)
+            db.add(new_prefs)
+
+        db.commit()
+        logger.debug("Notification preferences updated for user %s", user_id)
             return True
 
         except Exception as e:
@@ -852,8 +849,7 @@ class NotificationService:
                     raise
 
                 wait_time = delay * (2**attempt)
-                logger.warning(
-                    f"Operation failed (attempt {attempt + 1}/{max_retries}): {e}. Retrying in {wait_time}s"
+                logger.warning("Operation failed (attempt %s/%s): %s. Retrying in %ss" % (attempt + 1, max_retries, e, wait_time)
                 )
                 await asyncio.sleep(wait_time)
 
