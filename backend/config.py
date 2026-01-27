@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = Field(
         default=60, env="ACCESS_TOKEN_EXPIRE_MINUTES"
     )
+    refresh_token_expire_days: int = Field(
+        default=7, env="REFRESH_TOKEN_EXPIRE_DAYS"
+    )
 
     # Password hashing
     pbkdf2_rounds: int = Field(default=1200000, env="PBKDF2_ROUNDS")

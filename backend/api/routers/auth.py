@@ -99,6 +99,7 @@ class TokenResponse(BaseModel):
     """Response model for login/register with token and user info"""
 
     access_token: str
+    refresh_token: str
     token_type: str
     user: UserResponse
 
@@ -132,7 +133,19 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
         expire = datetime.utcnow() + expires_delta
     else:
         expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
+    to_encode.update({"exp": expire, "type": "access"})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+
+def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None):
+    """Create JWT refresh token with longer expiration"""
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(days=settings.refresh_token_expire_days)
+    to_encode.update({"exp": expire, "type": "refresh"})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
@@ -216,9 +229,12 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
         access_token = create_access_token(
             data={"sub": new_user.email}, expires_delta=access_token_expires
         )
+        # Create refresh token
+        refresh_token = create_refresh_token(data={"sub": new_user.email})
 
         return TokenResponse(
             access_token=access_token,
+            refresh_token=refresh_token,
             token_type="bearer",
             user=UserResponse(
                 id=str(new_user.id),
@@ -354,9 +370,12 @@ async def login(
         access_token = create_access_token(
             data={"sub": user.email}, expires_delta=access_token_expires
         )
+        # Create refresh token
+        refresh_token = create_refresh_token(data={"sub": user.email})
 
         return TokenResponse(
             access_token=access_token,
+            refresh_token=refresh_token,
             token_type="bearer",
             user=UserResponse(
                 id=str(user.id), email=user.email, created_at=user.created_at
@@ -394,6 +413,335 @@ async def get_me(current_user: User = Depends(get_current_user)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get user profile: {str(e)}",
+        )
+
+
+# Request/Response models for new endpoints
+class RefreshTokenRequest(BaseModel):
+    """Request model for token refresh"""
+
+    refresh_token: str
+
+
+class RefreshTokenResponse(BaseModel):
+    """Response model for token refresh"""
+
+    access_token: str
+    refresh_token: str
+    token_type: str
+
+
+class LogoutResponse(BaseModel):
+    """Response model for logout"""
+
+    message: str
+
+
+class EmailVerificationRequest(BaseModel):
+    """Request model for email verification"""
+
+    email: str
+
+
+class VerifyEmailTokenRequest(BaseModel):
+    """Request model for email verification with token"""
+
+    token: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    """Request model for forgot password"""
+
+    email: str
+
+
+class ResetPasswordRequest(BaseModel):
+    """Request model for reset password"""
+
+    token: str
+    new_password: str
+
+
+@router.post("/refresh", response_model=RefreshTokenResponse)
+async def refresh_access_token(
+    request: RefreshTokenRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Refresh access token using refresh token
+
+    Mobile app expects:
+    - POST /v1/auth/refresh
+    - Body: {"refresh_token": "..."}
+    - Returns: {"access_token": "...", "refresh_token": "...", "token_type": "bearer"}
+    """
+    try:
+        # Verify refresh token
+        payload = jwt.decode(
+            request.refresh_token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM]
+        )
+
+        # Check token type
+        if payload.get("type") != "refresh":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token type",
+            )
+
+        email = payload.get("sub")
+
+        if email is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid refresh token",
+            )
+
+        # Get user
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found",
+            )
+
+        # Create new tokens
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": user.email},
+            expires_delta=access_token_expires
+        )
+
+        # Generate new refresh token
+        refresh_token = create_refresh_token(data={"sub": user.email})
+
+        logger.info(f"Token refreshed for user: {user.email}")
+
+        return RefreshTokenResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            token_type="bearer",
+        )
+    except JWTError as e:
+        logger.error(f"Token refresh failed: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid or expired refresh token: {str(e)}",
+        )
+    except Exception as e:
+        logger.error(f"Token refresh error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Token refresh failed: {str(e)}",
+        )
+
+
+@router.post("/logout", response_model=LogoutResponse)
+async def logout(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Logout user and invalidate tokens
+
+    Note: For full token invalidation, implement a token blacklist
+    in Redis or database (not implemented in this basic version)
+    """
+    # In a production system, you would:
+    # 1. Add the access token to a blacklist in Redis
+    # 2. Set an appropriate TTL based on token expiration
+    # For now, we just log the logout event
+    logger.info(f"User logged out: {current_user.email}")
+
+    return {"message": "Successfully logged out"}
+
+
+@router.post("/verify-email")
+async def send_verification_email(
+    request: EmailVerificationRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Send email verification link
+
+    Args:
+        request: EmailVerificationRequest with email
+
+    Returns:
+        Success message
+    """
+    user = db.query(User).filter(User.email == request.email).first()
+
+    # Don't reveal if user exists
+    if not user:
+        logger.info(f"Verification email requested for non-existent email: {request.email}")
+        return {"message": "If the email exists, a verification link has been sent"}
+
+    if user.email_verified:
+        return {"message": "Email is already verified"}
+
+    # Generate verification token
+    verification_token = create_access_token(
+        data={"sub": user.email, "purpose": "email_verification"},
+        expires_delta=timedelta(hours=24)
+    )
+
+    # TODO: Send verification email via notification service
+    # notification_service.send_email_verification(user.email, verification_token)
+
+    logger.info(f"Verification email sent to: {user.email}")
+
+    return {
+        "message": "Verification email sent",
+        "debug_token": verification_token  # Remove in production
+    }
+
+
+@router.post("/verify-email/token")
+async def verify_email_with_token(
+    request: VerifyEmailTokenRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Verify email with token
+
+    Args:
+        request: VerifyEmailTokenRequest with verification token
+
+    Returns:
+        Success message
+    """
+    try:
+        payload = jwt.decode(
+            request.token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM]
+        )
+
+        if payload.get("purpose") != "email_verification":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid verification token",
+            )
+
+        email = payload.get("sub")
+
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid verification token",
+            )
+
+        user.email_verified = True
+        db.commit()
+
+        logger.info(f"Email verified for user: {user.email}")
+
+        return {"message": "Email verified successfully"}
+    except JWTError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid or expired verification token: {str(e)}",
+        )
+
+
+@router.post("/forgot-password")
+async def forgot_password(
+    request: ForgotPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Send password reset email
+
+    Args:
+        request: ForgotPasswordRequest with email
+
+    Returns:
+        Success message
+    """
+    user = db.query(User).filter(User.email == request.email).first()
+
+    # Don't reveal if user exists
+    if not user:
+        logger.info(f"Password reset requested for non-existent email: {request.email}")
+        return {"message": "If the email exists, a reset link has been sent"}
+
+    # Generate reset token
+    reset_token = create_access_token(
+        data={"sub": user.email, "purpose": "password_reset"},
+        expires_delta=timedelta(hours=1)
+    )
+
+    # TODO: Send reset email via notification service
+    # notification_service.send_password_reset(user.email, reset_token)
+
+    logger.info(f"Password reset email sent to: {user.email}")
+
+    return {
+        "message": "Password reset email sent",
+        "debug_token": reset_token  # Remove in production
+    }
+
+
+@router.post("/reset-password")
+async def reset_password(
+    request: ResetPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Reset password with token
+
+    Args:
+        request: ResetPasswordRequest with token and new password
+
+    Returns:
+        Success message
+    """
+    try:
+        payload = jwt.decode(
+            request.token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM]
+        )
+
+        if payload.get("purpose") != "password_reset":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid reset token",
+            )
+
+        email = payload.get("sub")
+
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid reset token",
+            )
+
+        # Validate new password strength
+        password_validator = UserCreate.__validators__['password']
+        try:
+            password_validator(None, request.new_password)
+        except ValueError as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(e),
+            )
+
+        # Update password
+        user.password_hash = get_password_hash(request.new_password)
+        db.commit()
+
+        logger.info(f"Password reset for user: {user.email}")
+
+        return {"message": "Password reset successfully"}
+    except JWTError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid or expired reset token: {str(e)}",
         )
 
 
@@ -493,9 +841,12 @@ async def oauth2_callback(
     access_token = create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
+    # Create refresh token
+    refresh_token = create_refresh_token(data={"sub": user.email})
 
     return TokenResponse(
         access_token=access_token,
+        refresh_token=refresh_token,
         token_type="bearer",
         user=UserResponse(
             id=str(user.id), email=user.email, created_at=user.created_at
