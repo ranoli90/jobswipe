@@ -105,18 +105,20 @@ class NotificationService:
     def email_enabled(self) -> bool:
         return self.sendgrid_client is not None
 
+    # Notification type to title mapping
+    NOTIFICATION_TITLES = {
+        "application_submitted": "Application Submitted",
+        "application_completed": "Application Completed",
+        "application_failed": "Application Failed",
+        "captcha_detected": "Action Required",
+        "job_match_found": "New Job Match",
+        "profile_updated": "Profile Updated",
+        "system_notification": "System Notification",
+    }
+
     def _get_notification_title(self, notification_type: str) -> str:
         """Get human-readable title for notification type"""
-        titles = {
-            "application_submitted": "Application Submitted",
-            "application_completed": "Application Completed",
-            "application_failed": "Application Failed",
-            "captcha_detected": "Action Required",
-            "job_match_found": "New Job Match",
-            "profile_updated": "Profile Updated",
-            "system_notification": "System Notification",
-        }
-        return titles.get(notification_type, "Notification")
+        return self.NOTIFICATION_TITLES.get(notification_type, "Notification")
 
     async def send_notification(
         self,
