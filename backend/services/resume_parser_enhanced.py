@@ -317,14 +317,12 @@ class EnhancedResumeParser:
                 current_exp["company"] = line
             elif re.search(r"\b(?:20|19)\d{2}", line):
                 current_exp["dates"] = line
-            
-
-            if "position" not in current_exp:
+            elif "position" not in current_exp:
                 current_exp["position"] = line
-                else:
-                    if "responsibilities" not in current_exp:
-                        current_exp["responsibilities"] = []
-                    current_exp["responsibilities"].append(line)
+            else:
+                if "responsibilities" not in current_exp:
+                    current_exp["responsibilities"] = []
+                current_exp["responsibilities"].append(line)
 
         if current_exp:
             experiences.append(current_exp)

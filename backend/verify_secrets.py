@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-\"\"\"
+"""
 Production Secrets Verification Script
 
 This script verifies that all required secrets are properly set for production deployment.
 Run this before deploying to production to ensure all security configurations are valid.
-\"\"\"
+"""
 
 import os
 import sys
@@ -38,104 +38,49 @@ FORBIDDEN_VALUES = [
 
 
 def check_secret(name: str, description: str) -> tuple[bool, str]:
-    \"\"\"Check if a secret is properly set.\"\"\"
+    """Check if a secret is properly set."""
     value = os.getenv(name)
     
     if not value:
-        return False, f\"{name} is not set\"
+        return False, f"{name} is not set"
     
     # Check for forbidden placeholder values
-    value_lower = value.lower()
     for forbidden in FORBIDDEN_VALUES:
-        if value_lower.startswith(forbidden):
-            return False, f\"{name} uses forbidden placeholder: {value}\"
+        if forbidden.lower() in value.lower():
+            return False, f"{name} contains forbidden placeholder value: {forbidden}"
     
-    # Check for obviously weak values
+    # Check minimum length (secrets should be reasonably long)
     if len(value) < 16:
-        return False, f\"{name} is too short ({len(value)} chars), minimum 16\"
+        return False, f"{name} is too short (minimum 16 characters)"
     
-    return True, f\"{name} is set\"
+    return True, f"{name} is properly set"
 
 
-def check_optional_secrets() -> list[tuple[str, str, bool]]:
-    \"\"\"Check optional secrets that have defaults.\"\"\"
-    optional = {
-        "REDIS_URL": "Redis connection URL (default: redis://localhost:6379/0)",
-        "CELERY_BROKER_URL": "Celery broker URL (default: redis://localhost:6379/0)",
-        "CELERY_RESULT_BACKEND": "Celery result backend (default: redis://localhost:6379/0)",
-        "VAULT_URL": "Vault server URL (default: http://vault:8200)",
-        "VAULT_TOKEN": "Vault authentication token",
-        "OLLAMA_BASE_URL": "Ollama API URL (default: http://localhost:11434/v1)",
-        "OLLAMA_MODEL": "Ollama model name (default: llama3.2:3b)",
-        "OLLAMA_EMBEDDING_MODEL": "Ollama embedding model (default: nomic-embed-text)",
-    }
-    
-    results = []
-    for name, description in optional.items():
-        value = os.getenv(name)
-        if value:
-            results.append((name, description, True))
-        
-
-        results.append((name, description, False))
-    
-    return results
-
-
-def main():
-    \"\"\"Main verification function.\"\"\"
-    print(\"=\" * 60)
-    print(\"Production Secrets Verification\")
-    print(\"=\" * 60)
-    print()
-    
-    # Check environment
-    env = os.getenv(\"ENVIRONMENT\", \"unknown\")
-    print(f\"Environment: {env}\")
-    print()
-    
-    # Check required secrets
-    print(\"Checking required secrets:\")
-    print(\"-\" * 40)
+def verify_secrets():
+    """Verify all required secrets."""
+    print("🔐 Production Secrets Verification")
+    print("=" * 50)
     
     all_passed = True
+    
     for name, description in REQUIRED_SECRETS.items():
         passed, message = check_secret(name, description)
-        status = \"✅\" if passed else \"❌\"
-        print(f\"{status} {name}: {message}\")
+        status = "✅" if passed else "❌"
+        print(f"{status} {message}")
+        
         if not passed:
             all_passed = False
     
-    print()
+    print("=" * 50)
     
-    # Check optional secrets
-    print(\"Checking optional secrets:\")
-    print(\"-\" * 40)
-    
-    optional_results = check_optional_secrets()
-    for name, description, is_set in optional_results:
-        status = \"✅\" if is_set else \"⚠️\"
-        print(f\"{status} {name}: {'set' if is_set else 'not set (using default)'}\")
-    
-    print()
-    
-    # Summary
-    print(\"=\" * 60)
     if all_passed:
-        print(\"✅ All required secrets are properly configured!\")
+        print("✅ All secrets are properly configured!")
         return 0
-    
-
-    print(\"❌ Some required secrets are missing or invalid!\")
-    print()
-    print(\"To fix, set the missing secrets:\")
-    print(\"  export SECRET_KEY='your-secure-secret-key'\")
-    print(\"  # ... etc\")
-    print()
-    print(\"For Fly.io deployment:\")
-    print(\"  flyctl secrets set SECRET_KEY='your-secure-secret-key' ...\")
+    else:
+        print("❌ Some secrets are missing or improperly configured!")
+        print("\nPlease set the missing secrets before deploying to production.")
         return 1
 
 
-if __name__ == \"__main__\":
-    sys.exit(main())
+if __name__ == "__main__":
+    sys.exit(verify_secrets())

@@ -198,7 +198,7 @@ def cleanup_orphan_notifications(days: int = DEFAULT_ORPHAN_NOTIFICATIONS_DAYS):
             db.query(Notification)
             .filter(Notification.created_at < cutoff)
             .outerjoin(User, Notification.user_id == User.id)
-            .filter(User.id == None)
+            .filter(User.id.is_(None))
         )
 
         deleted = orphan_notifications.count()
@@ -249,7 +249,7 @@ def cleanup_temp_files(hours: int = DEFAULT_TEMP_FILES_HOURS):
                     os.remove(file_path)
                     deleted += 1
                 except Exception as e:
-                    logger.warning("Could not delete %s: %s", ('file_path', 'e'))
+                    logger.warning("Could not delete %s: %s", file_path, e)
 
     logger.info("Cleaned up %s temporary files", deleted)
     return deleted

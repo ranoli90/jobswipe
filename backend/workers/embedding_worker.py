@@ -345,13 +345,13 @@ class EmbeddingQueue:
         task.completed_at = datetime.now(timezone.utc)
         task.error = error
 
-            # Remove from processing set
-            await self._client.zrem(self.PROCESSING_SET, task_id)
+        # Remove from processing set
+        await self._client.zrem(self.PROCESSING_SET, task_id)
 
-            # Store in failed queue
-            await self._client.hset(
-                self.FAILED_QUEUE, task_id, json.dumps(task.to_dict())
-            )
+        # Store in failed queue
+        await self._client.hset(
+            self.FAILED_QUEUE, task_id, json.dumps(task.to_dict())
+        )
             await self._client.expire(self.FAILED_QUEUE, 7 * 24 * 60 * 60)
 
             # Remove from pending queue

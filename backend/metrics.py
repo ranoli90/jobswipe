@@ -323,9 +323,7 @@ except KeyError:
     )
 
 try:
-    notifications_failed_total = REGISTRY._names_to_collectors[
-        "notifications_failed_total"
-    ]
+    notifications_failed_total = REGISTRY._names_to_collectors["notifications_failed_total"]
 except KeyError:
     notifications_failed_total = Counter(
         "notifications_failed_total",

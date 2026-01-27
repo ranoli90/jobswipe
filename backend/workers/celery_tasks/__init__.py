@@ -1,5 +1,6 @@
 """
 Celery Background Tasks
 
-Task modules for async job processing.
+This package contains Celery task definitions for asynchronous processing.
+Tasks include job ingestion, notification delivery, analytics processing, and cleanup operations.
 """

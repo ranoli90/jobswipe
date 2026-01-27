@@ -128,9 +128,8 @@ class EmbeddingCache:
                 self.hits += 1
                 return json.loads(cached)
             
-
             self.misses += 1
-                return None
+            return None
         except Exception as e:
             logger.error("Error getting embedding from cache: %s", e)
             return None

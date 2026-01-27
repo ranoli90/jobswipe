@@ -501,7 +501,7 @@ def parse_resume(file_content: bytes, filename: str) -> dict:
         ai_parsed_data["raw_text"] = text[:1000]  # Truncate for storage
         ai_parsed_data["ai_enhanced"] = True
 
-        logger.info("Successfully parsed resume: {ai_parsed_data.get("full_name', 'Unknown')}"
+        logger.info("Successfully parsed resume: %s", ai_parsed_data.get("full_name", "Unknown"))
         )
 
         return ai_parsed_data

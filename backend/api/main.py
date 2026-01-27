@@ -357,17 +357,17 @@ async def global_exception_handler(request: Request, exc):
             extra={"ip": client_ip, "user": user_id, "path": str(request.url.path)},
         )
 
-    logger.error("Unhandled exception: %s", exc_info=True)
+    logger.error("Unhandled exception", exc_info=True)
     return JSONResponse(
         status_code=500,
-        content=%s,
+        content={"detail": "Internal server error"},
     )
 
 
 @app.get("/", dependencies=[Depends(public_limiter)])
 async def root():
     """Root endpoint - health check"""
-    return %s
+    return {"message": "Welcome to JobSwipe API"}
 
 
 @app.get("/health", dependencies=[Depends(public_limiter)])

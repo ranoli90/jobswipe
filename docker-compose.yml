@@ -151,7 +151,7 @@ services:
           sleep 1
         done
         
-        celery -A workers.app_agent_worker flower --port=5555 --broker=amqp://guest:guest@rabbitmq:5672//
+        celery -A workers.app_agent_worker flower --port=5555 --broker=amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672//
       "
 
   # OpenSearch for search and analytics

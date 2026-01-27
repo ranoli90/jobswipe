@@ -228,7 +228,7 @@ class FileValidationMiddleware(BaseHTTPMiddleware):
         async def receive():
             return {"type": "http.request", "body": body}
 
-        request._receive = receive
+        request._receive = receive  # type: ignore[attr-defined]  # noqa: SLF001
 
         # Try to parse form data and validate files
         try:
@@ -296,16 +296,16 @@ def validate_file(
         return False, f"File size exceeds maximum ({max_size // (1024*1024)}MB)"
 
     # Validate filename
-    valid, error = FileValidationMiddleware._validate_extension.__func__(None, filename)
+    valid, error = FileValidationMiddleware._validate_extension.__func__(None, filename)  # noqa: SLF001
     if not valid:
         return False, error
 
-    valid, error = FileValidationMiddleware._validate_filename(None, filename)
+    valid, error = FileValidationMiddleware._validate_filename(None, filename)  # noqa: SLF001
     if not valid:
         return False, error
 
     # Validate content
-    valid, error = FileValidationMiddleware._validate_content(None, content)
+    valid, error = FileValidationMiddleware._validate_content(None, content)  # noqa: SLF001
     if not valid:
         return False, error
 

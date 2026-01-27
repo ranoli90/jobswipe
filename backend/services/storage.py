@@ -90,10 +90,10 @@ class StorageService:
             return self.get_file_url(file_path)
 
         except S3Error as e:
-            logger.error("Error uploading file %s: %s", ('file_path', 'str(e)'))
+            logger.error("Error uploading file %s: %s", file_path, str(e))
             raise
         except Exception as e:
-            logger.error("Unexpected error uploading file %s: %s", ('file_path', 'str(e)'))
+            logger.error("Unexpected error uploading file %s: %s", file_path, str(e))
             raise
 
     def get_file_url(self, file_path: str) -> str:
@@ -111,7 +111,7 @@ class StorageService:
                 MINIO_BUCKET, file_path, expires=604800
             )
         except Exception as e:
-            logger.error("Error getting file URL for %s: %s", ('file_path', 'str(e)'))
+            logger.error("Error getting file URL for %s: %s", file_path, str(e))
             raise
 
     def download_file(self, file_path: str) -> bytes:
@@ -138,10 +138,10 @@ class StorageService:
             if e.code == "NoSuchKey":
                 logger.warning("File not found: %s", file_path)
                 return None
-            logger.error("Error downloading file %s: %s", ('file_path', 'str(e)'))
+            logger.error("Error downloading file %s: %s", file_path, str(e))
             raise
         except Exception as e:
-            logger.error("Unexpected error downloading file %s: %s", ('file_path', 'str(e)'))
+            logger.error("Unexpected error downloading file %s: %s", file_path, str(e))
             raise
 
     def delete_file(self, file_path: str) -> bool:
@@ -164,10 +164,10 @@ class StorageService:
             if e.code == "NoSuchKey":
                 logger.warning("File not found: %s", file_path)
                 return False
-            logger.error("Error deleting file %s: %s", ('file_path', 'str(e)'))
+            logger.error("Error deleting file %s: %s", file_path, str(e))
             raise
         except Exception as e:
-            logger.error("Unexpected error deleting file %s: %s", ('file_path', 'str(e)'))
+            logger.error("Unexpected error deleting file %s: %s", file_path, str(e))
             raise
 
     def list_files(self, prefix: str = "") -> list:
@@ -187,7 +187,7 @@ class StorageService:
             return [obj.object_name for obj in objects]
 
         except Exception as e:
-            logger.error("Error listing files with prefix %s: %s", ('prefix', 'str(e)'))
+            logger.error("Error listing files with prefix %s: %s", prefix, str(e))
             raise
 
 

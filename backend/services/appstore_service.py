@@ -222,10 +222,10 @@ if __name__ == "__main__":
     result = run_audit()
     logging.info("App Store Metadata Audit")
     logging.info("=" * 30)
-    logging.info("Timestamp: {result["timestamp']}")
-    logging.info("Success: {result["success']}")
+    logging.info("Timestamp: %s", result["timestamp"])
+    logging.info("Success: %s", result["success"])
     if result["error"]:
-        logging.error("Error: {result["error']}")
+        logging.error("Error: %s", result["error"])
     
 
     logging.info("Changed: {result["changed']}")

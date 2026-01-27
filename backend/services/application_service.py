@@ -168,7 +168,13 @@ async def run_application_task(task_id: str, db=None):
         task.status = "needs_review"
         db.add(task)
         db.commit()
-            return False
+        return False
+
+    def _update_task_status(self, task_id: str, success: bool, db: Session) -> None:
+        """Update task status after application attempt."""
+        task = db.query(ApplicationTask).filter(ApplicationTask.id == task_id).first()
+        if not task:
+            return
 
         # Update task status
         task.attempt_count += 1

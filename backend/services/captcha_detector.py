@@ -39,14 +39,6 @@ class CaptchaDetector:
         try:
             # Check if image contains common CAPTCHA patterns
             # This is a simplified implementation - in production, use ML models
-            captcha_patterns = [
-                "captcha",
-                "security check",
-                "verify you are human",
-                "prove you're not a robot",
-                "reCAPTCHA",
-            ]
-
             # In real implementation, you would use OCR or ML models
 
             # For now, return None to indicate no CAPTCHA detected
@@ -108,6 +100,7 @@ class CaptchaDetector:
 
             response = requests.post(
                 "https://2captcha.com/in.php",
+                timeout=30,
                 data={
                     "key": self.api_key,
                     "method": "base64",
@@ -167,7 +160,8 @@ class CaptchaDetector:
         try:
             # Check 2Captcha for results
             response = requests.get(
-                f"https://2captcha.com/res.php?key={self.api_key}&action=get&id={request_id}&json=1"
+                f"https://2captcha.com/res.php?key={self.api_key}&action=get&id={request_id}&json=1",
+                timeout=30
             )
 
             if response.status_code == 200:
@@ -202,7 +196,7 @@ class HumanInTheLoopSystem:
             Task ID for tracking
         """
         try:
-            response = requests.post(f"{self.queue_url}/{task_type}", json=data)
+            response = requests.post(f"{self.queue_url}/{task_type}", json=data, timeout=30)
 
             if response.status_code == 200:
                 result = response.json()

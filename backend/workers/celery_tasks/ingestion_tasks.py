@@ -60,8 +60,7 @@ def ingest_jobs_from_source(self, source_name: str):
                 )
 
                 if existing:
-                    logger.debug("Job {job_data.get("external_id')} already exists, skipping"
-                    )
+                    logger.debug("Job %s already exists, skipping", job_data.get("external_id"))
                     continue
 
                 # Create new job

@@ -186,8 +186,8 @@ async def get_personalized_jobs(
         # Hybrid matching approach
         query = db.query(Job)
 
-            # Rule-based filters
-            if profile.skills:
+        # Rule-based filters
+        if profile.skills:
                 # Filter by skills (simple keyword matching for MVP)
                 skill_filters = [
                     Job.description.ilike("%" + skill + "%") for skill in profile.skills

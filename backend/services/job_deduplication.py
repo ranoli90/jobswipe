@@ -9,7 +9,7 @@ import re
 from datetime import datetime, timedelta
 from typing import Dict, List, Tuple
 
-from thefuzz import fuzz, process
+from thefuzz import fuzz, process  # noqa: F401
 
 from backend.db.database import get_db
 from backend.db.models import Job

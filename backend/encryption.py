@@ -110,15 +110,14 @@ class PIIEncryptor:
         try:
             decrypted = self.fernet.decrypt(encrypted_data.encode())
             result = decrypted.decode()
-            logger.info("AUDIT: PII decryption successful - data length: %s" % (len(result))
-            )
+            logger.info("AUDIT: PII decryption successful - data length: %s", len(result))
             return result
         except InvalidToken as e:
             logger.warning("AUDIT: PII decryption failed - Invalid token - %s", str(e))
-            raise DecryptionError("Failed to decrypt data: invalid token")
+            raise DecryptionError("Failed to decrypt data: invalid token") from e
         except Exception as e:
             logger.warning("AUDIT: PII decryption failed - %s", str(e))
-            raise DecryptionError(f"Failed to decrypt data: {str(e)}")
+            raise DecryptionError(f"Failed to decrypt data: {str(e)}") from e
 
 
 # Global encryptor instance

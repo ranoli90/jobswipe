@@ -13,7 +13,7 @@ from enum import Enum
 from typing import Any, Dict, Optional, Set
 
 from fastapi import WebSocket, WebSocketDisconnect
-from starlette.websockets import WebSocketState
+from starlette.websockets import WebSocketState  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +107,7 @@ class WebSocketManager:
                     self._type_connections[conn_type] = set()
                 self._type_connections[conn_type].add(connection_id)
 
-            logger.info("WebSocket connected: %s (user: %s)", ('connection_id', 'user_id'))
+            logger.info("WebSocket connected: %s (user: %s)", connection_id, user_id)
 
         # Start heartbeat for this connection
         asyncio.create_task(self._heartbeat(connection_id))
@@ -237,7 +237,7 @@ class WebSocketManager:
             await self.disconnect(connection_id)
             return False
         except Exception as e:
-            logger.error("Failed to send message to %s: %s", ('connection_id', 'e'))
+            logger.error("Failed to send message to %s: %s", connection_id, e)
             return False
 
     async def _heartbeat(self, connection_id: str) -> None:
@@ -270,7 +270,7 @@ class WebSocketManager:
                 await self.disconnect(connection_id)
                 return
             except Exception as e:
-                logger.error("Heartbeat failed for %s: %s", ('connection_id', 'e'))
+                logger.error("Heartbeat failed for %s: %s", connection_id, e)
                 await self.disconnect(connection_id)
                 return
 

@@ -20,7 +20,9 @@ from backend.services.application_automation import \
     application_automation_service
 from backend.services.cover_letter_service import cover_letter_service
 from backend.services.domain_service import domain_service
-from backend.services.job_ingestion_service import job_ingestion_service
+from backend.services.job_ingestion_service import (  # noqa: F401
+    job_ingestion_service,
+)
 
 router = APIRouter()
 logger = logging.getLogger(__name__)

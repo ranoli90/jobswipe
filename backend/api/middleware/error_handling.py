@@ -292,10 +292,11 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
         logger.error(log_message, extra=context, exc_info=True)
 
         # Log security-related errors to security logger
-        if status_code in (401, 403):
+        if status_code in {401, 403}:
             security_logger = logging.getLogger("security")
             security_logger.warning(
-                f"Security event: {type(exception).__name__}",
+                "Security event: %s",
+                type(exception).__name__,
                 extra={
                     **context,
                     "event": type(exception).__name__,

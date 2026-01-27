@@ -56,12 +56,10 @@ class SecretsManager:
                 if response and "data" in response and "data" in response["data"]:
                     value = response["data"]["data"].get(key)
                     if value is not None:
-                        logger.info("AUDIT: Secret accessed from Vault - path: %s, key: %s" % (path, key)
-                        )
+                        logger.info("AUDIT: Secret accessed from Vault - path: %s, key: %s", path, key)
                         return value
             except Exception as e:
-                logger.warning("AUDIT: Failed to read secret from Vault - path: %s, key: %s, error: %s" % (path, key, str(e))
-                )
+                logger.warning("AUDIT: Failed to read secret from Vault - path: %s, key: %s, error: %s", path, key, str(e))
 
         # Fallback to environment variables
         env_key = f"{path.replace('/', '_').upper()}_{key.upper()}"
@@ -69,8 +67,7 @@ class SecretsManager:
         if value is not None and value != default:
             logger.info("AUDIT: Secret accessed from environment - key: %s", env_key)
         elif value == default:
-            logger.warning("AUDIT: Secret not found, using default - path: %s, key: %s" % (path, key)
-            )
+            logger.warning("AUDIT: Secret not found, using default - path: %s, key: %s", path, key)
         return value
 
     def set_secret(self, path: str, key: str, value: str):
@@ -87,17 +84,15 @@ class SecretsManager:
                 self.client.secrets.kv.v2.create_or_update_secret(
                     path=path, secret={key: value}
                 )
-                logger.info("AUDIT: Secret set in Vault - path: %s, key: %s", ('path', 'key'))
+                logger.info("AUDIT: Secret set in Vault - path: %s, key: %s", path, key)
                 return
             except Exception as e:
-                logger.warning("AUDIT: Failed to set secret in Vault - path: %s, key: %s, error: %s" % (path, key, str(e))
-                )
+                logger.warning("AUDIT: Failed to set secret in Vault - path: %s, key: %s, error: %s", path, key, str(e))
 
         # Fallback: set environment variable (not persistent)
         env_key = f"{path.replace('/', '_').upper()}_{key.upper()}"
         os.environ[env_key] = value
-        logger.warning("AUDIT: Secret stored in environment variable %s (not persistent)" % (env_key)
-        )
+        logger.warning("AUDIT: Secret stored in environment variable %s (not persistent)", env_key)
 
     def get_encryption_key(self) -> str:
         """Get encryption key for PII data"""

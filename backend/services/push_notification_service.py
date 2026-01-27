@@ -206,13 +206,13 @@ class FCMClient:
                     message_id=response_data.get("name"),
                 )
             error_data = response.json()
-                return PushResult(
-                    success=False,
-                    platform=Platform.ANDROID,
-                    device_token=device_token,
-                    error_code=error_data.get("error", {}).get("code"),
-                    error_message=str(error_data),
-                )
+            return PushResult(
+                success=False,
+                platform=Platform.ANDROID,
+                device_token=device_token,
+                error_code=error_data.get("error", {}).get("code"),
+                error_message=str(error_data),
+            )
         except Exception as e:
             logger.error("FCM send failed: %s", e)
             return PushResult(

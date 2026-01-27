@@ -61,8 +61,8 @@ class InputSanitizationMiddleware(BaseHTTPMiddleware):
                         sanitized_data = self._sanitize_json_data(json_data)
                         # Replace the body with sanitized version
                         sanitized_body = json.dumps(sanitized_data).encode("utf-8")
-                        request._body = sanitized_body
-                    except json.JSONDecodeError:
+                        request._body = sanitized_body  # type: ignore[attr-defined]  # noqa: SLF001
+                    except json.JSONDecodeError as exc:
                         security_logger.warning(
                             "Invalid JSON in request body",
                             extra={
@@ -73,7 +73,7 @@ class InputSanitizationMiddleware(BaseHTTPMiddleware):
                                 "method": request.method,
                             },
                         )
-                        raise HTTPException(status_code=400, detail="Invalid JSON")
+                        raise HTTPException(status_code=400, detail="Invalid JSON") from exc
 
             elif (
                 "multipart/form-data" in content_type
@@ -90,9 +90,10 @@ class InputSanitizationMiddleware(BaseHTTPMiddleware):
             response = await call_next(request)
             return response
 
-        except Exception as e:
+        except Exception as exc:
             security_logger.error(
-                f"Input sanitization error: {str(e)}",
+                "Input sanitization error: %s",
+                str(exc),
                 extra={
                     "ip": request.client.host if request.client else "unknown",
                     "path": str(request.url.path),
@@ -107,21 +108,18 @@ class InputSanitizationMiddleware(BaseHTTPMiddleware):
         for key, value in query_params.items():
             if isinstance(value, str):
                 sanitized[key] = self._sanitize_string(value)
-            
-
-            sanitized[key] = value
+            else:
+                sanitized[key] = value
         return sanitized
 
     def _sanitize_json_data(self, data: Any) -> Any:
         """Recursively sanitize JSON data"""
         if isinstance(data, dict):
             return {key: self._sanitize_json_data(value) for key, value in data.items()}
-        elif isinstance(data, list):
+        if isinstance(data, list):
             return [self._sanitize_json_data(item) for item in data]
-        elif isinstance(data, str):
+        if isinstance(data, str):
             return self._sanitize_string(data)
-        
-
         return data
 
     def _sanitize_string(self, text: str) -> str:
@@ -145,9 +143,10 @@ class InputSanitizationMiddleware(BaseHTTPMiddleware):
             # For simplicity, we'll check in the endpoint where files are processed
             # This is a placeholder for file validation logic
             pass
-        except Exception as e:
+        except Exception as exc:
             security_logger.warning(
-                f"File upload validation error: {str(e)}",
+                "File upload validation error: %s",
+                str(exc),
                 extra={
                     "ip": request.client.host if request.client else "unknown",
                     "path": str(request.url.path),

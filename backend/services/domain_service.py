@@ -51,7 +51,7 @@ class DomainRateLimiter:
         except Exception as e:
             import logging
 
-            logging.error("Error loading domain configurations: %s" % (str(e)))
+            logging.error("Error loading domain configurations: %s", str(e))
             # Use default config if database connection fails
             self.domain_limits = {}
 
@@ -170,7 +170,7 @@ class DomainRateLimiter:
         except Exception as e:
             import logging
 
-            logging.error("Error updating domain status: %s" % (str(e)))
+            logging.error("Error updating domain status: %s", str(e))
 
     def set_rate_limit(self, domain: str, rate_limit_policy: Dict[str, Any]):
         """Set custom rate limit policy for domain"""
@@ -205,7 +205,7 @@ class DomainRateLimiter:
         except Exception as e:
             import logging
 
-            logging.error("Error updating rate limit policy: %s" % (str(e)))
+            logging.error("Error updating rate limit policy: %s", str(e))
 
 
 class DomainService:

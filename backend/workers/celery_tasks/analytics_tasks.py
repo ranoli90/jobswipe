@@ -335,7 +335,7 @@ def calculate_user_engagement_scores():
 
     db.commit()
     logger.info("Calculated engagement scores for %s users", processed)
-        return processed
+    return processed
 
     except Exception as e:
         logger.error("Error calculating engagement scores: %s", e)

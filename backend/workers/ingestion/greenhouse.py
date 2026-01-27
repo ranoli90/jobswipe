@@ -144,15 +144,14 @@ def update_or_create_job(greenhouse_job: GreenhouseJob, db) -> Job:
         existing_job.apply_url = normalized_job["apply_url"]
         existing_job.updated_at = datetime.now(timezone.utc)
         db.add(existing_job)
-        logger.info("Updated Greenhouse job: {normalized_job["title']} ({normalized_job['external_id']})"
-        )
+        logger.info("Updated Greenhouse job: %s (%s)", normalized_job["title"], normalized_job["external_id"])
         return existing_job
     
 
     # Create new job
     new_job = Job(**normalized_job)
     db.add(new_job)
-    logger.info("Created new Greenhouse job: {normalized_job["title']} ({normalized_job['external_id']})"
+    logger.info("Created new Greenhouse job: %s (%s)", normalized_job["title"], normalized_job["external_id"])
     )
         return new_job
 

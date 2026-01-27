@@ -1,5 +1,8 @@
 """
 Services package
+
+This package contains all service layer implementations for the JobSwipe application.
+Services handle business logic, external API integrations, and data processing.
 """
 
 from .analytics_service import AnalyticsService

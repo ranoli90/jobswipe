@@ -511,8 +511,7 @@ class ApplicationAutomationService:
 
                 # Queue for human resolution
                 if "human_task_id" in captcha_details:
-                    logger.info("CAPTCHA queued for human resolution (Task ID: {captcha_details["human_task_id']})"
-                    )
+                    logger.info("CAPTCHA queued for human resolution (Task ID: %s)", captcha_details["human_task_id"])
 
                 # Send notification to user
                 await self._send_user_notification(

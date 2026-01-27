@@ -62,24 +62,24 @@ class CompressionMiddleware(BaseHTTPMiddleware):
         content_type = content_type.lower().split(";")[0].strip()
 
         # Check if it's a compressible type
-        for compressible in self.COMPRESSIBLE_TYPES:
-            if content_type.startswith(compressible):
-                return True
+        if any(
+            content_type.startswith(compressible)
+            for compressible in self.COMPRESSIBLE_TYPES
+        ):
+            return True
 
         # Check if it's a text-based type
-        for text_type in self.TEXT_TYPES:
-            if content_type.startswith(text_type):
-                return True
-
-        return False
+        return any(
+            content_type.startswith(text_type) for text_type in self.TEXT_TYPES
+        )
 
     def _get_accept_encoding(self, request: Request) -> str:
         """Get the preferred encoding from Accept-Encoding header"""
         accept_encoding = request.headers.get("Accept-Encoding", "")
 
-        if "br" in accept_encoding and self.compression_type in ("brotli", "auto"):
+        if "br" in accept_encoding and self.compression_type in {"brotli", "auto"}:
             return "br"
-        elif "gzip" in accept_encoding:
+        if "gzip" in accept_encoding:
             return "gzip"
         return ""
 
@@ -142,7 +142,7 @@ class CompressionMiddleware(BaseHTTPMiddleware):
                 response.body = compressed_body
 
         except Exception as e:
-            logger.warning("Compression failed for %s: %s", ('request.url.path', 'e'))
+            logger.warning("Compression failed for %s: %s", request.url.path, e)
             # Fall back to uncompressed response
 
         return response

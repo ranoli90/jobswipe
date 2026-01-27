@@ -6,7 +6,7 @@ Provides secure API key generation, validation, and management for internal serv
 
 import logging
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from passlib.context import CryptContext
@@ -163,7 +163,7 @@ class ApiKeyService:
         self.db.commit()
         self.db.refresh(api_key)
 
-        logger.info("Created API key: %s for service: %s", ('prefix', 'service_type'))
+        logger.info("Created API key: %s for service: %s", prefix, service_type)
 
         return {
             "id": str(api_key.id),
@@ -332,9 +332,7 @@ class ApiKeyService:
         Returns:
             Tuple of (is_allowed, current_count)
         """
-        from datetime import datetime, timedelta
-
-        one_hour_ago = datetime.now(timezone.utc) - timedelta(hours=1)
+        one_hour_ago = datetime.now(timezone.utc) - timedelta(hours=1)  # noqa: F821
 
         # Count requests in the last hour
         result = self.db.execute(

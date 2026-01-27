@@ -505,12 +505,10 @@ class JobIngestionService:
             success_count += 1
 
             except Exception as e:
-                logger.error("Failed to process job {job.get("title', 'Unknown')}: {e}"
-                )
+                logger.error("Failed to process job %s: %s", job.get("title", "Unknown"), e)
                 failed_count += 1
 
-        logger.info("Batch processed: %s succeeded, %s failed" % (success_count, failed_count)
-        )
+        logger.info("Batch processed: %s succeeded, %s failed", success_count, failed_count)
         return success_count, failed_count
 
     async def kafka_consumer_loop(self):

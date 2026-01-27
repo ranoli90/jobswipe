@@ -142,12 +142,12 @@ class RequestDeduplicationMiddleware(BaseHTTPMiddleware):
 
         # Fallback to local cache
         current_time = time.time()
-            if signature in self._local_cache:
-                # Check if cache entry is still valid
-                cached_time = self._local_cache.get(signature, 0)
-                if current_time - cached_time < self.CACHE_TTL:
-                    return JSONResponse(
-                        status_code=409,
+        if signature in self._local_cache:
+            # Check if cache entry is still valid
+            cached_time = self._local_cache.get(signature, 0)
+            if current_time - cached_time < self.CACHE_TTL:
+                return JSONResponse(
+                    status_code=409,
                         content={
                             "detail": "Duplicate request detected",
                             "message": "A similar request was processed recently. Please try again.",

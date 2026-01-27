@@ -35,7 +35,7 @@ def send_email_notification(
             return {"status": "failed", "reason": "User not found"}
 
         # Log notification (in production, integrate with email service like SendGrid, SES, etc.)
-        logger.info("Sending email to %s: %s", ('user.email', 'subject'))
+        logger.info("Sending email to %s: %s", user.email, subject)
 
         # Create notification record
         notification = Notification(
@@ -51,7 +51,7 @@ def send_email_notification(
         return {"status": "sent", "user_id": user_id, "email": user.email}
 
     except Exception as e:
-        logger.error("Failed to send email notification to %s: %s", ('user_id', 'e'))
+        logger.error("Failed to send email notification to %s: %s", user_id, e)
         raise self.retry(exc=e)
     finally:
         db.close()
@@ -84,7 +84,7 @@ def send_push_notification(
             return {"status": "skipped", "reason": "Push disabled"}
 
         # In production, integrate with FCM, APNS, etc.
-        logger.info("Sending push to user %s: %s", ('user_id', 'title'))
+        logger.info("Sending push to user %s: %s", user_id, title)
 
         # Create notification record
         notification = Notification(
@@ -101,7 +101,7 @@ def send_push_notification(
         return {"status": "sent", "user_id": user_id}
 
     except Exception as e:
-        logger.error("Failed to send push notification to %s: %s", ('user_id', 'e'))
+        logger.error("Failed to send push notification to %s: %s", user_id, e)
         raise self.retry(exc=e)
     finally:
         db.close()

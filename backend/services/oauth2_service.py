@@ -13,7 +13,6 @@ import redis
 from authlib.integrations.httpx_client import AsyncOAuth2Client
 
 from backend.config import settings
-from backend.config import settings as app_settings
 from backend.vault_secrets import get_secret
 
 logger = logging.getLogger(__name__)
@@ -147,7 +146,7 @@ class OAuth2Service:
             )
 
             # Exchange code for token
-            token = await client.fetch_token(config["access_token_url"], code=code)
+            await client.fetch_token(config["access_token_url"], code=code)
 
             # Get user info
             user_info = await client.get(config["userinfo_url"])
@@ -156,7 +155,7 @@ class OAuth2Service:
             return self._normalize_user_info(provider, user_info.json())
 
         except Exception as e:
-            logger.error("OAuth2 error for %s: %s", ('provider', 'e'))
+            logger.error("OAuth2 error for %s: %s", provider, e)
             return None
 
     def _normalize_user_info(
@@ -183,7 +182,7 @@ class OAuth2Service:
                 "last_name": user_info.get("family_name"),
                 "picture": user_info.get("picture"),
             }
-        elif provider == "linkedin":
+        if provider == "linkedin":
             return {
                 "provider": "linkedin",
                 "provider_id": user_info.get("id"),

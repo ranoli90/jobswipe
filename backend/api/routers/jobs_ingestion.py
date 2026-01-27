@@ -15,8 +15,10 @@ from pydantic import BaseModel
 from backend.api.routers.auth import get_current_user
 from backend.config import settings
 from backend.db.models import User
-from backend.services.job_ingestion_service import (ingest_jobs_once,
-                                                    job_ingestion_service)
+from backend.services.job_ingestion_service import (  # noqa: F401
+    ingest_jobs_once,
+    job_ingestion_service,
+)
 
 router = APIRouter()
 logger = logging.getLogger(__name__)

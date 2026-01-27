@@ -12,9 +12,9 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic
 revision = "005"
-down_revision = "004"
-branch_labels = None
-depends_on = None
+down_revision = "004"  # noqa: F841 - Required by Alembic
+branch_labels = None  # noqa: F841 - Required by Alembic
+depends_on = None  # noqa: F841 - Required by Alembic
 
 
 def upgrade():

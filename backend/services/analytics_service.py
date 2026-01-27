@@ -398,16 +398,15 @@ class AnalyticsService:
             return "Sales"
         elif "manager" in title_lower:
             return "Other"
-        
 
         return "Other"
 
-async def export_report(self, report_type: str, format: str = "json") -> str:
-    """
-    Export report in specified format.
+    async def export_report(self, report_type: str, format: str = "json") -> str:
+        """
+        Export report in specified format.
 
-    Args:
-        report_type: Type of report to export
+        Args:
+            report_type: Type of report to export
             format: Export format (json, csv, html)
 
         Returns:

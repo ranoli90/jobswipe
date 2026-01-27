@@ -695,21 +695,19 @@ class NotificationService:
                 existing_token.platform = platform
                 existing_token.app_version = app_version
                 existing_token.last_used = datetime.now()
-            
+            else:
+                # Create new token
+                device_token = DeviceToken(
+                    user_id=user_id,
+                    device_id=device_id,
+                    platform=platform,
+                    token=token,
+                    app_version=app_version,
+                )
+                db.add(device_token)
 
-            # Create new token
-            device_token = DeviceToken(
-                user_id=user_id,
-                device_id=device_id,
-                platform=platform,
-                token=token,
-                app_version=app_version,
-            )
-            db.add(device_token)
-
-        db.commit()
-        logger.debug("Device token registered for user %s, device %s" % (user_id, device_id)
-        )
+            db.commit()
+            logger.debug("Device token registered for user %s, device %s", user_id, device_id)
             return True
 
         except Exception as e:
