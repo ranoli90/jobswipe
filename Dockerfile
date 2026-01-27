@@ -1,34 +1,55 @@
-FROM python:3.12-slim-bullseye
+# Multi-stage build for optimization
+FROM python:3.12-slim-bullseye AS base
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+# Install system dependencies in one layer
+RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
     curl \
     gnupg \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Node.js for Playwright dependencies
+# Install Node.js for Playwright
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs && \
+    apt-get install -y --no-install-recommends nodejs && \
     rm -rf /var/lib/apt/lists/*
 
-# Install Playwright browsers
+# Install Playwright (lighter version, chromium only)
 RUN npm install -g playwright@1.40.0 && \
-    playwright install --with-deps chromium && \
+    playwright install chromium && \
     npm cache clean --force
 
-# Copy requirements and install Python dependencies
+# Python dependencies stage
+FROM base AS python-deps
+
+# Copy only requirements file
 COPY backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt && \
+
+# Install Python dependencies with optimizations
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt && \
     pip cache purge
 
-# Copy only backend directory
+# Final stage
+FROM python:3.12-slim-bullseye AS final
+
+WORKDIR /app
+
+# Copy system dependencies and Node.js from base
+COPY --from=base /usr/local /usr/local
+COPY --from=base /usr/lib /usr/lib
+COPY --from=base /usr/include /usr/include
+
+# Copy Python packages from python-deps
+COPY --from=python-deps /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=python-deps /usr/local/bin /usr/local/bin
+
+# Copy only backend application code
 COPY backend/ .
 
-# Create non-root user for security
+# Create non-root user
 RUN useradd -m -u 1000 appuser && \
     chown -R appuser:appuser /app
 
