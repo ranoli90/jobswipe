@@ -502,8 +502,7 @@ class JobIngestionService:
                 # Process directly if Kafka not available
                 await self.process_job(job)
 
-            success_count += 1
-
+                success_count += 1
             except Exception as e:
                 logger.error("Failed to process job %s: %s", job.get("title", "Unknown"), e)
                 failed_count += 1

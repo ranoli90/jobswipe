@@ -401,11 +401,10 @@ class EnhancedResumeParser:
                 text = EnhancedResumeParser.extract_text_from_pdf(file_content)
             elif filename.lower().endswith(".docx"):
                 text = EnhancedResumeParser.extract_text_from_docx(file_content)
-            
+            else:
+                raise ValueError(f"Unsupported file type: {filename}")
 
-            raise ValueError(f"Unsupported file type: {filename}")
-
-        logger.info("Extracted %s characters from resume", len(text))
+            logger.info("Extracted %s characters from resume", len(text))
 
             # Parse basic information
             basic_info = EnhancedResumeParser.parse_basic_info(text)

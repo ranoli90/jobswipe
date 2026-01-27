@@ -188,18 +188,18 @@ async def get_personalized_jobs(
 
         # Rule-based filters
         if profile.skills:
-                # Filter by skills (simple keyword matching for MVP)
-                skill_filters = [
-                    Job.description.ilike("%" + skill + "%") for skill in profile.skills
-                ]
-                if skill_filters:
-                    query = query.filter(or_(*skill_filters))
+            # Filter by skills (simple keyword matching for MVP)
+            skill_filters = [
+                Job.description.ilike("%" + skill + "%") for skill in profile.skills
+            ]
+            if skill_filters:
+                query = query.filter(or_(*skill_filters))
 
-            if profile.location:
-                # Filter by location proximity (simple string matching for MVP)
-                query = query.filter(Job.location.ilike("%" + profile.location + "%"))
+        if profile.location:
+            # Filter by location proximity (simple string matching for MVP)
+            query = query.filter(Job.location.ilike("%" + profile.location + "%"))
 
-            query = query.order_by(Job.created_at.desc())
+        query = query.order_by(Job.created_at.desc())
 
         # Exclude jobs user has already interacted with
         interacted_job_ids = [

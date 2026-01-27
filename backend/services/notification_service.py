@@ -746,9 +746,8 @@ class NotificationService:
                 return True
             
 
-            logger.warning("Device token not found for user %s, device %s" % (user_id, device_id)
-            )
-                return False
+            logger.warning("Device token not found for user %s, device %s", user_id, device_id)
+            return False
 
         except Exception as e:
             db.rollback()

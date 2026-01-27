@@ -228,11 +228,11 @@ if __name__ == "__main__":
         logging.error("Error: %s", result["error"])
     
 
-    logging.info("Changed: {result["changed']}")
+    logging.info("Changed: %s", result.get("changed"))
     app_info = result.get("appInfo")
-        if app_info:
-            logging.info("Version: {app_info.get("version', 'N/A')}")
-            logging.info("Minimum OS: {app_info.get("minimumOsVersion', 'N/A')}")
+    if app_info:
+        logging.info("Version: %s", app_info.get("version", "N/A"))
+        logging.info("Minimum OS: %s", app_info.get("minimumOsVersion", "N/A"))
             logging.info("Seller: {app_info.get("sellerName', 'N/A')}")
             logging.info("Bundle ID: {app_info.get("bundleId', 'N/A')}")
         else:

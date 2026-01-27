@@ -289,7 +289,7 @@ class EmbeddingCache:
 
             # Count successful operations
             cached_count = sum(1 for result in results if result)
-            logger.info("Cached %s/%s embeddings", ('cached_count', 'len(embeddings)'))
+            logger.info("Cached %s/%s embeddings", cached_count, len(embeddings))
             return cached_count
         except Exception as e:
             logger.error("Error in batch embedding set: %s", e)

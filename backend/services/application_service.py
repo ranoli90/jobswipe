@@ -170,7 +170,7 @@ async def run_application_task(task_id: str, db=None):
         db.commit()
         return False
 
-    def _update_task_status(self, task_id: str, success: bool, db: Session) -> None:
+    def _update_task_status(self, task_id: str, success: bool, db: Session, error: str = None) -> None:
         """Update task status after application attempt."""
         task = db.query(ApplicationTask).filter(ApplicationTask.id == task_id).first()
         if not task:
@@ -182,17 +182,16 @@ async def run_application_task(task_id: str, db=None):
         if success:
             task.status = "success"
             logger.info("Application task completed successfully: %s", task_id)
-        
-
-        # Check if error is CAPTCHA-related
-            if "CAPTCHA" in error or "captcha" in error:
+        else:
+            # Check if error is CAPTCHA-related
+            if error and ("CAPTCHA" in error or "captcha" in error):
                 task.status = "waiting_human"
                 task.last_error = error
-                logger.warning("CAPTCHA detected for task %s: %s", ('task_id', 'error'))
+                logger.warning("CAPTCHA detected for task %s: %s", task_id, error)
             else:
                 task.status = "failed"
                 task.last_error = error
-                logger.error("Application task failed: %s - %s", ('task_id', 'error'))
+                logger.error("Application task failed: %s - %s", task_id, error)
 
         # Save audit logs
         for log_entry in audit_logger.get_logs():

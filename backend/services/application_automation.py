@@ -88,10 +88,10 @@ class ApplicationAutomationService:
             await self.page.wait_for_selector(selector, timeout=10000)
             await self.page.fill(selector, value)
             await self.page.wait_for_timeout(500)  # Add human-like delay
-            logger.debug("Filled field %s with value: %s", ('selector', 'value'))
+            logger.debug("Filled field %s with value: %s", selector, value)
 
         except Exception as e:
-            logger.warning("Failed to fill field %s: %s", ('selector', 'e'))
+            logger.warning("Failed to fill field %s: %s", selector, e)
 
     async def click_element(self, selector: str):
         """Click on an element"""
@@ -102,7 +102,7 @@ class ApplicationAutomationService:
             logger.debug("Clicked element: %s", selector)
 
         except Exception as e:
-            logger.warning("Failed to click element %s: %s", ('selector', 'e'))
+            logger.warning("Failed to click element %s: %s", selector, e)
 
     async def check_for_captcha(self) -> Optional[Dict]:
         """Check if page contains CAPTCHA
@@ -185,10 +185,10 @@ class ApplicationAutomationService:
             await self.page.wait_for_selector(selector, timeout=10000)
             await self.page.select_option(selector, value)
             await self.page.wait_for_timeout(500)
-            logger.debug("Selected %s from %s", ('value', 'selector'))
+            logger.debug("Selected %s from %s", value, selector)
 
         except Exception as e:
-            logger.warning("Failed to select dropdown %s: %s", ('selector', 'e'))
+            logger.warning("Failed to select dropdown %s: %s", selector, e)
 
     async def fill_checkboxes(self, selectors: List[str]):
         """Fill multiple checkboxes"""
@@ -201,7 +201,7 @@ class ApplicationAutomationService:
                 logger.debug("Handled checkbox: %s", selector)
 
             except Exception as e:
-                logger.warning("Failed to handle checkbox %s: %s", ('selector', 'e'))
+                logger.warning("Failed to handle checkbox %s: %s", selector, e)
 
     async def upload_file(self, selector: str, file_path: str):
         """Upload file using file input"""
@@ -212,7 +212,7 @@ class ApplicationAutomationService:
             logger.debug("Uploaded file: %s", file_path)
 
         except Exception as e:
-            logger.warning("Failed to upload file %s: %s", ('file_path', 'e'))
+            logger.warning("Failed to upload file %s: %s", file_path, e)
 
     async def submit_form(self, selector: str = "button[type='submit']"):
         """Submit form by clicking submit button"""
@@ -271,7 +271,7 @@ class ApplicationAutomationService:
             logger.debug("Page loaded successfully")
 
         except Exception as e:
-            logger.error("Failed to navigate to %s: %s", ('apply_url', 'e'))
+            logger.error("Failed to navigate to %s: %s", apply_url, e)
             raise
 
     async def extract_form_fields(self) -> Dict[str, List[str]]:
@@ -676,12 +676,12 @@ class ApplicationAutomationService:
             db.add(task)
             db.commit()
 
-            logger.info("Task completed: %s - Status: %s", ('task.id', 'task.status'))
+            logger.info("Task completed: %s - Status: %s", task.id, task.status)
 
             return result
 
         except Exception as e:
-            logger.error("Task failed: %s - Error: %s", ('task.id', 'e'))
+            logger.error("Task failed: %s - Error: %s", task.id, e)
 
             task.status = "failed"
             task.attempt_count += 1
