@@ -7,8 +7,6 @@ app = 'jobswipe-9obhra'
 primary_region = 'iad'
 
 [build]
-  # Use Depot for faster builds
-  builder = "depot/fly-builder"
 
 [http_service]
   internal_port = 8080
