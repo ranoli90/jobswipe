@@ -48,6 +48,9 @@ class User(Base):
     status = Column(String, default="active")
     created_at = Column(DateTime, default=datetime.utcnow)
 
+    # Email verification
+    email_verified = Column(Boolean, default=False)
+
     # MFA fields
     mfa_enabled = Column(Boolean, default=False)
     mfa_secret = Column(String)
