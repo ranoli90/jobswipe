@@ -17,6 +17,9 @@ from backend.db.models import ApiKey, ApiKeyUsageLog, User
 
 logger = logging.getLogger(__name__)
 
+# Valid service types for API keys
+VALID_SERVICE_TYPES = ["ingestion", "automation", "analytics", "webhook"]
+
 # Password hashing context using bcrypt
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -137,6 +140,12 @@ class ApiKeyService:
         Returns:
             Dict containing the new API key details (including the plain key)
         """
+        # Validate service type
+        if service_type not in VALID_SERVICE_TYPES:
+            raise ValueError(
+                f"Invalid service_type. Must be one of: {VALID_SERVICE_TYPES}"
+            )
+            
         # Generate new key
         display_key, key_hash = self.generate_key()
         prefix = display_key[: self.KEY_PREFIX_LENGTH]

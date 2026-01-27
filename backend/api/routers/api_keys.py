@@ -52,6 +52,10 @@ class ApiKeyWithKeyResponse(ApiKeyResponse):
     key: str  # Only returned once at creation
 
 
+# Valid service types for API keys
+VALID_SERVICE_TYPES = ["ingestion", "automation", "analytics", "webhook"]
+
+
 @router.post(
     "/", response_model=ApiKeyWithKeyResponse, status_code=status.HTTP_201_CREATED
 )
@@ -66,11 +70,10 @@ async def create_api_key(
     The API key is only returned once at creation time. Store it securely.
     """
     # Validate service type
-    valid_service_types = ["ingestion", "automation", "analytics", "webhook"]
-    if request.service_type not in valid_service_types:
+    if request.service_type not in VALID_SERVICE_TYPES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid service_type. Must be one of: {valid_service_types}",
+            detail=f"Invalid service_type. Must be one of: {VALID_SERVICE_TYPES}",
         )
 
     # Check if user has admin permissions
