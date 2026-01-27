@@ -219,7 +219,7 @@ class HumanInTheLoopSystem:
             Dict with status and result
         """
         try:
-            response = requests.get(f"{self.queue_url}/task/{task_id}")
+            response = requests.get(f"{self.queue_url}/task/{task_id}", timeout=30)
 
             if response.status_code == 200:
                 return response.json()
