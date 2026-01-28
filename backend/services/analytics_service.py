@@ -13,10 +13,10 @@ from typing import Dict, List, Optional
 import numpy as np
 import pandas as pd
 
-from db.database import get_db
-from db.models import ApplicationTask, Job, User, UserJobInteraction
-from services.matching import calculate_job_score
-from services.openai_service import OpenAIService
+from backend.db.database import get_db
+from backend.db.models import ApplicationTask, Job, User, UserJobInteraction
+from backend.services.matching import calculate_job_score
+from backend.services.openai_service import OpenAIService
 
 logger = logging.getLogger(__name__)
 
