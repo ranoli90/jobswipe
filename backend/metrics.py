@@ -689,7 +689,7 @@ def get_metrics_score_range(score: float) -> str:
     return "0.8-1.0"
 
 
-async def metrics_endpoint():
+def metrics_endpoint():
     """Prometheus metrics endpoint"""
     return Response(media_type="text/plain; charset=utf-8", content=generate_latest())
 

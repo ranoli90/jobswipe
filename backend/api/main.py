@@ -24,7 +24,7 @@ from pythonjsonlogger import jsonlogger
 
 # Try to import settings with proper error handling
 try:
-    from backend.config import Settings
+    from config import Settings
     settings = Settings()
 except Exception as e:
     # Log to stderr before logging is configured
@@ -33,21 +33,21 @@ except Exception as e:
     print("Required variables: DATABASE_URL, SECRET_KEY, ENCRYPTION_PASSWORD, ENCRYPTION_SALT, OAUTH_STATE_SECRET", file=sys.stderr)
     sys.exit(1)
 
-from backend.api.middleware.compression import add_compression_middleware
-from backend.api.middleware.error_handling import add_error_handling_middleware
-from backend.api.middleware.file_validation import \
+from api.middleware.compression import add_compression_middleware
+from api.middleware.error_handling import add_error_handling_middleware
+from api.middleware.file_validation import \
     add_file_validation_middleware
-from backend.api.middleware.input_sanitization import \
+from api.middleware.input_sanitization import \
     InputSanitizationMiddleware
-from backend.api.middleware.output_encoding import OutputEncodingMiddleware
-from backend.api.routers import (analytics, application_automation,
-                                 applications, auth, job_categorization,
-                                 job_deduplication, jobs, jobs_ingestion,
-                                 notifications, profile, api_keys)
-from backend.db.database import get_db
-from backend.metrics import MetricsMiddleware, metrics_endpoint
-from backend.services.embedding_service import EmbeddingService
-from backend.tracing import setup_tracing
+from api.middleware.output_encoding import OutputEncodingMiddleware
+from api.routers import (analytics, application_automation,
+                         applications, auth, job_categorization,
+                         job_deduplication, jobs, jobs_ingestion,
+                         notifications, profile, api_keys)
+from db.database import get_db, engine
+from metrics import MetricsMiddleware, metrics_endpoint
+from services.embedding_service import EmbeddingService
+from tracing import setup_tracing
 
 # Configure structured logging
 log_level = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -182,6 +182,8 @@ app = FastAPI(
 # Setup rate limiting with Redis
 @app.on_event("startup")
 async def startup():
+    global redis_instance
+    redis_instance = None
     # Validate environment configuration on startup
     logger.info("Validating environment configuration...")
     try:
@@ -204,6 +206,17 @@ async def startup():
         logger.error("Failed to initialize Redis rate limiter: %s", e)
         logger.warning("Continuing without rate limiting - Redis unavailable")
         # Don't raise - allow app to start without Redis
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    global redis_instance
+    if redis_instance:
+        await redis_instance.close()
+        logger.info("Redis connection closed gracefully")
+    engine.dispose()
+    logger.info("Database engine disposed gracefully")
+    logger.info("Application shutdown complete")
 
 
 # Rate limiters
@@ -358,9 +371,9 @@ async def readiness_check():
 
 
 @app.get("/metrics")
-async def metrics():
+def metrics():
     """Prometheus metrics endpoint."""
-    return await metrics_endpoint()
+    return metrics_endpoint()
 
 
 @app.get("/")
