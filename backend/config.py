@@ -2,7 +2,7 @@ import os
 import secrets
 import warnings
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, ConfigDict
 from pydantic_settings import BaseSettings
 
 # Default Redis URL constant to avoid duplication
@@ -97,10 +97,11 @@ class Settings(BaseSettings):
         env="CORS_ALLOW_HEADERS",
     )
 
-    class Config:
-        env_file = os.getenv("ENV_FILE", ".env")
-        env_file_encoding = "utf-8"
-        extra = "ignore"
+    model_config = ConfigDict(
+        env_file=os.getenv("ENV_FILE", ".env"),
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
     @field_validator(
         "secret_key",
@@ -195,6 +196,18 @@ class Settings(BaseSettings):
 
 # Create settings instance with error handling for better debugging
 try:
+    # Debug logging for environment variables in production
+    import logging
+    logger = logging.getLogger(__name__)
+    env = os.getenv("ENVIRONMENT", "development")
+    if env == "production":
+        logger.warning("Environment variables check:")
+        for var in ["VAULT_TOKEN", "ANALYTICS_API_KEY", "INGESTION_API_KEY", "DEDUPLICATION_API_KEY", "CATEGORIZATION_API_KEY", "AUTOMATION_API_KEY"]:
+            value = os.getenv(var)
+            if value:
+                logger.warning(f"{var}: set (length {len(value)})")
+            else:
+                logger.warning(f"{var}: not set")
     settings = Settings()
 except Exception as e:
     import logging
