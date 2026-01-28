@@ -19,7 +19,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi_limiter import FastAPILimiter
 from fastapi_limiter.depends import RateLimiter
-from fastapi_limiter.exceptions import RateLimitExceeded
 from pythonjsonlogger import jsonlogger
 
 from backend.api.middleware.compression import add_compression_middleware
@@ -207,34 +206,37 @@ public_limiter = RateLimiter(
 
 
 # Rate limit exception handler
-@app.exception_handler(RateLimitExceeded)
-async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
-    client_ip = request.client.host if request.client else "unknown"
-    user_id = (
-        getattr(request.state, "user_id", "anonymous")
-        if hasattr(request.state, "user_id")
-        else "anonymous"
-    )
+@app.exception_handler(HTTPException)
+async def rate_limit_exceeded_handler(request: Request, exc: HTTPException):
+    if exc.status_code == 429:
+        client_ip = request.client.host if request.client else "unknown"
+        user_id = (
+            getattr(request.state, "user_id", "anonymous")
+            if hasattr(request.state, "user_id")
+            else "anonymous"
+        )
 
-    # Log rate limit violation
-    security_logger.warning(
-        "Rate limit exceeded",
-        extra={
-            "ip": client_ip,
-            "user": user_id,
-            "path": str(request.url.path),
-            "method": request.method,
-        },
-    )
+        # Log rate limit violation
+        security_logger.warning(
+            "Rate limit exceeded",
+            extra={
+                "ip": client_ip,
+                "user": user_id,
+                "path": str(request.url.path),
+                "method": request.method,
+            },
+        )
 
-    # Calculate retry-after (assume 60 seconds for simplicity, or get from exc if available)
-    retry_after = 60  # seconds
+        # Calculate retry-after (assume 60 seconds for simplicity, or get from exc if available)
+        retry_after = 60  # seconds
 
-    return JSONResponse(
-        status_code=429,
-        content={"detail": "Too many requests"},
-        headers={"Retry-After": str(retry_after)},
-    )
+        return JSONResponse(
+            status_code=429,
+            content={"detail": "Too many requests"},
+            headers={"Retry-After": str(retry_after)},
+        )
+    # For other HTTPExceptions, re-raise them
+    raise exc
 
 
 # Setup OpenTelemetry tracing
@@ -269,7 +271,7 @@ class SecurityHeadersMiddleware:
                 # Add security headers
                 message["headers"].append(
                     (b"content-security-policy", 
-                     b"default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:")
+                     b"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self' data:; frame-ancestors 'none'")
                 )
                 message["headers"].append(
                     (b"x-frame-options", b"DENY")
@@ -282,6 +284,15 @@ class SecurityHeadersMiddleware:
                 )
                 message["headers"].append(
                     (b"referrer-policy", b"strict-origin-when-cross-origin")
+                )
+                message["headers"].append(
+                    (b"strict-transport-security", b"max-age=31536000; includeSubDomains; preload")
+                )
+                message["headers"].append(
+                    (b"x-permitted-cross-domain-policies", b"none")
+                )
+                message["headers"].append(
+                    (b"permissions-policy", b"accelerometer=(), autoplay=(), camera=(), display-capture=(), encrypted-media=(), fullscreen=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(), sync-xhr=(), usb=()")
                 )
             await send(message)
 

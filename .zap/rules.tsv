@@ -1,0 +1,57 @@
+# ZAP Rules Configuration for JobSwipe API
+# Format: Rule ID	Alert Threshold	Attack Strength	Description
+10001	INFO	LOW	(10001) Cookie No HttpOnly Flag
+10002	INFO	LOW	(10002) Cookie Without Secure Flag
+10015	INFO	LOW	(10015) Session ID in URL Rewrite
+10021	WARN	MEDIUM	(10021) Information Disclosure - Debug Error Messages
+10027	WARN	LOW	(10027) HTTP Parameter Override
+10034	WARN	LOW	(10034) Weak Authentication Method
+10035	WARN	LOW	(10035) Clear Text Password Submission
+10043	INFO	LOW	(10043) Cross-Domain JavaScript Source File Inclusion
+10054	WARN	LOW	(10054) Script Passive Scan Rules
+10093	WARN	LOW	(10093) Form without CSRF Token
+10094	WARN	LOW	(10094) Content-Type Header Missing
+10095	WARN	LOW	(10095) Server Leaks Information via "X-Powered-By" HTTP Response Header Field(s)
+10096	WARN	LOW	(10096) Server Leaks Information via "Server" HTTP Response Header Field(s)
+10100	WARN	LOW	(10100) X-Backend-Server Header Leaks Information
+10101	WARN	LOW	(10101) X-Forwarded-For Header Information Leak
+10103	WARN	LOW	(10103) Application Error Disclosure
+10108	WARN	LOW	(10108) Response Content Type Mismatch
+10109	INFO	LOW	(10109) Directory Browsing Enabled
+10110	WARN	LOW	(10110) Path Traversal
+10111	WARN	LOW	(10111) Source Code Disclosure
+10112	WARN	LOW	(10112) OS Command Injection
+10113	WARN	LOW	(10113) SQL Injection
+10114	WARN	LOW	(10114) Remote File Inclusion
+10115	WARN	LOW	(10115) Server Side Includes
+10116	WARN	LOW	(10116) Remote Code Execution
+10117	WARN	LOW	(10117) Cross Site Scripting
+10118	WARN	LOW	(10118) Cross Site Request Forgery
+10119	WARN	LOW	(10119) Clickjacking
+10120	WARN	LOW	(10120) Insecure Direct Object References
+10121	WARN	LOW	(10121) Security Misconfiguration
+10122	WARN	LOW	(10122) Sensitive Data Exposure
+10123	WARN	LOW	(10123) Missing Authentication Token
+10124	WARN	LOW	(10124) Broken Access Control
+10125	WARN	LOW	(10125) Missing Function Level Access Control
+10126	WARN	LOW	(10126) Cross-Site Scripting (DOM Based)
+10127	WARN	LOW	(10127) Cross-Site Scripting (Reflected)
+10128	WARN	LOW	(10128) Cross-Site Scripting (Stored)
+10129	WARN	LOW	(10129) XML External Entity Injection
+10130	WARN	LOW	(10130) Invalid Authentication
+10131	WARN	LOW	(10131) Invalid Authorization
+10132	WARN	LOW	(10132) Session Fixation
+10133	WARN	LOW	(10133) Weak Session ID
+10134	WARN	LOW	(10134) Missing Secure Attribute
+10135	WARN	LOW	(10135) Missing HttpOnly Attribute
+10136	WARN	LOW	(10136) Missing SameSite Attribute
+10137	WARN	LOW	(10137) Cross-Site Scripting (XSS) via User Input
+10138	WARN	LOW	(10138) Cross-Site Scripting (XSS) via DOM Manipulation
+10139	WARN	LOW	(10139) Cross-Site Scripting (XSS) via Event Handlers
+10140	WARN	LOW	(10140) Cross-Site Scripting (XSS) via JavaScript
+10141	WARN	LOW	(10141) Cross-Site Scripting (XSS) via HTML Injection
+10142	WARN	LOW	(10142) Cross-Site Scripting (XSS) via PHP Injection
+10143	WARN	LOW	(10143) Cross-Site Scripting (XSS) via ASP Injection
+10144	WARN	LOW	(10144) Cross-Site Scripting (XSS) via JSP Injection
+10145	WARN	LOW	(10145) Cross-Site Scripting (XSS) via Perl Injection
+10146	WARN	LOW	(10146) Cross-Site Scripting (XSS) via Python Injection

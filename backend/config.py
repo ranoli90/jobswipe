@@ -3,7 +3,6 @@ import os
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
 
-
 # Default Redis URL constant to avoid duplication
 DEFAULT_REDIS_URL = "redis://localhost:6379/0"
 
@@ -20,9 +19,7 @@ class Settings(BaseSettings):
     redis_url: str = Field(default=DEFAULT_REDIS_URL, env="REDIS_URL")
 
     # Celery (using Redis for both broker and result backend in production)
-    celery_broker_url: str = Field(
-        default=DEFAULT_REDIS_URL, env="CELERY_BROKER_URL"
-    )
+    celery_broker_url: str = Field(default=DEFAULT_REDIS_URL, env="CELERY_BROKER_URL")
     celery_result_backend: str = Field(
         default=DEFAULT_REDIS_URL, env="CELERY_RESULT_BACKEND"
     )
@@ -33,9 +30,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = Field(
         default=60, env="ACCESS_TOKEN_EXPIRE_MINUTES"
     )
-    refresh_token_expire_days: int = Field(
-        default=7, env="REFRESH_TOKEN_EXPIRE_DAYS"
-    )
+    refresh_token_expire_days: int = Field(default=7, env="REFRESH_TOKEN_EXPIRE_DAYS")
 
     # Password hashing
     pbkdf2_rounds: int = Field(default=1200000, env="PBKDF2_ROUNDS")
@@ -75,6 +70,9 @@ class Settings(BaseSettings):
     log_max_size: int = Field(default=10485760, env="LOG_MAX_SIZE")
     log_backup_count: int = Field(default=5, env="LOG_BACKUP_COUNT")
 
+    # Frontend URL for email templates
+    frontend_url: str = Field(default="http://localhost:3000", env="FRONTEND_URL")
+
     # CORS Configuration
     cors_allow_origins: list = Field(
         default=["http://localhost:3000", "https://localhost:3000"],
@@ -109,7 +107,14 @@ class Settings(BaseSettings):
     def validate_secrets(cls, v, info):
         if cls.environment == "production" and (
             v is None
-            or (isinstance(v, str) and (v.startswith("dev-") or v.startswith("CHANGE_") or len(v.strip()) == 0))
+            or (
+                isinstance(v, str)
+                and (
+                    v.startswith("dev-")
+                    or v.startswith("CHANGE_")
+                    or len(v.strip()) == 0
+                )
+            )
         ):
             raise ValueError(
                 f"{info.field_name} must be set to a secure value in production"
@@ -117,7 +122,9 @@ class Settings(BaseSettings):
         return v
 
     @field_validator(
-        "cors_allow_origins", "cors_allow_methods", "cors_allow_headers",
+        "cors_allow_origins",
+        "cors_allow_methods",
+        "cors_allow_headers",
         mode="before",
     )
     @classmethod

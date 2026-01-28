@@ -1,0 +1,275 @@
+name: Security Headers Scan
+
+on:
+  schedule:
+    - cron: '0 2 * * 1'  # Weekly on Monday at 02:00 UTC
+  push:
+    branches: [main, staging]
+  pull_request:
+    branches: [main, staging]
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    name: Security Headers Validation
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests
+
+    - name: Run security headers validation
+      run: |
+        mkdir -p reports
+        python scripts/validate_security_headers.py --environment staging --output reports/security_headers_report
+
+    - name: Upload security report
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-headers-report
+        path: reports/security_headers_report*.md
+        retention-days: 30
+
+  owasp-zap-scan:
+    runs-on: ubuntu-latest
+    name: OWASP ZAP Baseline Scan
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run OWASP ZAP Baseline Scan
+      uses: zaproxy/action-baseline@v0.13.0
+      with:
+        target: 'https://api.staging.jobswipe.app'
+        token: ${{ secrets.GITHUB_TOKEN }}
+        cmd_options: '-a'
+        rules_file_name: '.zap/rules.tsv'
+
+    - name: Upload ZAP report
+      uses: actions/upload-artifact@v4
+      with:
+        name: owasp-zap-report
+        path: reports/*
+        retention-days: 30
+
+  csp-test:
+    runs-on: ubuntu-latest
+    name: CSP Header Validation
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests beautifulsoup4
+
+    - name: Test CSP header
+      run: |
+        python - <<END
+        import requests
+        import re
+
+        def test_csp_header(url):
+            print(f"Testing CSP header on: {url}")
+            try:
+                response = requests.get(url, timeout=10)
+                
+                if 'Content-Security-Policy' in response.headers:
+                    csp = response.headers['Content-Security-Policy']
+                    print(f"✓ CSP header found: {csp}")
+                    
+                    # Check if CSP contains basic directives
+                    if "default-src 'self'" in csp:
+                        print("✓ CSP has default-src 'self'")
+                    else:
+                        print("✗ CSP missing default-src 'self'")
+                        
+                    if "script-src" in csp:
+                        print("✓ CSP has script-src directive")
+                    else:
+                        print("✗ CSP missing script-src directive")
+                        
+                    if "style-src" in csp:
+                        print("✓ CSP has style-src directive")
+                    else:
+                        print("✗ CSP missing style-src directive")
+                        
+                else:
+                    print("✗ CSP header not found")
+                    return False
+                    
+                return True
+                
+            except Exception as e:
+                print(f"Error testing {url}: {e}")
+                return False
+
+        # Test main endpoints for CSP
+        endpoints = [
+            "https://api.staging.jobswipe.app/api/v1/auth/me",
+            "https://api.staging.jobswipe.app/api/v1/jobs",
+            "https://api.staging.jobswipe.app/health"
+        ]
+
+        all_passed = True
+        for endpoint in endpoints:
+            print()
+            if not test_csp_header(endpoint):
+                all_passed = False
+
+        if not all_passed:
+            print("\n✗ CSP validation failed")
+            import sys
+            sys.exit(1)
+        else:
+            print("\n✅ All CSP tests passed")
+        END
+
+  clickjacking-test:
+    runs-on: ubuntu-latest
+    name: X-Frame-Options Validation
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests
+
+    - name: Test X-Frame-Options header
+      run: |
+        python - <<END
+        import requests
+
+        def test_x_frame_options(url):
+            print(f"Testing X-Frame-Options on: {url}")
+            try:
+                response = requests.get(url, timeout=10)
+                
+                if 'X-Frame-Options' in response.headers:
+                    x_frame = response.headers['X-Frame-Options']
+                    print(f"✓ X-Frame-Options found: {x_frame}")
+                    
+                    if x_frame in ['DENY', 'SAMEORIGIN']:
+                        print(f"✓ X-Frame-Options has valid value: {x_frame}")
+                        return True
+                    else:
+                        print(f"✗ X-Frame-Options has invalid value: {x_frame}")
+                        return False
+                else:
+                    print("✗ X-Frame-Options header not found")
+                    return False
+                    
+            except Exception as e:
+                print(f"Error testing {url}: {e}")
+                return False
+
+        endpoints = [
+            "https://api.staging.jobswipe.app/api/v1/auth/me",
+            "https://api.staging.jobswipe.app/api/v1/jobs",
+            "https://api.staging.jobswipe.app/health"
+        ]
+
+        all_passed = True
+        for endpoint in endpoints:
+            print()
+            if not test_x_frame_options(endpoint):
+                all_passed = False
+
+        if not all_passed:
+            print("\n✗ X-Frame-Options validation failed")
+            import sys
+            sys.exit(1)
+        else:
+            print("\n✅ All X-Frame-Options tests passed")
+        END
+
+  xss-protection-test:
+    runs-on: ubuntu-latest
+    name: X-XSS-Protection Validation
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests
+
+    - name: Test X-XSS-Protection header
+      run: |
+        python - <<END
+        import requests
+
+        def test_x_xss_protection(url):
+            print(f"Testing X-XSS-Protection on: {url}")
+            try:
+                response = requests.get(url, timeout=10)
+                
+                if 'X-XSS-Protection' in response.headers:
+                    xss_protection = response.headers['X-XSS-Protection']
+                    print(f"✓ X-XSS-Protection found: {xss_protection}")
+                    
+                    if '1; mode=block' in xss_protection:
+                        print("✓ X-XSS-Protection is properly configured")
+                        return True
+                    else:
+                        print(f"✗ X-XSS-Protection has invalid value: {xss_protection}")
+                        return False
+                else:
+                    print("✗ X-XSS-Protection header not found")
+                    return False
+                    
+            except Exception as e:
+                print(f"Error testing {url}: {e}")
+                return False
+
+        endpoints = [
+            "https://api.staging.jobswipe.app/api/v1/auth/me",
+            "https://api.staging.jobswipe.app/api/v1/jobs",
+            "https://api.staging.jobswipe.app/health"
+        ]
+
+        all_passed = True
+        for endpoint in endpoints:
+            print()
+            if not test_x_xss_protection(endpoint):
+                all_passed = False
+
+        if not all_passed:
+            print("\n✗ X-XSS-Protection validation failed")
+            import sys
+            sys.exit(1)
+        else:
+            print("\n✅ All X-XSS-Protection tests passed")
+        END

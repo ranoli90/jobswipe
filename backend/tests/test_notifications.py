@@ -22,9 +22,15 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 # Import models and services
-from backend.db.models import (DeviceToken, Notification, NotificationTemplate,
-                               User, UserNotificationPreferences)
+from backend.db.models import (
+    DeviceToken,
+    Notification,
+    NotificationTemplate,
+    User,
+    UserNotificationPreferences,
+)
 from backend.services.notification_service import NotificationService
+
 # Import test fixtures
 from backend.tests.conftest import *
 
@@ -251,6 +257,8 @@ class TestNotificationService:
             ("job_match_found", "New Job Match"),
             ("profile_updated", "Profile Updated"),
             ("system_notification", "System Notification"),
+            ("email_verification", "Email Verification"),
+            ("password_reset", "Password Reset"),
             ("unknown_type", "Notification"),
         ],
     )
@@ -260,6 +268,73 @@ class TestNotificationService:
         """Test notification title generation for various types"""
         result = notification_service._get_notification_title(notification_type)
         assert result == expected_title
+
+    @pytest.mark.asyncio
+    async def test_send_email_verification(self, notification_service, sample_user):
+        """Test sending email verification notification"""
+        with patch.object(
+            notification_service, "_get_user_email", new_callable=AsyncMock
+        ) as mock_get_email:
+            mock_get_email.return_value = sample_user.email
+
+            with patch.object(
+                notification_service, "send_notification", new_callable=AsyncMock
+            ) as mock_send_notification:
+                mock_send_notification.return_value = {"delivered": True}
+
+                await notification_service.send_email_verification(
+                    sample_user.id, "test-verification-token"
+                )
+
+                mock_send_notification.assert_called_once()
+                args, kwargs = mock_send_notification.call_args
+
+                assert kwargs["notification_type"] == "email_verification"
+                assert (
+                    kwargs["metadata"]["verification_token"]
+                    == "test-verification-token"
+                )
+
+    @pytest.mark.asyncio
+    async def test_send_password_reset(self, notification_service, sample_user):
+        """Test sending password reset notification"""
+        with patch.object(
+            notification_service, "_get_user_email", new_callable=AsyncMock
+        ) as mock_get_email:
+            mock_get_email.return_value = sample_user.email
+
+            with patch.object(
+                notification_service, "send_notification", new_callable=AsyncMock
+            ) as mock_send_notification:
+                mock_send_notification.return_value = {"delivered": True}
+
+                await notification_service.send_password_reset(
+                    sample_user.id, "test-reset-token"
+                )
+
+                mock_send_notification.assert_called_once()
+                args, kwargs = mock_send_notification.call_args
+
+                assert kwargs["notification_type"] == "password_reset"
+                assert kwargs["metadata"]["reset_token"] == "test-reset-token"
+
+    def test_should_send_email_notification_for_verification(
+        self, notification_service, sample_preferences
+    ):
+        """Test that email verification notifications are always sent if email is enabled"""
+        result = notification_service._should_send_email_notification(
+            "email_verification", sample_preferences
+        )
+        assert result is True
+
+    def test_should_send_email_notification_for_reset(
+        self, notification_service, sample_preferences
+    ):
+        """Test that password reset notifications are always sent if email is enabled"""
+        result = notification_service._should_send_email_notification(
+            "password_reset", sample_preferences
+        )
+        assert result is True
 
     # ============================================================
     # Test: Template Rendering

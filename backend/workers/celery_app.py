@@ -9,6 +9,9 @@ import os
 from celery import Celery
 from celery.schedules import crontab
 
+# Setup tracing
+from backend.tracing import setup_tracing
+
 # Configure Celery to use Redis as broker and result backend
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
@@ -24,6 +27,9 @@ celery_app = Celery(
         "backend.workers.celery_tasks.cleanup_tasks",
     ],
 )
+
+# Setup OpenTelemetry tracing
+setup_tracing(celery_app=celery_app)
 
 # Celery configuration
 celery_app.conf.update(

@@ -93,7 +93,7 @@ class OpenAIService:
             return response.data[0].embedding
 
         except Exception as e:
-            logger.error(f"Error generating job embedding: {e}")
+            logger.error("Error generating job embedding: %s" % (e))
             return []
 
     @staticmethod
@@ -123,7 +123,7 @@ class OpenAIService:
             return response.data[0].embedding
 
         except Exception as e:
-            logger.error(f"Error generating profile embedding: {e}")
+            logger.error("Error generating profile embedding: %s" % (e))
             return []
 
     @staticmethod

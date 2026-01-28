@@ -81,6 +81,9 @@ def main():
     
     # Find all Python files
     for root, _, files in os.walk(backend_dir):
+        # Skip venv directory
+        if 'venv' in root:
+            continue
         for file in files:
             if file.endswith('.py'):
                 python_files.append(os.path.join(root, file))

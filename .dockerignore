@@ -105,3 +105,4 @@ backend/alembic/versions/README
 backend/*.pyc
 backend/__pycache__
 backend/workers/
+backend/venv/

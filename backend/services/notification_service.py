@@ -114,6 +114,8 @@ class NotificationService:
         "job_match_found": "New Job Match",
         "profile_updated": "Profile Updated",
         "system_notification": "System Notification",
+        "email_verification": "Email Verification",
+        "password_reset": "Password Reset",
     }
 
     def _get_notification_title(self, notification_type: str) -> str:
@@ -280,6 +282,8 @@ class NotificationService:
             "captcha_detected": preferences.email_captcha_detected,
             "job_match_found": preferences.email_job_match_found,
             "system_notification": preferences.email_system_notification,
+            "email_verification": True,  # Always send verification emails if email is enabled
+            "password_reset": True,  # Always send password reset emails if email is enabled
         }
 
         return type_mapping.get(notification_type, False)
@@ -414,6 +418,42 @@ class NotificationService:
         except Exception as e:
             logger.error("Failed to send FCM notifications: %s", e)
 
+    async def send_email_verification(self, user_id: str, verification_token: str):
+        """Send email verification notification to user
+        
+        Args:
+            user_id: User ID to send verification email to
+            verification_token: Verification token to include in the email
+        """
+        metadata = {"verification_token": verification_token}
+        message = "Please verify your email address to complete your registration"
+        
+        await self.send_notification(
+            user_id=user_id,
+            task_id=None,
+            notification_type="email_verification",
+            message=message,
+            metadata=metadata
+        )
+
+    async def send_password_reset(self, user_id: str, reset_token: str):
+        """Send password reset notification to user
+        
+        Args:
+            user_id: User ID to send reset email to
+            reset_token: Reset token to include in the email
+        """
+        metadata = {"reset_token": reset_token}
+        message = "You requested a password reset. Please click the link below to reset your password"
+        
+        await self.send_notification(
+            user_id=user_id,
+            task_id=None,
+            notification_type="password_reset",
+            message=message,
+            metadata=metadata
+        )
+
     async def _send_email_notification(
         self,
         user_id: str,
@@ -482,31 +522,112 @@ class NotificationService:
     ) -> tuple[str, str]:
         """Get email template for notification type"""
         title = self._get_notification_title(notification_type)
+        metadata = metadata or {}
 
-        # Basic HTML template
-        html_template = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <title>{title}</title>
-            <style>
-                body {{ font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }}
-                .container {{ max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; }}
-                .header {{ background-color: #007bff; color: white; padding: 20px; border-radius: 10px 10px 0 0; text-align: center; }}
-                .content {{ padding: 20px; }}
-                .footer {{ text-align: center; color: #666; font-size: 12px; margin-top: 20px; }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1>JobSwipe</h1>
-                    <h2>{title}</h2>
-                </div>
-                <div class="content">
-                    <p>{message}</p>
-                    {"".join(f"<p><strong>{k}:</strong> {v}</p>" for k, v in (metadata or {}).items())}
+        # Specific templates for verification and password reset
+        if notification_type == "email_verification":
+            verification_token = metadata.get("verification_token", "")
+            from backend.config import settings
+            verification_url = settings.frontend_url + f"/verify-email?token={verification_token}"
+            
+            html_template = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <title>{title}</title>
+                <style>
+                    body {{ font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }}
+                    .container {{ max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; }}
+                    .header {{ background-color: #007bff; color: white; padding: 20px; border-radius: 10px 10px 0 0; text-align: center; }}
+                    .content {{ padding: 20px; }}
+                    .footer {{ text-align: center; color: #666; font-size: 12px; margin-top: 20px; }}
+                    .button {{ display: inline-block; background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 20px 0; }}
+                    .button:hover {{ background-color: #0056b3; }}
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>JobSwipe</h1>
+                        <h2>{title}</h2>
+                    </div>
+                    <div class="content">
+                        <p>{message}</p>
+                        <p>Please click the button below to verify your email address:</p>
+                        <p style="text-align: center;">
+                            <a href="{verification_url}" class="button">Verify Email</a>
+                        </p>
+                        <p>If you didn't request this verification, please ignore this email.</p>
+                        <p>Alternatively, you can copy and paste this URL into your browser:</p>
+                        <p style="font-family: monospace; background-color: #f8f9fa; padding: 10px; border-radius: 5px; word-break: break-all;">
+                            {verification_url}
+                        </p>
+            """
+        elif notification_type == "password_reset":
+            reset_token = metadata.get("reset_token", "")
+            from backend.config import settings
+            reset_url = settings.frontend_url + f"/reset-password?token={reset_token}"
+            
+            html_template = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <title>{title}</title>
+                <style>
+                    body {{ font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }}
+                    .container {{ max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; }}
+                    .header {{ background-color: #007bff; color: white; padding: 20px; border-radius: 10px 10px 0 0; text-align: center; }}
+                    .content {{ padding: 20px; }}
+                    .footer {{ text-align: center; color: #666; font-size: 12px; margin-top: 20px; }}
+                    .button {{ display: inline-block; background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 20px 0; }}
+                    .button:hover {{ background-color: #0056b3; }}
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>JobSwipe</h1>
+                        <h2>{title}</h2>
+                    </div>
+                    <div class="content">
+                        <p>{message}</p>
+                        <p>Please click the button below to reset your password:</p>
+                        <p style="text-align: center;">
+                            <a href="{reset_url}" class="button">Reset Password</a>
+                        </p>
+                        <p>This link will expire in 1 hour. If you didn't request this password reset, please ignore this email.</p>
+                        <p>Alternatively, you can copy and paste this URL into your browser:</p>
+                        <p style="font-family: monospace; background-color: #f8f9fa; padding: 10px; border-radius: 5px; word-break: break-all;">
+                            {reset_url}
+                        </p>
+            """
+        else:
+            # Default template for other notification types
+            html_template = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <title>{title}</title>
+                <style>
+                    body {{ font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }}
+                    .container {{ max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; }}
+                    .header {{ background-color: #007bff; color: white; padding: 20px; border-radius: 10px 10px 0 0; text-align: center; }}
+                    .content {{ padding: 20px; }}
+                    .footer {{ text-align: center; color: #666; font-size: 12px; margin-top: 20px; }}
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>JobSwipe</h1>
+                        <h2>{title}</h2>
+                    </div>
+                    <div class="content">
+                        <p>{message}</p>
+                        {"".join(f"<p><strong>{k}:</strong> {v}</p>" for k, v in metadata.items())}
                 </div>
                 <div class="footer">
                     <p>You received this notification because you have notifications enabled for {notification_type.replace('_', ' ')}.</p>

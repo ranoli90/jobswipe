@@ -499,6 +499,17 @@ except KeyError:
         ["queue_name"],  # notifications, ingestion, analytics, cleanup
     )
 
+# ============================================================
+# Request Queue Metrics
+# ============================================================
+try:
+    request_queue_length = REGISTRY._names_to_collectors["request_queue_length"]
+except KeyError:
+    request_queue_length = Gauge(
+        "request_queue_length",
+        "Number of requests in the HTTP request queue"
+    )
+
 try:
     celery_worker_count = REGISTRY._names_to_collectors["celery_worker_count"]
 except KeyError:
@@ -693,6 +704,9 @@ class MetricsMiddleware:
             await self.app(scope, receive, send)
             return
 
+        # Increment request queue length when request arrives
+        request_queue_length.inc()
+        
         start_time = time.time()
         method = scope["method"]
         path = scope["path"]
@@ -708,7 +722,11 @@ class MetricsMiddleware:
                 response_started = True
             await send(message)
 
-        await self.app(scope, receive, wrapped_send)
+        try:
+            await self.app(scope, receive, wrapped_send)
+        finally:
+            # Decrement request queue length when request processing completes
+            request_queue_length.dec()
 
         if response_started:
             duration = time.time() - start_time

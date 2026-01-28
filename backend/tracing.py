@@ -9,13 +9,14 @@ from opentelemetry import trace
 from opentelemetry.exporter.jaeger.thrift import JaegerExporter
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
+from opentelemetry.instrumentation.celery import CeleryInstrumentor
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 logger = logging.getLogger(__name__)
 
 
-def setup_tracing(app=None):
+def setup_tracing(app=None, celery_app=None):
     """Setup OpenTelemetry tracing with Jaeger exporter for production environments"""
 
     # Only enable tracing in production and staging environments
@@ -43,6 +44,11 @@ def setup_tracing(app=None):
 
     # Instrument HTTPX (for external API calls)
     HTTPXClientInstrumentor().instrument()
+
+    # Instrument Celery if celery_app is provided
+    if celery_app:
+        CeleryInstrumentor().instrument(app=celery_app)
+        logger.info("Celery instrumentation configured")
 
     logger.info("OpenTelemetry tracing configured with Jaeger exporter")
 

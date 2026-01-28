@@ -50,6 +50,7 @@ class User(Base):
     email = Column(String, unique=True, nullable=False, index=True)
     password_hash = Column(String, nullable=False)
     status = Column(String, default="active")
+    role = Column(String, default="user")  # 'user' or 'admin'
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Email verification

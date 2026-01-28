@@ -176,14 +176,42 @@ flyctl secrets set \
   --app jobswipe-api
 ```
 
-### 4. Configure Scale
+### 4. Configure Auto-Scaling
 
 ```bash
-# Scale to 2 VMs
-flyctl scale count 2 --app jobswipe-api
+# Configure auto-scaling based on CPU, memory, and request queue metrics
+flyctl autoscale metric --cpu 70 --memory 80 --min 2 --max 10 --app jobswipe-api
 
-# Configure auto-scaling
-flyctl autoscale balanced --min 2 --max 10 --app jobswipe-api
+# Or configure via fly.toml (already included in our configuration)
+```
+
+#### Auto-Scaling Configuration Details
+
+The application is configured with intelligent auto-scaling based on three key metrics:
+
+1. **CPU Utilization**: Scales up when CPU usage exceeds 70% (cooldown: 60 seconds)
+2. **Memory Utilization**: Scales up when memory usage exceeds 80% (cooldown: 60 seconds)
+3. **Request Queue Length**: Scales up when request queue exceeds 50 requests (cooldown: 30 seconds)
+
+Scales down when CPU usage drops below 30% (cooldown: 5 minutes) to optimize costs.
+
+**Minimum/Maximum Instance Counts**:
+- Production: 2-10 instances
+- Staging: 1-5 instances
+
+#### Prometheus Metrics for Auto-Scaling
+
+The application exposes the following Prometheus metrics at `/metrics`:
+
+```
+# HELP request_queue_length Number of requests in the HTTP request queue
+# TYPE request_queue_length gauge
+
+# HELP cpu_system System CPU utilization percentage
+# TYPE cpu_system gauge
+
+# HELP memory_usage System memory utilization percentage
+# TYPE memory_usage gauge
 ```
 
 ### 5. Set Up Volumes

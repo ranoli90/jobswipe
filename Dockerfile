@@ -3,23 +3,13 @@ FROM python:3.12-slim-bullseye AS base
 
 WORKDIR /app
 
-# Install system dependencies in one layer
+# Install minimal system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
     curl \
     gnupg \
     && rm -rf /var/lib/apt/lists/*
-
-# Install Node.js for Playwright
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y --no-install-recommends nodejs && \
-    rm -rf /var/lib/apt/lists/*
-
-# Install Playwright (lighter version, chromium only)
-RUN npm install -g playwright@1.40.0 && \
-    playwright install chromium && \
-    npm cache clean --force
 
 # Python dependencies stage
 FROM base AS python-deps
@@ -36,11 +26,6 @@ RUN pip install --no-cache-dir --upgrade pip && \
 FROM python:3.12-slim-bullseye AS final
 
 WORKDIR /app
-
-# Copy system dependencies and Node.js from base
-COPY --from=base /usr/local /usr/local
-COPY --from=base /usr/lib /usr/lib
-COPY --from=base /usr/include /usr/include
 
 # Copy Python packages from python-deps
 COPY --from=python-deps /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
