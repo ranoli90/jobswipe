@@ -253,7 +253,7 @@ async def calculate_job_score(job: Job, profile: CandidateProfile) -> float:
     # BM25 scoring (primary method)
     bm25_score = compute_bm25_score(job, profile)
     score += bm25_score * 0.5
-    logger.info("BM25 score: %s", bm25_score:.2f)
+    logger.info("BM25 score: %.2f", bm25_score)
 
     # Semantic matching with embeddings
     if embedding_service.is_available() and job.description:
