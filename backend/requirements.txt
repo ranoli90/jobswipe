@@ -57,4 +57,4 @@ openai
 spacy
 qrcode
 pyotp
-playwright.async_api
+playwright
