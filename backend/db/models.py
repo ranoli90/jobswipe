@@ -259,7 +259,7 @@ class Notification(Base):
     type = Column(String, nullable=False)
     title = Column(String, nullable=False)
     message = Column(Text, nullable=False)
-    metadata = Column(JSON)
+    data = Column(JSON)
     read = Column(Boolean, default=False)
     delivered = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
