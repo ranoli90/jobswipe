@@ -31,8 +31,11 @@ WORKDIR /app
 COPY --from=python-deps /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=python-deps /usr/local/bin /usr/local/bin
 
+# Create a backend directory and copy code into it
+RUN mkdir -p /app/backend
+
 # Copy only backend application code
-COPY backend/ .
+COPY backend/ /app/backend/
 
 # Create non-root user
 RUN useradd -m -u 1000 appuser && \
@@ -47,4 +50,4 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
-CMD ["python", "-m", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["python", "-m", "uvicorn", "backend.api.main:app", "--host", "0.0.0.0", "--port", "8080"]

@@ -105,7 +105,8 @@ class Settings(BaseSettings):
     )
     @classmethod
     def validate_secrets(cls, v, info):
-        if cls.environment == "production" and (
+        env = os.getenv("ENVIRONMENT", "development")
+        if env == "production" and (
             v is None
             or (
                 isinstance(v, str)
