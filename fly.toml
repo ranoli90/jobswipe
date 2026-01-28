@@ -37,7 +37,7 @@ primary_region = 'iad'
 
 [processes]
   app = "python -m uvicorn backend.api.main:app --host 0.0.0.0 --port 8080"
-  worker = "sh -c 'cd /app/backend && celery -A workers.celery_app worker --loglevel=info --concurrency=4'"
+  worker = "celery -A backend.workers.celery_app worker --loglevel=info --concurrency=4"
 
 [[vm]]
   memory = '2gb'
