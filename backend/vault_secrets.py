@@ -8,7 +8,7 @@ from typing import Any, Dict, Optional
 
 import hvac
 
-from config import settings
+from backend.config import settings
 
 # Vault secret paths as constants to avoid duplication
 DATABASE_VAULT_PATH = "jobswipe/database"
@@ -26,7 +26,7 @@ class SecretsManager:
     """Manages secrets using HashiCorp Vault"""
 
     def __init__(self):
-        from config import settings
+        from backend.config import settings
         self.logger = logging.getLogger(__name__)
         self.vault_url = settings.vault_url
         self.vault_token = settings.vault_token
