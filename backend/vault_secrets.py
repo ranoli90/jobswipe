@@ -26,6 +26,7 @@ class SecretsManager:
     """Manages secrets using HashiCorp Vault"""
 
     def __init__(self):
+        from backend.config import settings
         self.logger = logging.getLogger(__name__)
         self.vault_url = settings.vault_url
         self.vault_token = settings.vault_token
