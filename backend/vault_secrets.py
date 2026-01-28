@@ -36,12 +36,12 @@ class SecretsManager:
         try:
             self.client = hvac.Client(url=self.vault_url, token=self.vault_token)
             if not self.client.is_authenticated():
-                logger.warning(
+                self.logger.warning(
                     "Vault authentication failed, falling back to environment variables"
                 )
                 self.client = None
         except Exception as e:
-            logger.warning("Could not connect to Vault: %s, falling back to environment variables" % (e)
+            self.logger.warning("Could not connect to Vault: %s, falling back to environment variables" % (e)
             )
             self.client = None
 
