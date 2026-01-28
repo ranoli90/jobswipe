@@ -277,7 +277,7 @@ async def calculate_job_score(job: Job, profile: CandidateProfile) -> float:
         if "score" in match_analysis:
             semantic_score = match_analysis["score"]
             score += semantic_score * 0.3
-            logger.info("Embedding semantic score: %s", semantic_score:.2f)
+            logger.info("Embedding semantic score: %.2f", semantic_score)
 
     # Rule-based matching (for additional features)
     logger.info("Adding rule-based matching components")
@@ -292,14 +292,14 @@ async def calculate_job_score(job: Job, profile: CandidateProfile) -> float:
         if skill_matches > 0:
             skill_score = (skill_matches / len(profile.skills)) * 0.1
             score += skill_score
-            logger.info("Skill match score: %s", skill_score:.2f)
+            logger.info("Skill match score: %.2f", skill_score)
 
     # Location matching
     if profile.location and job.location:
         if profile.location.lower() in job.location.lower():
             location_score = 0.05
             score += location_score
-            logger.info("Location match score: %s", location_score:.2f)
+            logger.info("Location match score: %.2f", location_score)
 
     # Experience matching (simple keyword based)
     if profile.work_experience and job.description:
@@ -316,10 +316,10 @@ async def calculate_job_score(job: Job, profile: CandidateProfile) -> float:
                 experience_matches / len(profile.work_experience)
             ) * 0.05
             score += experience_score
-            logger.info("Experience match score: %s", experience_score:.2f)
+            logger.info("Experience match score: %.2f", experience_score)
 
     final_score = min(1.0, score)
-    logger.info("Final job match score: %s", final_score:.2f)
+    logger.info("Final job match score: %.2f", final_score)
 
     return final_score
 
