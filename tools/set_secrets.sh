@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Set default app name or use provided one
+APP_NAME="${APP_NAME:-jobswipe-9obhra}"
+
 export PATH="$HOME/.fly/bin:$PATH"
 
 # Check if flyctl is installed
@@ -59,7 +62,7 @@ while IFS='=' read -r key value; do
         # Skip if value is empty
         [ -z "$value" ] && continue
         echo "Setting secret: $key"
-        flyctl secrets set --app jobswipe-backend "$key"="$value"
+        flyctl secrets set --app "$APP_NAME" "$key"="$value"
     fi
 done < .env.production
 

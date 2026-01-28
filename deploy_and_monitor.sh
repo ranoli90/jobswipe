@@ -21,6 +21,7 @@ deploy() {
     echo ""
     echo "Setting secrets to Fly.io..."
     if [ -f "tools/set_secrets.sh" ]; then
+        export APP_NAME="$APP_NAME"
         bash tools/set_secrets.sh
     else
         echo "Warning: tools/set_secrets.sh not found, skipping secrets deployment"
