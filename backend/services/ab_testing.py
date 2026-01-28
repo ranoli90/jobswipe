@@ -13,8 +13,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 
-from backend.db.database import async_session
-from backend.db.models import ABTest, FeatureFlag, User
+from db.database import async_session
+from db.models import ABTest, FeatureFlag, User
 
 logger = logging.getLogger(__name__)
 
@@ -360,10 +360,7 @@ class ABTestService:
             value: Value of the conversion
         """
         # In production, this would store to a metrics/analytics database
-        logger.info("Conversion: experiment=%s, " % (experiment_id)
-            f"user={user_id}, variant={variant}, "
-            f"metric={metric_name}, value={value}"
-        )
+        logger.info(f"Conversion: experiment={experiment_id}, user={user_id}, variant={variant}, metric={metric_name}, value={value}")
 
     async def get_experiment_results(
         self,

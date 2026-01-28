@@ -53,3 +53,8 @@ aioapns>=3.1
 firebase-admin>=6.0.0
 sendgrid>=6.10.0
 brotli>=1.2.0
+openai
+spacy
+qrcode
+pyotp
+playwright.async_api

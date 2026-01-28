@@ -75,7 +75,7 @@ class TestDatabaseConnectionPoolStress:
             async def fetch_jobs(user_id: int):
                 import uuid
 
-                from backend.services.matching import get_personalized_jobs
+                from services.matching import get_personalized_jobs
 
                 user_uuid = uuid.UUID(f"12345678-1234-5678-9012-{user_id:012d}")
                 result = await get_personalized_jobs(user_uuid, db=mock_session)
@@ -103,7 +103,7 @@ class TestDatabaseConnectionPoolStress:
             async def create_application_task(user_id: int, job_id: int):
                 import uuid
 
-                from backend.services.application_service import \
+                from services.application_service import \
                     create_application_task
 
                 user_uuid = str(uuid.UUID(f"12345678-1234-5678-9012-{user_id:012d}"))
@@ -194,7 +194,7 @@ class TestDatabaseConnectionPoolStress:
             async def isolated_transaction(tx_id: int):
                 import uuid
 
-                from backend.services.application_service import \
+                from services.application_service import \
                     create_application_task
 
                 user_uuid = str(uuid.UUID(f"12345678-1234-5678-9012-{tx_id:012d}"))
@@ -226,7 +226,7 @@ class TestDatabaseConnectionPoolStress:
 
                 # Subsequent connections succeed
                 mock_connection = MagicMock()
-                    return mock_connection
+                return mock_connection
 
             mock_connect.side_effect = mock_connect_func
 
@@ -292,7 +292,7 @@ class TestDatabaseConnectionPoolStress:
             async def concurrent_matching(user_id: int):
                 import uuid
 
-                from backend.services.matching import get_personalized_jobs
+                from services.matching import get_personalized_jobs
 
                 user_uuid = uuid.UUID(f"12345678-1234-5678-9012-{user_id:012d}")
                 start_time = time.time()
@@ -377,7 +377,7 @@ class TestDatabaseConnectionPoolStress:
             async def concurrent_profile_update(user_id: int):
                 from unittest.mock import AsyncMock
 
-                from backend.api.routers.profile import update_profile
+                from api.routers.profile import update_profile
 
                 # Mock request and user
                 mock_request = MagicMock()

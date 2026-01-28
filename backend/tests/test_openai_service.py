@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from backend.services.openai_service import OpenAIService
+from services.openai_service import OpenAIService
 
 
 class TestOpenAIService:
@@ -140,8 +140,7 @@ class TestOpenAIService:
         assert "Python" in result["matched_skills"]
         assert "React" in result["missing_skills"]
         assert "Learn React" in result["recommendations"]
-            mock_client.chat.completions.create.assert_called_once()
-            
+        mock_client.chat.completions.create.assert_called_once()
     def test_parse_match_analysis(self):
         """Test match analysis parsing"""
         raw_response = """Here's your JSON:

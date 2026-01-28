@@ -7,10 +7,10 @@ Celery tasks for database maintenance and cleanup operations.
 import logging
 from datetime import datetime, timedelta
 
-from backend.db.database import get_db
-from backend.db.models import (OAuth2State, RefreshToken, Session,
+from db.database import get_db
+from db.models import (OAuth2State, RefreshToken, Session,
                                UserJobInteraction)
-from backend.workers.celery_app import celery_app
+from workers.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
 
@@ -189,7 +189,7 @@ def cleanup_orphan_notifications(days: int = DEFAULT_ORPHAN_NOTIFICATIONS_DAYS):
     deleted = 0
 
     try:
-        from backend.db.models import Notification, User
+        from db.models import Notification, User
 
         cutoff = datetime.now(timezone.utc) - timedelta(days=days)
 

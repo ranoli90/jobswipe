@@ -9,7 +9,7 @@ import uuid
 import pytest
 from fastapi.testclient import TestClient
 
-from backend.api.main import app
+from api.main import app
 
 # API endpoint constants to avoid duplication
 PROFILE_ENDPOINT = "/api/profile/"

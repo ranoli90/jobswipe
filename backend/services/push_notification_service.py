@@ -13,10 +13,10 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 
-from backend.config import settings
-from backend.db.database import async_session
-from backend.db.models import DeviceToken, Notification, User
-from backend.services.notification_service import NotificationService
+from config import settings
+from db.database import async_session
+from db.models import DeviceToken, Notification, User
+from services.notification_service import NotificationService
 
 logger = logging.getLogger(__name__)
 
@@ -293,11 +293,10 @@ class PushNotificationService:
         for token in tokens:
             if token.platform == Platform.IOS.value:
                 result = await self.apns.send(token.token, payload)
-            
+            else:
+                result = await self.fcm.send(token.token, payload)
 
-            result = await self.fcm.send(token.token, payload)
-
-        results.append(result)
+            results.append(result)
 
             # Update device token if invalid
             if not result.success and result.error_code in (
@@ -418,7 +417,7 @@ class PushNotificationService:
             session.add(device)
 
         await session.commit()
-            return device
+        return device
 
     async def unregister_device(self, device_id: str) -> bool:
         """

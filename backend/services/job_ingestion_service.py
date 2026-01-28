@@ -18,10 +18,10 @@ import aiohttp
 import feedparser
 from bs4 import BeautifulSoup
 
-from backend.db.database import get_db
-from backend.db.models import Job
-from backend.services.matching import calculate_job_score
-from backend.services.openai_service import OpenAIService
+from db.database import get_db
+from db.models import Job
+from services.matching import calculate_job_score
+from services.openai_service import OpenAIService
 
 logger = logging.getLogger(__name__)
 
@@ -560,6 +560,8 @@ class JobIngestionService:
             except Exception as e:
                 logger.error("Periodic ingestion error: %s", e)
                 await asyncio.sleep(60)  # Wait before retrying
+            finally:
+                pass
 
     async def run_once(self):
         """Run ingestion once"""

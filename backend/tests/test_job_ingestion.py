@@ -12,7 +12,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from backend.services.job_ingestion_service import JobIngestionService
+from services.job_ingestion_service import JobIngestionService
 
 
 class TestJobIngestionService:

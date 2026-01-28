@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from backend.services.notification_service import NotificationService
+from services.notification_service import NotificationService
 
 
 class TestNotificationDeliveryIntegration:

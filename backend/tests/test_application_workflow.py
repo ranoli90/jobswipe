@@ -15,7 +15,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 # Import test fixtures
-from backend.tests.conftest import client, db_session
+from tests.conftest import client, db_session
 
 
 class TestJobApplicationWorkflow:

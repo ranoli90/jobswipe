@@ -14,12 +14,12 @@ from typing import Dict, List, Optional
 
 from playwright.async_api import async_playwright
 
-from backend.db.database import get_db
-from backend.db.models import ApplicationTask, CandidateProfile, Job, User
-from backend.services.captcha_detector import (CaptchaDetector,
+from db.database import get_db
+from db.models import ApplicationTask, CandidateProfile, Job, User
+from services.captcha_detector import (CaptchaDetector,
                                                HumanInTheLoopSystem)
-from backend.services.domain_service import domain_service
-from backend.services.resume_parser_enhanced import parse_resume_enhanced
+from services.domain_service import domain_service
+from services.resume_parser_enhanced import parse_resume_enhanced
 
 logger = logging.getLogger(__name__)
 
@@ -598,7 +598,7 @@ class ApplicationAutomationService:
         """
         try:
             # Import here to avoid circular imports
-            from backend.services.notification_service import \
+            from services.notification_service import \
                 notification_service
 
             await notification_service.send_notification(

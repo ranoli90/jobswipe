@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
-from backend.api.main import app
+from api.main import app
 
 
 class TestFileUploadValidationIntegration:
@@ -355,7 +355,7 @@ class TestFileUploadValidationIntegration:
         self, valid_pdf_content, malicious_exe_content
     ):
         """Test file validation utility functions"""
-        from backend.api.middleware.file_validation import (
+        from api.middleware.file_validation import (
             validate_file, validate_resume_file)
 
         # Test valid PDF
@@ -383,7 +383,7 @@ class TestFileUploadValidationIntegration:
 
     def test_content_type_validation(self, valid_pdf_content):
         """Test MIME type validation"""
-        from backend.api.middleware.file_validation import validate_file
+        from api.middleware.file_validation import validate_file
 
         # Valid PDF
         allowed_types = {"application/pdf"}

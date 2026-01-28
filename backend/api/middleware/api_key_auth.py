@@ -12,8 +12,8 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
-from backend.db.database import get_db
-from backend.services.api_key_service import ApiKeyService
+from db.database import get_db
+from services.api_key_service import ApiKeyService
 
 
 class ApiKeyAuthMiddleware(BaseHTTPMiddleware):
@@ -135,43 +135,42 @@ class ApiKeyAuthMiddleware(BaseHTTPMiddleware):
             response = await call_next(request)
 
             # Log usage after request completes
+            start_time = request.state.get("_start_time", time.time())
+            duration_ms = int((time.time() - start_time) * 1000)
+
+            # Get client info
+            client_ip = request.client.host if request.client else None
+            user_agent = request.headers.get("User-Agent")
+
+            # Determine error type from response
+            error_type = None
+            if response.status_code >= 400:
+                if response.status_code == 401:
+                    error_type = "auth_error"
+                elif response.status_code == 403:
+                    error_type = "forbidden"
+                elif response.status_code == 404:
+                    error_type = "not_found"
+                elif response.status_code == 429:
+                    error_type = "rate_limit"
+                elif response.status_code >= 500:
+                    error_type = "server_error"
+                else:
+                    error_type = "client_error"
+
             try:
-                start_time = request.state.get("_start_time", time.time())
-                duration_ms = int((time.time() - start_time) * 1000)
-
-                # Get client info
-                client_ip = request.client.host if request.client else None
-                user_agent = request.headers.get("User-Agent")
-
-                # Determine error type from response
-                error_type = None
-                if response.status_code >= 400:
-                    if response.status_code == 401:
-                        error_type = "auth_error"
-                    elif response.status_code == 403:
-                        error_type = "forbidden"
-                    elif response.status_code == 404:
-                        error_type = "not_found"
-                    elif response.status_code == 429:
-                        error_type = "rate_limit"
-                    elif response.status_code >= 500:
-                        error_type = "server_error"
-                    else:
-                        error_type = "client_error"
-
-                try:
-                    service.log_usage(
-                        api_key=api_key_record,
-                        endpoint=path,
-                        method=request.method,
-                        status_code=response.status_code,
-                        request_size=int(request.headers.get("content-length", 0)),
-                        duration_ms=duration_ms,
-                        ip_address=client_ip,
-                        user_agent=user_agent,
-                        error_type=error_type,
-                    )
-                except Exception as e:
+                service.log_usage(
+                    api_key=api_key_record,
+                    endpoint=path,
+                    method=request.method,
+                    status_code=response.status_code,
+                    request_size=int(request.headers.get("content-length", 0)),
+                    duration_ms=duration_ms,
+                    ip_address=client_ip,
+                    user_agent=user_agent,
+                    error_type=error_type,
+                )
+            except Exception as e:
                 # Don't fail the request if logging fails
                 pass
 

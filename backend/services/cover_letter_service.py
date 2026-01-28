@@ -5,7 +5,7 @@ Handles LLM-based cover letter generation with strict constraints and validation
 
 from typing import Optional
 
-from backend.services.openai_service import OLLAMA_MODEL, OpenAIService
+from services.openai_service import OLLAMA_MODEL, OpenAIService
 
 # Constants for cover letter generation
 MAX_SKILLS_TO_INCLUDE = 8

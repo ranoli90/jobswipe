@@ -9,10 +9,10 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from backend.api.routers.auth import get_current_user, get_current_admin_user
-from backend.db.database import get_db
-from backend.db.models import User
-from backend.services.notification_service import notification_service
+from api.routers.auth import get_current_user, get_current_admin_user
+from db.database import get_db
+from db.models import User
+from services.notification_service import notification_service
 
 router = APIRouter()
 

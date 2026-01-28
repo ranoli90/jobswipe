@@ -18,13 +18,13 @@ from passlib.context import CryptContext
 from pydantic import BaseModel, validator
 from sqlalchemy.orm import Session
 
-from backend.api.validators import email_validator, string_validator
-from backend.config import settings
-from backend.db.database import get_db
-from backend.db.models import FailedLoginAttempt, User
-from backend.services.mfa_service import mfa_service
-from backend.services.oauth2_service import oauth2_service
-from backend.services.notification_service import NotificationService
+from api.validators import email_validator, string_validator
+from config import settings
+from db.database import get_db
+from db.models import FailedLoginAttempt, User
+from services.mfa_service import mfa_service
+from services.oauth2_service import oauth2_service
+from services.notification_service import NotificationService
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -138,8 +138,8 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     
 
     expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-to_encode.update({"exp": expire, "type": "access"})
-encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    to_encode.update({"exp": expire, "type": "access"})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
 
@@ -148,11 +148,11 @@ def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
-    
+
 
     expire = datetime.now(timezone.utc) + timedelta(days=settings.refresh_token_expire_days)
-to_encode.update({"exp": expire, "type": "refresh"})
-encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    to_encode.update({"exp": expire, "type": "refresh"})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
 
@@ -816,7 +816,7 @@ async def oauth2_callback(
 
     # Validate state for CSRF protection
     if not oauth2_service.validate_state(state):
-        logger.warning("OAuth2 state validation failed for provider %s, state: %s, IP: %s, User-Agent: {request.headers.get(" % (provider, state, request.client.host)user-agent')}"
+        logger.warning("OAuth2 state validation failed for provider %s, state: %s, IP: %s, User-Agent: %s" % (provider, state, request.client.host, request.headers.get("User-Agent"))
         )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid state parameter"

@@ -8,9 +8,9 @@ import json
 import logging
 from datetime import datetime, timedelta
 
-from backend.db.database import get_db
-from backend.db.models import ApplicationTask, Job, User, UserJobInteraction
-from backend.workers.celery_app import celery_app
+from db.database import get_db
+from db.models import ApplicationTask, Job, User, UserJobInteraction
+from workers.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
 
@@ -332,14 +332,15 @@ def calculate_user_engagement_scores():
             user.metadata = {"engagement_score": engagement_score}
 
         processed += 1
-
-    db.commit()
-    logger.info("Calculated engagement scores for %s users", processed)
-    return processed
-
     except Exception as e:
         logger.error("Error calculating engagement scores: %s", e)
         db.rollback()
         return 0
     finally:
         db.close()
+
+    db.commit()
+
+    logger.info("Calculated engagement scores for %s users", processed)
+
+    return processed

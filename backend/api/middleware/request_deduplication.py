@@ -15,7 +15,7 @@ from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
-from backend.config import settings
+from config import settings
 
 
 class RequestDeduplicationMiddleware(BaseHTTPMiddleware):

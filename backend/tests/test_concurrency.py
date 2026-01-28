@@ -26,7 +26,7 @@ class TestConcurrency:
     @pytest.fixture
     def client(self):
         """Create test client"""
-        from backend.api.main import app
+        from api.main import app
 
         return TestClient(app)
 
@@ -94,7 +94,7 @@ class TestRateLimiting:
     @pytest.fixture
     def client(self):
         """Create test client"""
-        from backend.api.main import app
+        from api.main import app
 
         return TestClient(app)
 
@@ -275,7 +275,7 @@ class TestAPIResponseTimes:
     @pytest.fixture
     def client(self):
         """Create test client"""
-        from backend.api.main import app
+        from api.main import app
 
         return TestClient(app)
 
@@ -366,7 +366,7 @@ class TestAuthenticationConcurrency:
     @pytest.fixture
     def client(self):
         """Create test client"""
-        from backend.api.main import app
+        from api.main import app
 
         return TestClient(app)
 
@@ -443,7 +443,7 @@ class TestResourceCleanup:
     @pytest.fixture
     def client(self):
         """Create test client"""
-        from backend.api.main import app
+        from api.main import app
 
         return TestClient(app)
 

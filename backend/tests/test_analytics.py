@@ -11,8 +11,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from unittest.mock import MagicMock, patch
 
-from backend.db.models import ApplicationTask, Job, User, UserJobInteraction
-from backend.services.analytics_service import AnalyticsService
+from db.models import ApplicationTask, Job, User, UserJobInteraction
+from services.analytics_service import AnalyticsService
 
 
 class TestAnalyticsService:
@@ -240,7 +240,7 @@ class TestAnalyticsService:
             "/tmp/reports/matching_accuracy_20260125_100000.json"
         )
 
-        from backend.services.analytics_service import analytics_service
+        from services.analytics_service import analytics_service
 
         result = analytics_service.export_report("matching_accuracy", "json")
 

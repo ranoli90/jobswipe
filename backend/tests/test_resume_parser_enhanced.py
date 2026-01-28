@@ -12,7 +12,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from unittest.mock import MagicMock, patch
 
-from backend.services.resume_parser_enhanced import (EnhancedResumeParser,
+from services.resume_parser_enhanced import (EnhancedResumeParser,
                                                      parse_resume_enhanced)
 
 

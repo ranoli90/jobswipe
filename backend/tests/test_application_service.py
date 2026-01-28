@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from backend.services.application_service import (create_application_task,
+from services.application_service import (create_application_task,
                                                   run_application_task)
 
 
@@ -306,7 +306,7 @@ class TestApplicationService:
         with patch('backend.services.application_service.download_file', return_value=b"resume"):
             with patch('backend.services.application_service.tempfile.NamedTemporaryFile') as mock_tempfile:
                 mock_temp_file = MagicMock()
-                mock_tempfile.return_value.__enter__.return_value = mock_temp_file:
+                mock_tempfile.return_value.__enter__.return_value = mock_temp_file
 
                     result = await run_application_task(str(mock_task.id), mock_db)
 

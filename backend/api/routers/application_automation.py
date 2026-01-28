@@ -12,15 +12,15 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
-from backend.api.routers.auth import get_current_user
-from backend.config import settings
-from backend.db.database import get_db
-from backend.db.models import ApplicationTask, CandidateProfile, Job, User
-from backend.services.application_automation import \
+from api.routers.auth import get_current_user
+from config import settings
+from db.database import get_db
+from db.models import ApplicationTask, CandidateProfile, Job, User
+from services.application_automation import \
     application_automation_service
-from backend.services.cover_letter_service import cover_letter_service
-from backend.services.domain_service import domain_service
-from backend.services.job_ingestion_service import (  # noqa: F401
+from services.cover_letter_service import cover_letter_service
+from services.domain_service import domain_service
+from services.job_ingestion_service import (  # noqa: F401
     job_ingestion_service,
 )
 

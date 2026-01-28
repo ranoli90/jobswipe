@@ -5,14 +5,15 @@ Handles job application task management and automation.
 """
 
 import logging
+import os
 import uuid
 from datetime import datetime
 from typing import Optional
 
-from backend.db.database import get_db
-from backend.db.models import (ApplicationAuditLog, ApplicationTask,
+from db.database import get_db
+from db.models import (ApplicationAuditLog, ApplicationTask,
                                CandidateProfile, Job)
-from backend.workers.application_agent.agents.greenhouse import (
+from workers.application_agent.agents.greenhouse import (
     ApplicationLogger, GreenhouseAgent, LeverAgent)
 
 logger = logging.getLogger(__name__)
@@ -169,6 +170,19 @@ async def run_application_task(task_id: str, db=None):
         db.add(task)
         db.commit()
         return False
+
+    except Exception as e:
+        logger.error("Error running application task %s: %s", task_id, str(e))
+        if db:
+            db.rollback()
+        raise
+
+    finally:
+        if resume_path:
+            try:
+                os.unlink(resume_path)
+            except OSError:
+                pass
 
     def _update_task_status(self, task_id: str, success: bool, db: Session, error: str = None) -> None:
         """Update task status after application attempt."""

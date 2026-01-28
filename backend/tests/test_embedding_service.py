@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import numpy as np
 import pytest
 
-from backend.services.embedding_service import EmbeddingService
+from services.embedding_service import EmbeddingService
 
 
 class TestEmbeddingService:

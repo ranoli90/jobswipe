@@ -32,6 +32,10 @@ primary_region = 'iad'
   [[http_service.scale_to_zero]]
     grace_period = "300s" # 5 minutes
 
+[processes]
+  app = "python -m uvicorn backend.api.main:app --host 0.0.0.0 --port 8080"
+  worker = "celery -A backend.workers.celery_app worker --loglevel=info --concurrency=4"
+
 [[vm]]
   memory = '2gb'
   cpu_kind = 'shared'

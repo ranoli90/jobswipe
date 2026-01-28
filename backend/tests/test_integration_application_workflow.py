@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
-from backend.api.main import app
+from api.main import app
 
 
 class TestApplicationWorkflowIntegration:
@@ -83,7 +83,7 @@ class TestApplicationWorkflowIntegration:
 
     def test_application_workflow_with_external_site_success(self, mock_db_session):
         """Test full workflow with mocked external site success"""
-        from backend.services.application_service import run_application_task
+        from services.application_service import run_application_task
 
         # Mock task
         mock_task = MagicMock()
@@ -141,7 +141,7 @@ class TestApplicationWorkflowIntegration:
 
     def test_application_workflow_with_captcha_handling(self, mock_db_session):
         """Test workflow when CAPTCHA is encountered"""
-        from backend.services.application_service import run_application_task
+        from services.application_service import run_application_task
 
         # Mock task
         mock_task = MagicMock()
@@ -187,7 +187,7 @@ class TestApplicationWorkflowIntegration:
 
     def test_application_workflow_with_multiple_sources(self, mock_db_session):
         """Test workflow handles different job sources correctly"""
-        from backend.services.application_service import run_application_task
+        from services.application_service import run_application_task
 
         test_cases = [
             ("greenhouse", "GreenhouseAgent"),
@@ -239,7 +239,7 @@ class TestApplicationWorkflowIntegration:
 
     def test_application_workflow_error_handling(self, mock_db_session):
         """Test workflow handles various error conditions"""
-        from backend.services.application_service import run_application_task
+        from services.application_service import run_application_task
 
         # Test missing resume
         mock_task = MagicMock()
@@ -273,7 +273,7 @@ class TestApplicationWorkflowIntegration:
         with patch('backend.services.application_service.download_file', return_value=b"resume"):
             with patch('backend.services.application_service.tempfile.NamedTemporaryFile') as mock_tempfile:
                 mock_temp_file = MagicMock()
-                mock_tempfile.return_value.__enter__.return_value = mock_temp_file:
+                mock_tempfile.return_value.__enter__.return_value = mock_temp_file
 
                     result = await run_application_task("task-123", mock_db_session)
 

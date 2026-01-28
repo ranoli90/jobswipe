@@ -12,8 +12,8 @@ from fastapi import (APIRouter, HTTPException, Query, WebSocket,
                      WebSocketDisconnect)
 from fastapi.responses import HTMLResponse
 
-from backend.api.middleware.auth import get_current_user_from_websocket
-from backend.api.websocket_manager import ConnectionType, websocket_manager
+from api.middleware.auth import get_current_user_from_websocket
+from api.websocket_manager import ConnectionType, websocket_manager
 
 logger = logging.getLogger(__name__)
 

@@ -22,17 +22,17 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 # Import models and services
-from backend.db.models import (
+from db.models import (
     DeviceToken,
     Notification,
     NotificationTemplate,
     User,
     UserNotificationPreferences,
 )
-from backend.services.notification_service import NotificationService
+from services.notification_service import NotificationService
 
 # Import test fixtures
-from backend.tests.conftest import *
+from tests.conftest import *
 
 
 class TestNotificationService:

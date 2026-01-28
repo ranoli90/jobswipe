@@ -174,23 +174,21 @@ class Settings(BaseSettings):
         "cors_allow_origins",
         "cors_allow_methods",
         "cors_allow_headers",
-        mode="before",
+        mode="after",
     )
     @classmethod
     def validate_cors_restrictions(cls, v, info):
         """Validate that CORS settings are not wildcard in production."""
         env = os.getenv("ENVIRONMENT", "development")
         if env == "production":
-            if isinstance(v, str) and v.strip() == "*":
-                raise ValueError(
-                    f"{info.field_name} cannot be '*' in production - must specify allowed {info.field_name.replace('cors_allow_', '')}"
-                )
-            if isinstance(v, list) and v == ["*"]:
+            if v == ["*"]:
                 raise ValueError(
                     f"{info.field_name} cannot be ['*'] in production - must specify allowed {info.field_name.replace('cors_allow_', '')}"
                 )
-        if isinstance(v, str):
-            return [item.strip() for item in v.split(",") if item.strip()]
+            if info.field_name == "cors_allow_origins" and (not v or len(v) == 0):
+                raise ValueError(
+                    f"{info.field_name} must be specified in production via {info.field_name.upper()} environment variable"
+                )
         return v
 
 

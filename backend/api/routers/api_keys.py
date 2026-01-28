@@ -10,11 +10,11 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from backend.api.main import get_current_user
-from backend.api.validators import validate_uuid
-from backend.db.database import get_db
-from backend.db.models import User
-from backend.services.api_key_service import ApiKeyService
+from api.main import get_current_user
+from api.validators import validate_uuid
+from db.database import get_db
+from db.models import User
+from services.api_key_service import ApiKeyService
 
 router = APIRouter()
 

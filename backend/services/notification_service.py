@@ -12,8 +12,8 @@ from typing import Any, Dict, List, Optional
 
 from sqlalchemy.orm import Session
 
-from backend.db.database import get_db
-from backend.db.models import (DeviceToken, Notification, NotificationTemplate,
+from db.database import get_db
+from db.models import (DeviceToken, Notification, NotificationTemplate,
                                UserNotificationPreferences)
 
 logger = logging.getLogger(__name__)
@@ -507,7 +507,7 @@ class NotificationService:
         """Get user's email address"""
         db = next(get_db())
         try:
-            from backend.db.models import User
+            from db.models import User
 
             user = db.query(User).filter(User.id == user_id).first()
             return user.email if user else None
@@ -527,7 +527,7 @@ class NotificationService:
         # Specific templates for verification and password reset
         if notification_type == "email_verification":
             verification_token = metadata.get("verification_token", "")
-            from backend.config import settings
+            from config import settings
             verification_url = settings.frontend_url + f"/verify-email?token={verification_token}"
             
             html_template = f"""
@@ -566,7 +566,7 @@ class NotificationService:
             """
         elif notification_type == "password_reset":
             reset_token = metadata.get("reset_token", "")
-            from backend.config import settings
+            from config import settings
             reset_url = settings.frontend_url + f"/reset-password?token={reset_token}"
             
             html_template = f"""
@@ -943,8 +943,8 @@ class NotificationService:
             new_prefs = UserNotificationPreferences(user_id=user_id, **preferences)
             db.add(new_prefs)
 
-        db.commit()
-        logger.debug("Notification preferences updated for user %s", user_id)
+            db.commit()
+            logger.debug("Notification preferences updated for user %s", user_id)
             return True
 
         except Exception as e:

@@ -12,10 +12,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
-from backend.api.routers.auth import get_current_user
-from backend.config import settings
-from backend.db.models import User
-from backend.services.job_ingestion_service import (  # noqa: F401
+from api.routers.auth import get_current_user
+from config import settings
+from db.models import User
+from services.job_ingestion_service import (  # noqa: F401
     ingest_jobs_once,
     job_ingestion_service,
 )
@@ -82,7 +82,7 @@ async def sync_greenhouse_board(
     logger.info("Syncing Greenhouse board: %s, incremental: %s", ('board_token', 'incremental'))
 
     try:
-        from backend.workers.ingestion.greenhouse import \
+        from workers.ingestion.greenhouse import \
             sync_greenhouse_board as greenhouse_sync
 
         jobs = await greenhouse_sync(board_token, incremental)
@@ -127,7 +127,7 @@ async def sync_lever_postings(
     logger.info("Syncing Lever organization: %s, incremental: %s", ('org_slug', 'incremental'))
 
     try:
-        from backend.workers.ingestion.lever import \
+        from workers.ingestion.lever import \
             sync_lever_postings as lever_sync
 
         jobs = await lever_sync(org_slug, incremental)
@@ -169,7 +169,7 @@ async def sync_rss_feed(
     logger.info("Syncing RSS feed: %s", feed_url)
 
     try:
-        from backend.workers.ingestion.rss import sync_rss_feed as rss_sync
+        from workers.ingestion.rss import sync_rss_feed as rss_sync
 
         jobs = await rss_sync(feed_url)
 

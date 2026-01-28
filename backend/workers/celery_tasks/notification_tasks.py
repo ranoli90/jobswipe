@@ -7,9 +7,9 @@ Celery tasks for handling email and push notifications.
 import logging
 from datetime import datetime, timedelta
 
-from backend.db.database import get_db
-from backend.db.models import Notification, NotificationPreference, User
-from backend.workers.celery_app import celery_app
+from db.database import get_db
+from db.models import Notification, NotificationPreference, User
+from workers.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
 
@@ -137,7 +137,7 @@ def send_daily_digest():
                 continue
 
             # Count new jobs and applications for the day
-            from backend.db.models import ApplicationTask, Job
+            from db.models import ApplicationTask, Job
 
             new_jobs = db.query(Job).filter(Job.created_at >= yesterday).count()
 

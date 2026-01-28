@@ -12,8 +12,8 @@ from typing import Any, Dict, Optional
 import redis
 from authlib.integrations.httpx_client import AsyncOAuth2Client
 
-from backend.config import settings
-from backend.vault_secrets import get_secret
+from config import settings
+from vault_secrets import get_secret
 
 logger = logging.getLogger(__name__)
 

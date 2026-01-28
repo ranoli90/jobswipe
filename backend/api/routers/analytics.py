@@ -13,10 +13,10 @@ from fastapi.responses import FileResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
-from backend.api.routers.auth import get_current_user
-from backend.config import settings
-from backend.db.models import User
-from backend.services.analytics_service import analytics_service  # noqa: F401
+from api.routers.auth import get_current_user
+from config import settings
+from db.models import User
+from services.analytics_service import analytics_service  # noqa: F401
 
 router = APIRouter()
 logger = logging.getLogger(__name__)

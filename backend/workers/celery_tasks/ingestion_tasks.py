@@ -7,11 +7,11 @@ Celery tasks for handling job data ingestion and processing.
 import logging
 from datetime import datetime
 
-from backend.db.database import get_db
-from backend.db.models import Job, JobSource
-from backend.services.embedding_service import EmbeddingService
-from backend.services.job_ingestion_service import job_ingestion_service
-from backend.workers.celery_app import celery_app
+from db.database import get_db
+from db.models import Job, JobSource
+from services.embedding_service import EmbeddingService
+from services.job_ingestion_service import job_ingestion_service
+from workers.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
 
@@ -126,7 +126,7 @@ def process_job_embedding(self, job_id: str):
                 )
 
                 # Store embedding in cache
-                from backend.services.embedding_cache import EmbeddingCache
+                from services.embedding_cache import EmbeddingCache
 
                 cache = EmbeddingCache()
                 loop.run_until_complete(cache.set_embedding(f"job:{job_id}", embedding))
@@ -194,7 +194,7 @@ def deduplicate_jobs(self, batch_size: int = 1000):
     try:
         from datetime import timedelta
 
-        from backend.services.job_deduplication import \
+        from services.job_deduplication import \
             job_deduplication_service
 
         # Get recent jobs for deduplication

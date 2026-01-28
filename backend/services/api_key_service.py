@@ -13,7 +13,7 @@ from passlib.context import CryptContext
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from backend.db.models import ApiKey, ApiKeyUsageLog, User
+from db.models import ApiKey, ApiKeyUsageLog, User
 
 logger = logging.getLogger(__name__)
 

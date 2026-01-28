@@ -1,0 +1,121 @@
+version: '3.8'
+
+services:
+  # Database
+  postgres:
+    image: postgres:15
+    container_name: jobswipe-postgres
+    environment:
+      POSTGRES_DB: jobswipe
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  # Redis for caching and Celery broker
+  redis:
+    image: redis:7-alpine
+    container_name: jobswipe-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  # Backend API - using same command as fly.toml [processes] app entry
+  backend:
+    build: ./backend
+    container_name: jobswipe-backend
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres/jobswipe
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      JWT_SECRET_KEY: "${JWT_SECRET_KEY:-dev-secret-key-change-in-production}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    # Using same command as fly.toml [processes] app entry
+    command: >
+      sh -c "
+        # Wait for PostgreSQL
+        while ! nc -z postgres 5432; do
+          echo 'PostgreSQL is unavailable - sleeping'
+          sleep 1
+        done
+        echo 'PostgreSQL is up - continuing'
+
+        # Initialize database
+        python -c 'from db.database import init_db; init_db()'
+
+        # Start API using fly.toml app command
+        python -m uvicorn backend.api.main:app --host 0.0.0.0 --port 8080
+      "
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  # Celery worker - using same command as fly.toml [processes] worker entry
+  celery-worker:
+    build: ./backend
+    container_name: jobswipe-celery-worker
+    environment:
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres/jobswipe
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      SECRET_KEY: "dev-secret-key-change-in-production"
+      ENCRYPTION_PASSWORD: "dev-encryption-password-change-in-production"
+      ENCRYPTION_SALT: "dev-salt-change-in-production"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    # Using same command as fly.toml [processes] worker entry
+    command: >
+      sh -c "
+        # Wait for services
+        while ! nc -z redis 6379; do
+          echo 'Redis is unavailable - sleeping'
+          sleep 1
+        done
+        
+        # Start worker using fly.toml worker command
+        celery -A backend.workers.celery_app worker --loglevel=info --concurrency=4
+      "
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+volumes:
+  postgres_data:

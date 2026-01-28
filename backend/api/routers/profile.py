@@ -12,14 +12,14 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from backend.api.middleware.file_validation import validate_file_upload
-from backend.api.routers.auth import get_current_user
-from backend.api.validators import (name_validator, phone_validator,
+from api.middleware.file_validation import validate_file_upload
+from api.routers.auth import get_current_user
+from api.validators import (name_validator, phone_validator,
                                     string_validator)
-from backend.db.database import get_db
-from backend.db.models import CandidateProfile, User
-from backend.services.resume_parser_enhanced import parse_resume_enhanced
-from backend.services.storage import upload_file
+from db.database import get_db
+from db.models import CandidateProfile, User
+from services.resume_parser_enhanced import parse_resume_enhanced
+from services.storage import upload_file
 
 router = APIRouter()
 

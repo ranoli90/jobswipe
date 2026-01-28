@@ -12,7 +12,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from backend.services.job_ingestion_service import JobIngestionService
+from services.job_ingestion_service import JobIngestionService
 
 
 class TestJobIngestionServiceSimple:
@@ -173,7 +173,7 @@ class TestJobIngestionServiceSimple:
         service = JobIngestionService()
 
         # Import module-level constant
-        from backend.services.job_ingestion_service import JOB_TYPES
+        from services.job_ingestion_service import JOB_TYPES
         
         assert len(JOB_TYPES) > 0
         assert "Software Engineer" in JOB_TYPES

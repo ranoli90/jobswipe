@@ -12,8 +12,8 @@ from typing import List, Optional
 import httpx
 from pydantic import BaseModel
 
-from backend.db.database import get_db
-from backend.db.models import Job
+from db.database import get_db
+from db.models import Job
 
 logger = logging.getLogger(__name__)
 
@@ -142,7 +142,6 @@ def update_or_create_job(lever_job: LeverJob, db) -> Job:
     new_job = Job(**normalized_job)
     db.add(new_job)
     logger.info("Created new Lever job: %s (%s)", normalized_job["title"], normalized_job["external_id"])
-    )
         return new_job
 
 

@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 from unittest.mock import MagicMock
 from fastapi import HTTPException
-from backend.api.routers.auth import get_current_admin_user
+from api.routers.auth import get_current_admin_user
 
 
 def test_get_current_admin_user_admin():

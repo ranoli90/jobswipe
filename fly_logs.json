@@ -1,0 +1,3100 @@
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"/app/backend/services/__init__.py\", line 8, in \u003cmodule\u003e",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:48:32.555658182Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "    from .analytics_service import AnalyticsService",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:48:32.555746314Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"/app/backend/services/analytics_service.py\", line 18, in \u003cmodule\u003e",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:48:32.555749104Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "    from backend.services.matching import calculate_job_score",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:48:32.555762414Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"/app/backend/services/matching.py\", line 280",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:48:32.555871596Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "    logger.info(\"Embedding semantic score: %s\", semantic_score:.2f)",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:48:32.555874356Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "                                                                ^",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:48:32.555874756Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "SyntaxError: invalid decimal literal",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:48:32.555875126Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "\u001b[32m INFO\u001b[0m Main child exited normally with code: 1",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:48:33.14573985Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "\u001b[32m INFO\u001b[0m Starting clean up.",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:48:33.165029326Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "[    5.820984] reboot: Restarting system",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:48:33.20817443Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "2026-01-28T10:49:11.072374906 [01KG2394RYNS5FGPTZCFP6G8NW:main] Running Firecracker v1.12.1",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:11.072447977Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "2026-01-28T10:49:11.072595760 [01KG2394RYNS5FGPTZCFP6G8NW:main] Listening on API socket (\"/fc.sock\").",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:11.07262013Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "\u001b[32m INFO\u001b[0m Starting init (commit: 6f59af0a)...",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:11.782795894Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "\u001b[32m INFO\u001b[0m Preparing to run: `python -m uvicorn backend.api.main:app --host 0.0.0.0 --port 8080` as appuser",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:11.907928949Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "\u001b[32m INFO\u001b[0m [fly api proxy] listening at /.fly/api",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:11.911284502Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "Machine started in 1.147s",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:12.131924842Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "runner"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "2026/01/28 10:49:12 INFO SSH listening listen_address=[fdaa:42:31df:a7b:60c:6f46:5ada:2]:22",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:12.151513382Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "Environment variables check:",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:15.683602913Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "VAULT_TOKEN: not set",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:15.683610224Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "ANALYTICS_API_KEY: set (length 17)",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:15.683611414Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "INGESTION_API_KEY: set (length 17)",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:15.683611804Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "DEDUPLICATION_API_KEY: set (length 21)",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:15.683612074Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "CATEGORIZATION_API_KEY: set (length 22)",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:15.683733186Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "AUTOMATION_API_KEY: set (length 18)",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:15.683737046Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "Vault authentication failed, falling back to environment variables",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.090339314Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "Traceback (most recent call last):",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.315029818Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"\u003cfrozen runpy\u003e\", line 198, in _run_module_as_main",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.315039248Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"\u003cfrozen runpy\u003e\", line 88, in _run_code",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.315039958Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"/usr/local/lib/python3.12/site-packages/uvicorn/__main__.py\", line 4, in \u003cmodule\u003e",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.315040748Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "    uvicorn.main()",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.315243591Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"/usr/local/lib/python3.12/site-packages/click/core.py\", line 1485, in __call__",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.315246721Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "    return self.main(*args, **kwargs)",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.316115415Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "           ^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.316119875Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"/usr/local/lib/python3.12/site-packages/click/core.py\", line 1406, in main",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.316120365Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "    rv = self.invoke(ctx)",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.316465291Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "         ^^^^^^^^^^^^^^^^",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.316468721Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"/usr/local/lib/python3.12/site-packages/click/core.py\", line 1269, in invoke",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.316469261Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "    return ctx.invoke(self.callback, **ctx.params)",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.316897858Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.316905068Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"/usr/local/lib/python3.12/site-packages/click/core.py\", line 824, in invoke",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.316906438Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "    return callback(*args, **kwargs)",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.317112871Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "           ^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.317117411Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"/usr/local/lib/python3.12/site-packages/uvicorn/main.py\", line 424, in main",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.317167822Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "    run(",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.317504117Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"/usr/local/lib/python3.12/site-packages/uvicorn/main.py\", line 594, in run",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.317515768Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "    server.run()",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.317728371Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"/usr/local/lib/python3.12/site-packages/uvicorn/server.py\", line 67, in run",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.317731971Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "    return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.317974505Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.318096767Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"/usr/local/lib/python3.12/asyncio/runners.py\", line 195, in run",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.318106907Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "    return runner.run(main)",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.318180358Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "           ^^^^^^^^^^^^^^^^",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.318183418Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"/usr/local/lib/python3.12/asyncio/runners.py\", line 118, in run",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.318204238Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "    return self._loop.run_until_complete(task)",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.318403442Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.318478133Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"/usr/local/lib/python3.12/asyncio/base_events.py\", line 691, in run_until_complete",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.318480373Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "    return future.result()",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.318714877Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "           ^^^^^^^^^^^^^^^",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.318718207Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"/usr/local/lib/python3.12/site-packages/uvicorn/server.py\", line 71, in serve",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.318718697Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "    await self._serve(sockets)",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.318867589Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"/usr/local/lib/python3.12/site-packages/uvicorn/server.py\", line 78, in _serve",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.318889529Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "    config.load()",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.318996741Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"/usr/local/lib/python3.12/site-packages/uvicorn/config.py\", line 439, in load",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.319068962Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "    self.loaded_app = import_from_string(self.app)",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.319409478Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.319461698Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"/usr/local/lib/python3.12/site-packages/uvicorn/importer.py\", line 19, in import_from_string",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.319465808Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "    module = importlib.import_module(module_str)",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.319641231Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.319737383Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"/usr/local/lib/python3.12/importlib/__init__.py\", line 90, in import_module",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.319740373Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "    return _bootstrap._gcd_import(name[level:], package, level)",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.319822314Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.319879625Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"\u003cfrozen importlib._bootstrap\u003e\", line 1387, in _gcd_import",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.319892885Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"\u003cfrozen importlib._bootstrap\u003e\", line 1360, in _find_and_load",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.319893315Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"\u003cfrozen importlib._bootstrap\u003e\", line 1310, in _find_and_load_unlocked",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.319893585Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"\u003cfrozen importlib._bootstrap\u003e\", line 488, in _call_with_frames_removed",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.319894755Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"\u003cfrozen importlib._bootstrap\u003e\", line 1387, in _gcd_import",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.319895015Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"\u003cfrozen importlib._bootstrap\u003e\", line 1360, in _find_and_load",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.319895325Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"\u003cfrozen importlib._bootstrap\u003e\", line 1310, in _find_and_load_unlocked",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.319895685Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"\u003cfrozen importlib._bootstrap\u003e\", line 488, in _call_with_frames_removed",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.319895955Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"\u003cfrozen importlib._bootstrap\u003e\", line 1387, in _gcd_import",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.319896205Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"\u003cfrozen importlib._bootstrap\u003e\", line 1360, in _find_and_load",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.319974197Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"\u003cfrozen importlib._bootstrap\u003e\", line 1331, in _find_and_load_unlocked",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.319976147Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"\u003cfrozen importlib._bootstrap\u003e\", line 935, in _load_unlocked",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.319976457Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"\u003cfrozen importlib._bootstrap_external\u003e\", line 999, in exec_module",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.319976717Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"\u003cfrozen importlib._bootstrap\u003e\", line 488, in _call_with_frames_removed",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.319976987Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"/app/backend/__init__.py\", line 15, in \u003cmodule\u003e",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.319977277Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "    from . import api, db, services, workers",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.320060008Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"/app/backend/services/__init__.py\", line 8, in \u003cmodule\u003e",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.320062518Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "    from .analytics_service import AnalyticsService",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.320141579Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"/app/backend/services/analytics_service.py\", line 18, in \u003cmodule\u003e",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.320227591Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "    from backend.services.matching import calculate_job_score",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.320301222Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "  File \"/app/backend/services/matching.py\", line 280",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.320303702Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "    logger.info(\"Embedding semantic score: %s\", semantic_score:.2f)",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.320304122Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "                                                                ^",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.320317542Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "SyntaxError: invalid decimal literal",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.320411344Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "\u001b[32m INFO\u001b[0m Main child exited normally with code: 1",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.928477638Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "\u001b[32m INFO\u001b[0m Starting clean up.",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:16.946422762Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "[    5.857730] reboot: Restarting system",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:17.018872751Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "app"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}
+{
+    "level": "info",
+    "instance": "e82700df007518",
+    "message": "machine has reached its max restart count of 10",
+    "region": "iad",
+    "timestamp": "2026-01-28T10:49:21.198685656Z",
+    "meta": {
+        "Instance": "e82700df007518",
+        "Region": "iad",
+        "Event": {
+            "Provider": "runner"
+        },
+        "HTTP": {
+            "Request": {
+                "ID": "",
+                "Method": "",
+                "Version": ""
+            },
+            "Response": {
+                "status_code": 0
+            }
+        },
+        "Error": {
+            "Code": 0,
+            "Message": ""
+        },
+        "URL": {
+            "Full": ""
+        }
+    }
+}

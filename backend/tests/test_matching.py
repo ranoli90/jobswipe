@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from backend.services.matching import (calculate_job_score, compute_bm25_score,
+from services.matching import (calculate_job_score, compute_bm25_score,
                                        get_job_matches_for_profile,
                                        get_job_recommendations_for_profile,
                                        get_personalized_jobs, preprocess_text)

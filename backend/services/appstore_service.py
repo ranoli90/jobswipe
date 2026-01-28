@@ -233,7 +233,7 @@ if __name__ == "__main__":
     if app_info:
         logging.info("Version: %s", app_info.get("version", "N/A"))
         logging.info("Minimum OS: %s", app_info.get("minimumOsVersion", "N/A"))
-            logging.info("Seller: {app_info.get("sellerName', 'N/A')}")
-            logging.info("Bundle ID: {app_info.get("bundleId', 'N/A')}")
-        else:
-            logging.warning("No app info available")
+        logging.info(f"Seller: {app_info.get('sellerName', 'N/A')}")
+        logging.info(f"Bundle ID: {app_info.get('bundleId', 'N/A')}")
+    else:
+        logging.warning("No app info available")

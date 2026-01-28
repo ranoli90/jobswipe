@@ -6,8 +6,8 @@ import json
 import time
 from typing import Any, Dict, Optional
 
-from backend.db.database import get_db
-from backend.db.models import Domain
+from db.database import get_db
+from db.models import Domain
 
 
 class DomainRateLimiter:
