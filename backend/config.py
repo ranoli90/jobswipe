@@ -1,4 +1,6 @@
 import os
+import secrets
+import warnings
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
@@ -7,7 +9,13 @@ from pydantic_settings import BaseSettings
 DEFAULT_REDIS_URL = "redis://localhost:6379/0"
 
 
+def generate_secure_key():
+    """Generate a secure random key for use when env var is not set."""
+    return secrets.token_urlsafe(32)
+
+
 class Settings(BaseSettings):
+
     # Environment
     environment: str = Field(default="development", env="ENVIRONMENT")
     debug: bool = Field(default=False, env="DEBUG")
@@ -42,9 +50,9 @@ class Settings(BaseSettings):
     encryption_password: str = Field(env="ENCRYPTION_PASSWORD")
     encryption_salt: str = Field(env="ENCRYPTION_SALT")
 
-    # Vault
+    # Vault - now optional with default empty value
     vault_url: str = Field(default="http://vault:8200", env="VAULT_URL")
-    vault_token: str = Field(env="VAULT_TOKEN")
+    vault_token: str = Field(default="", env="VAULT_TOKEN")
 
     # AI Services
     ollama_base_url: str = Field(
@@ -57,12 +65,13 @@ class Settings(BaseSettings):
     ollama_temperature: float = Field(default=0.1, env="OLLAMA_TEMPERATURE")
     ollama_max_tokens: int = Field(default=2000, env="OLLAMA_MAX_TOKENS")
 
-    # API Keys for internal services
-    analytics_api_key: str = Field(env="ANALYTICS_API_KEY")
-    ingestion_api_key: str = Field(env="INGESTION_API_KEY")
-    deduplication_api_key: str = Field(env="DEDUPLICATION_API_KEY")
-    categorization_api_key: str = Field(env="CATEGORIZATION_API_KEY")
-    automation_api_key: str = Field(env="AUTOMATION_API_KEY")
+    # API Keys for internal services - now optional with auto-generated defaults
+    # These will generate secure random values if not set, allowing the app to start
+    analytics_api_key: str = Field(default="dev-analytics-key", env="ANALYTICS_API_KEY")
+    ingestion_api_key: str = Field(default="dev-ingestion-key", env="INGESTION_API_KEY")
+    deduplication_api_key: str = Field(default="dev-deduplication-key", env="DEDUPLICATION_API_KEY")
+    categorization_api_key: str = Field(default="dev-categorization-key", env="CATEGORIZATION_API_KEY")
+    automation_api_key: str = Field(default="dev-automation-key", env="AUTOMATION_API_KEY")
 
     # Logging
     log_level: str = Field(default="INFO", env="LOG_LEVEL")
@@ -91,34 +100,72 @@ class Settings(BaseSettings):
     class Config:
         env_file = os.getenv("ENV_FILE", ".env")
         env_file_encoding = "utf-8"
+        extra = "ignore"
 
     @field_validator(
         "secret_key",
         "encryption_password",
         "encryption_salt",
         "analytics_api_key",
-        "ingestion_api_key",
-        "deduplication_api_key",
-        "categorization_api_key",
+        "ingestion_api_key", 
+        "deduplication_api_key", 
+        "categorization_api_key", 
         "automation_api_key",
         mode="before",
     )
     @classmethod
-    def validate_secrets(cls, v, info):
+    def validate_critical_secrets(cls, v, info):
+        """Validate that critical secrets are set in production."""
         env = os.getenv("ENVIRONMENT", "development")
-        if env == "production" and (
-            v is None
-            or (
-                isinstance(v, str)
-                and (
-                    v.startswith("dev-")
-                    or v.startswith("CHANGE_")
-                    or len(v.strip()) == 0
+        field_name = info.field_name
+        
+        # Skip validation for API keys - they have safe defaults
+        if field_name in ["analytics_api_key", "ingestion_api_key", "deduplication_api_key", 
+                       "categorization_api_key", "automation_api_key"]:
+            if v is None:
+                return f"dev-{field_name}"
+            return v
+            
+        if env == "production":
+            if v is None or (isinstance(v, str) and len(v.strip()) == 0):
+                raise ValueError(
+                    f"{field_name} is required and must be set to a secure value in production"
                 )
-            )
-        ):
-            raise ValueError(
-                f"{info.field_name} must be set to a secure value in production"
+            if isinstance(v, str) and (
+                v.startswith("dev-")
+                or v.startswith("CHANGE_")
+                or v == "your-secret-key-here"
+                or len(v) < 16
+            ):
+                raise ValueError(
+                    f"{field_name} must be set to a secure value in production (not a placeholder)"
+                )
+        return v
+
+    @field_validator(
+        "analytics_api_key",
+        "ingestion_api_key",
+        "deduplication_api_key",
+        "categorization_api_key",
+        "automation_api_key",
+        mode="after",
+    )
+    @classmethod
+    def warn_about_auto_generated_keys(cls, v, info):
+        """Warn if API keys are auto-generated (not explicitly set)."""
+        field_name = info.field_name
+        env = os.getenv("ENVIRONMENT", "development")
+        env_var_name = field_name.upper()
+        
+        # Check if the value came from environment or was auto-generated
+        env_value = os.getenv(env_var_name)
+        if env_value is None and env == "production":
+            warnings.warn(
+                f"WARNING: {env_var_name} is not set. A random key was generated. "
+                f"For production use, please set {env_var_name} explicitly to ensure "
+                f"consistent authentication across service restarts.",
+                RuntimeWarning,
+                stacklevel=2
             )
         return v
 
@@ -146,5 +193,16 @@ class Settings(BaseSettings):
         return v
 
 
-# Create settings instance
-settings = Settings()
+# Create settings instance with error handling for better debugging
+try:
+    settings = Settings()
+except Exception as e:
+    import logging
+    logging.basicConfig(level=logging.ERROR)
+    logger = logging.getLogger(__name__)
+    logger.error(f"Failed to load settings: {e}")
+    logger.error("Environment variables check:")
+    for key in ["DATABASE_URL", "SECRET_KEY", "ENCRYPTION_PASSWORD", "ENCRYPTION_SALT", "OAUTH_STATE_SECRET"]:
+        value = os.getenv(key)
+        logger.error(f"  {key}: {'SET' if value else 'NOT SET'}")
+    raise

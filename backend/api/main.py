@@ -8,6 +8,7 @@ FastAPI-based API for job search and application automation platform.
 import logging
 import logging.config
 import os
+import sys
 import uuid
 from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
@@ -21,6 +22,17 @@ from fastapi_limiter import FastAPILimiter
 from fastapi_limiter.depends import RateLimiter
 from pythonjsonlogger import jsonlogger
 
+# Try to import settings with proper error handling
+try:
+    from backend.config import Settings
+    settings = Settings()
+except Exception as e:
+    # Log to stderr before logging is configured
+    print(f"CRITICAL ERROR: Failed to load settings: {e}", file=sys.stderr)
+    print("This usually means required environment variables are missing.", file=sys.stderr)
+    print("Required variables: DATABASE_URL, SECRET_KEY, ENCRYPTION_PASSWORD, ENCRYPTION_SALT, OAUTH_STATE_SECRET", file=sys.stderr)
+    sys.exit(1)
+
 from backend.api.middleware.compression import add_compression_middleware
 from backend.api.middleware.error_handling import add_error_handling_middleware
 from backend.api.middleware.file_validation import \
@@ -32,7 +44,6 @@ from backend.api.routers import (analytics, application_automation,
                                  applications, auth, job_categorization,
                                  job_deduplication, jobs, jobs_ingestion,
                                  notifications, profile, api_keys)
-from backend.config import Settings
 from backend.db.database import get_db
 from backend.metrics import MetricsMiddleware, metrics_endpoint
 from backend.services.embedding_service import EmbeddingService
@@ -45,7 +56,12 @@ log_max_size = int(os.getenv("LOG_MAX_SIZE", 10485760))  # 10MB
 log_backup_count = int(os.getenv("LOG_BACKUP_COUNT", 5))
 
 # Ensure log directory exists
-os.makedirs(os.path.dirname(log_file), exist_ok=True)
+try:
+    os.makedirs(os.path.dirname(log_file), exist_ok=True)
+except OSError as e:
+    print(f"Warning: Could not create log directory: {e}", file=sys.stderr)
+    # Fallback to stdout only logging
+    log_file = "/dev/null"
 
 logging_config = {
     "version": 1,
@@ -86,7 +102,7 @@ logging_config = {
     },
     "loggers": {
         "": {  # root logger
-            "handlers": ["console", "file"],
+            "handlers": ["console", "file"] if log_file != "/dev/null" else ["console"],
             "level": log_level,
             "propagate": True,
         },
@@ -162,8 +178,6 @@ app = FastAPI(
     title="JobSwipe API", version="1.0.0", max_request_size=10 * 1024 * 1024
 )  # 10MB limit
 
-settings = Settings()
-
 
 # Setup rate limiting with Redis
 @app.on_event("startup")
@@ -179,10 +193,17 @@ async def startup():
         logger.error("Environment configuration validation failed: %s", e)
         raise
 
-    redis_instance = redis.from_url(
-        settings.redis_url, encoding="utf8", decode_responses=True
-    )
-    await FastAPILimiter.init(redis_instance)
+    # Initialize Redis with error handling
+    try:
+        redis_instance = redis.from_url(
+            settings.redis_url, encoding="utf8", decode_responses=True
+        )
+        await FastAPILimiter.init(redis_instance)
+        logger.info("Redis rate limiter initialized successfully")
+    except Exception as e:
+        logger.error("Failed to initialize Redis rate limiter: %s", e)
+        logger.warning("Continuing without rate limiting - Redis unavailable")
+        # Don't raise - allow app to start without Redis
 
 
 # Rate limiters
@@ -240,7 +261,11 @@ async def rate_limit_exceeded_handler(request: Request, exc: HTTPException):
 
 
 # Setup OpenTelemetry tracing
-setup_tracing(app)
+try:
+    setup_tracing(app)
+    logger.info("OpenTelemetry tracing initialized")
+except Exception as e:
+    logger.warning("Failed to initialize tracing: %s", e)
 
 # CORS configuration - using settings from config
 app.add_middleware(
@@ -251,225 +276,104 @@ app.add_middleware(
     allow_headers=settings.cors_allow_headers,
 )
 
-# Correlation ID middleware
+# Add correlation ID middleware
 app.add_middleware(CorrelationIdMiddleware)
 
-
-# Security headers middleware
-class SecurityHeadersMiddleware:
-    def __init__(self, app):
-        self.app = app
-
-    async def __call__(self, scope, receive, send):
-        if scope["type"] != "http":
-            await self.app(scope, receive, send)
-            return
-
-        # Capture the original send to modify responses
-        async def send_wrapper(message):
-            if message["type"] == "http.response.start":
-                # Add security headers
-                message["headers"].append(
-                    (b"content-security-policy", 
-                     b"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self' data:; frame-ancestors 'none'")
-                )
-                message["headers"].append(
-                    (b"x-frame-options", b"DENY")
-                )
-                message["headers"].append(
-                    (b"x-xss-protection", b"1; mode=block")
-                )
-                message["headers"].append(
-                    (b"x-content-type-options", b"nosniff")
-                )
-                message["headers"].append(
-                    (b"referrer-policy", b"strict-origin-when-cross-origin")
-                )
-                message["headers"].append(
-                    (b"strict-transport-security", b"max-age=31536000; includeSubDomains; preload")
-                )
-                message["headers"].append(
-                    (b"x-permitted-cross-domain-policies", b"none")
-                )
-                message["headers"].append(
-                    (b"permissions-policy", b"accelerometer=(), autoplay=(), camera=(), display-capture=(), encrypted-media=(), fullscreen=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(), sync-xhr=(), usb=()")
-                )
-            await send(message)
-
-        await self.app(scope, receive, send_wrapper)
-
-
-app.add_middleware(SecurityHeadersMiddleware)
-
-# Input sanitization middleware
+# Add security middleware
 app.add_middleware(InputSanitizationMiddleware)
-
-# Output encoding middleware
 app.add_middleware(OutputEncodingMiddleware)
 
-# Prometheus metrics middleware
-app.add_middleware(MetricsMiddleware)
+# Add compression middleware
+add_compression_middleware(app)
 
-# Response compression
-compression_type = os.getenv("COMPRESSION_TYPE", "gzip")
-add_compression_middleware(app, compression_type=compression_type)
-
-# Error handling middleware
-include_traceback = os.getenv("DEBUG", "false").lower() == "true"
-add_error_handling_middleware(app, include_traceback=include_traceback)
-
-# File upload validation middleware
+# Add file validation middleware
 add_file_validation_middleware(app)
 
-# Include routers with rate limiting
-from fastapi import Depends
+# Add error handling middleware
+add_error_handling_middleware(app)
 
-app.include_router(
-    auth.router, prefix="/api/v1/auth", tags=["auth"], dependencies=[Depends(auth_limiter)]
-)
-app.include_router(
-    profile.router,
-    prefix="/api/v1/profile",
-    tags=["profile"],
-    dependencies=[Depends(api_limiter)],
-)
-app.include_router(
-    jobs.router, prefix="/api/v1/jobs", tags=["jobs"], dependencies=[Depends(api_limiter)]
-)
-app.include_router(
-    applications.router,
-    prefix="/api/v1/applications",
-    tags=["applications"],
-    dependencies=[Depends(api_limiter)],
-)
-app.include_router(
-    jobs_ingestion.router,
-    prefix="/api/v1/ingestion",
-    tags=["ingestion"],
-    dependencies=[Depends(api_limiter)],
-)
-app.include_router(
-    analytics.router,
-    prefix="/api/v1/analytics",
-    tags=["analytics"],
-    dependencies=[Depends(api_limiter)],
-)
-app.include_router(
-    application_automation.router,
-    prefix="/api/v1/application-automation",
-    tags=["application-automation"],
-    dependencies=[Depends(api_limiter)],
-)
-app.include_router(
-    job_deduplication.router,
-    prefix="/api/v1/deduplicate",
-    tags=["deduplication"],
-    dependencies=[Depends(api_limiter)],
-)
-app.include_router(
-    job_categorization.router,
-    prefix="/api/v1/categorize",
-    tags=["categorization"],
-    dependencies=[Depends(api_limiter)],
-)
-app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["notifications"], dependencies=[Depends(api_limiter)])
-app.include_router(api_keys.router, prefix="/api/v1/admin/api-keys", tags=["API Keys"], dependencies=[Depends(api_limiter)])
+# Add metrics middleware
+app.add_middleware(MetricsMiddleware)
 
 
-# Global exception handler for error logging
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc):
-    client_ip = request.client.host if request.client else "unknown"
-    user_id = (
-        getattr(request.state, "user_id", "anonymous")
-        if hasattr(request.state, "user_id")
-        else "anonymous"
-    )
-
-    # Log security events for authentication/authorization failures
-    if isinstance(exc, (ValueError, TypeError)) and "auth" in str(exc).lower():
-        security_logger.warning(
-            "Authentication failure",
-            extra={"ip": client_ip, "user": user_id, "path": str(request.url.path)},
-        )
-
-    logger.error("Unhandled exception", exc_info=True)
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "Internal server error"},
-    )
+# Include routers
+app.include_router(auth.router, prefix="/api/v1", tags=["auth"])
+app.include_router(jobs.router, prefix="/api/v1", tags=["jobs"])
+app.include_router(applications.router, prefix="/api/v1", tags=["applications"])
+app.include_router(profile.router, prefix="/api/v1", tags=["profile"])
+app.include_router(analytics.router, prefix="/api/v1", tags=["analytics"])
+app.include_router(notifications.router, prefix="/api/v1", tags=["notifications"])
+app.include_router(
+    application_automation.router, prefix="/api/v1", tags=["application_automation"]
+)
+app.include_router(job_deduplication.router, prefix="/api/v1", tags=["deduplication"])
+app.include_router(job_categorization.router, prefix="/api/v1", tags=["categorization"])
+app.include_router(jobs_ingestion.router, prefix="/api/v1", tags=["ingestion"])
+app.include_router(api_keys.router, prefix="/api/v1", tags=["api_keys"])
 
 
-@app.get("/", dependencies=[Depends(public_limiter)])
-async def root():
-    """Root endpoint - health check"""
-    return {"message": "Welcome to JobSwipe API"}
-
-
-@app.get("/health", dependencies=[Depends(public_limiter)])
+@app.get("/health")
 async def health_check():
-    """Basic health check endpoint - service availability"""
-    return {"status": "healthy", "service": "JobSwipe API", "version": "1.0.0"}
-
-
-@app.get("/ready", ('exc', '"detail": "Internal server error"', '"service": "JobSwipe API", "version": "1.0.0", "status": "healthy"', '"status": "healthy", "service": "JobSwipe API", "version": "1.0.0"'))
-async def readiness_check():
-    """Readiness check endpoint - dependencies check"""
-    health_status = {
-        "status": "ready",
-        "timestamp": datetime.datetime.now(timezone.utc).isoformat() + "Z",
-        "services": {},
+    """Health check endpoint for load balancers and monitoring."""
+    return {
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "version": "1.0.0"
     }
 
+
+@app.get("/ready")
+async def readiness_check():
+    """Readiness check for Kubernetes-style deployments."""
     # Check database connectivity
     try:
         db = next(get_db())
         db.execute("SELECT 1")
-        health_status["services"]["database"] = "ready"
-        db.close()
+        db_status = "connected"
     except Exception as e:
-        logger.error("Database readiness check failed: %s", exc_info=True)
-        health_status["services"]["database"] = f"not ready: %s"
-        health_status["status"] = "not ready"
-
+        logger.error(f"Database health check failed: {e}")
+        db_status = "disconnected"
+    
     # Check Redis connectivity
     try:
-        redis_url = os.getenv("CELERY_RESULT_BACKEND", "redis://redis:6379/0", ('str(e)', 'str(e)'))
-        if redis_url.startswith("redis://"):
-            redis_client = redis.from_url(redis_url)
-            redis_client.ping()
-            health_status["services"]["redis"] = "ready"
-        
-
-        health_status["services"]["redis"] = "unknown"
+        import redis as redis_sync
+        r = redis_sync.from_url(settings.redis_url)
+        r.ping()
+        redis_status = "connected"
     except Exception as e:
-        logger.error("Redis readiness check failed: %s", exc_info=True)
-        health_status["services"]["redis"] = f"not ready: %s"
-        health_status["status"] = "not ready"
-
-    # Check Ollama connectivity
-    try:
-        import httpx
-
-        ollama_url = os.getenv("OLLAMA_BASE_URL", "http://ollama:11434", ('str(e)', 'str(e)'))
-        async with httpx.AsyncClient() as client:
-            response = await client.get(f"{ollama_url}/api/tags", timeout=5.0)
-            if response.status_code == 200:
-                health_status["services"]["ollama"] = "ready"
-            else:
-                health_status["services"][
-                    "ollama"
-                ] = f"not ready: HTTP {response.status_code}"
-                health_status["status"] = "not ready"
-    except Exception as e:
-        logger.error("Ollama readiness check failed: %s", exc_info=True)
-        health_status["services"]["ollama"] = f"not ready: %s"
-        health_status["status"] = "not ready"
-
-    return health_status
+        logger.warning(f"Redis health check failed: {e}")
+        redis_status = "disconnected"
+    
+    status_code = 200 if db_status == "connected" else 503
+    
+    return JSONResponse(
+        status_code=status_code,
+        content={
+            "status": "ready" if db_status == "connected" else "not_ready",
+            "database": db_status,
+            "redis": redis_status,
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+    )
 
 
-@app.get("/metrics", ('str(e)', 'str(e)'))
-async def get_metrics():
-    """Prometheus metrics endpoint"""
+@app.get("/metrics")
+async def metrics():
+    """Prometheus metrics endpoint."""
     return await metrics_endpoint()
+
+
+@app.get("/")
+async def root():
+    """Root endpoint - redirects to API documentation."""
+    return {
+        "message": "JobSwipe API",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "health": "/health",
+    }
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8080)

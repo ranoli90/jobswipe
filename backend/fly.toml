@@ -15,8 +15,8 @@ primary_region = 'iad'
   PORT = '8080'
 
 [processes]
-  app = 'python -m uvicorn api.main:app --host 0.0.0.0 --port 8080 --workers 4'
-  worker = 'celery -A backend.workers.app_agent_worker worker --loglevel=INFO --concurrency=2'
+  app = 'python -m uvicorn api.main:app --host 0.0.0.0 --port 8080 --workers 2'
+  # worker = 'celery -A backend.workers.app_agent_worker worker --loglevel=INFO --concurrency=2'
 
 [[mounts]]
   source = 'jobswipe_data'
@@ -27,8 +27,8 @@ primary_region = 'iad'
   force_https = true
   auto_stop_machines = 'stop'
   auto_start_machines = true
-  min_machines_running = 2
-  max_machines_running = 10
+  min_machines_running = 1
+  max_machines_running = 3
   processes = ['app']
 
   [[http_service.checks]]
@@ -42,54 +42,8 @@ primary_region = 'iad'
   [[http_service.scale_to_zero]]
     grace_period = "300s" # 5 minutes
 
-# Auto-scaling configuration based on metrics
-[experimental]
-  auto_scaling = true
-
-[[http_service.scale]]
-  # Scale based on CPU utilization
-  metric_name = "cpu"
-  metric_type = "system"
-  threshold = 70
-  unit = "percent"
-  adjustment = "+1"
-  cooldown = "60s"
-
-[[http_service.scale]]
-  # Scale based on memory utilization
-  metric_name = "memory"
-  metric_type = "system"
-  threshold = 80
-  unit = "percent"
-  adjustment = "+1"
-  cooldown = "60s"
-
-[[http_service.scale]]
-  # Scale based on request queue length (Prometheus metric)
-  metric_name = "request_queue_length"
-  metric_type = "prometheus"
-  threshold = 50
-  unit = "count"
-  adjustment = "+1"
-  cooldown = "30s"
-
-[[http_service.scale]]
-  # Scale down when CPU is low
-  metric_name = "cpu"
-  metric_type = "system"
-  threshold = 30
-  unit = "percent"
-  adjustment = "-1"
-  cooldown = "300s" # 5 minutes
-
 [[vm]]
   cpu_kind = 'shared'
   cpus = 1
-  memory_mb = 1024
+  memory_mb = 512
   processes = ['app']
-
-[[vm]]
-  cpu_kind = 'shared'
-  cpus = 1
-  memory_mb = 2048
-  processes = ['worker']

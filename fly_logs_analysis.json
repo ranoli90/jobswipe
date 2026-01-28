@@ -1,0 +1,33 @@
+{
+  "timestamp": "2026-01-28T00:07:45.799635",
+  "total_logs": 100,
+  "categories": {
+    "config": 7,
+    "worker": 1,
+    "pydantic_validation": 13
+  },
+  "missing_env_vars": [],
+  "restart_info": {
+    "total_restarts": 3,
+    "restart_events": [
+      {
+        "timestamp": "2026-01-28T06:27:58.197223027Z",
+        "instance": "7811e19b172d78",
+        "message": "\u001b[32m INFO\u001b[0m Main child exited normally with code: 1",
+        "index": 96
+      },
+      {
+        "timestamp": "2026-01-28T06:27:58.251765749Z",
+        "instance": "7811e19b172d78",
+        "message": "[    5.819753] reboot: Restarting system",
+        "index": 98
+      },
+      {
+        "timestamp": "2026-01-28T06:28:02.500331967Z",
+        "instance": "7811e19b172d78",
+        "message": "machine has reached its max restart count of 10",
+        "index": 99
+      }
+    ]
+  }
+}
