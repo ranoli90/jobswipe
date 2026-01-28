@@ -11,8 +11,8 @@ from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
-from config import settings
-from vault_secrets import get_encryption_key
+from backend.config import settings
+from backend.vault_secrets import get_encryption_key
 
 logger = logging.getLogger(__name__)
 
