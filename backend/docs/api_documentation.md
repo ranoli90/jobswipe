@@ -755,6 +755,709 @@ Content-Type: application/json
 }
 ```
 
+### Get Notification Statistics (Admin Only)
+
+```http
+GET /api/v1/notifications/stats
+Authorization: Bearer <admin_access_token>
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "total_notifications": 1500,
+    "delivered_push": 1200,
+    "delivered_email": 850,
+    "failed_push": 50,
+    "failed_email": 20,
+    "service_status": {
+      "apns": "healthy",
+      "fcm": "healthy",
+      "email": "healthy"
+    }
+  }
+}
+```
+
+**Response (403 Forbidden - Non-Admin):**
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "AUTHORIZATION_ERROR",
+    "message": "Only admin users can access this endpoint"
+  }
+}
+```
+
+## Job Deduplication Endpoints
+
+### Find Duplicate Jobs
+
+```http
+GET /api/v1/deduplicate/find
+Authorization: Bearer <admin_access_token>
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "message": "Found 3 duplicate groups",
+  "duplicate_groups": [
+    {
+      "main_job": {
+        "id": "job-uuid-1",
+        "title": "Senior Software Engineer",
+        "company": "Tech Corp",
+        "source": "greenhouse",
+        "similarity": 1.0
+      },
+      "duplicates": [
+        {
+          "id": "job-uuid-2",
+          "title": "Senior Software Engineer",
+          "company": "Tech Corp",
+          "source": "lever",
+          "similarity": 0.95
+        }
+      ]
+    }
+  ]
+}
+```
+
+### Remove Duplicate Jobs
+
+```http
+POST /api/v1/deduplicate/remove
+Authorization: Bearer <admin_access_token>
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "message": "Removed 2 duplicate jobs from 1 groups",
+  "duplicate_groups_found": 1,
+  "duplicates_removed": 2
+}
+```
+
+### Run Deduplication Process
+
+```http
+POST /api/v1/deduplicate/run
+Authorization: Bearer <admin_access_token>
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "message": "Removed 5 duplicate jobs from 3 groups",
+  "duplicate_groups_found": 3,
+  "duplicates_removed": 5
+}
+```
+
+## Job Categorization Endpoints
+
+### Categorize All Jobs
+
+```http
+POST /api/v1/categorize/all
+Authorization: Bearer <admin_access_token>
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "message": "Successfully categorized 1234 jobs",
+  "jobs_categorized": 1234,
+  "category_counts": {
+    "Software Engineering": 856,
+    "Product Management": 123,
+    "Data Science": 98,
+    "Design": 157
+  }
+}
+```
+
+### Get Category Distribution
+
+```http
+GET /api/v1/categorize/distribution
+Authorization: Bearer <admin_access_token>
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "message": "Category distribution retrieved successfully",
+  "distribution": {
+    "Software Engineering": 856,
+    "Product Management": 123,
+    "Data Science": 98,
+    "Design": 157
+  }
+}
+```
+
+### Run Categorization Process
+
+```http
+POST /api/v1/categorize/run
+Authorization: Bearer <admin_access_token>
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "message": "Successfully categorized 1234 jobs",
+  "jobs_categorized": 1234,
+  "category_counts": {
+    "Software Engineering": 856,
+    "Product Management": 123,
+    "Data Science": 98,
+    "Design": 157
+  }
+}
+```
+
+## API Keys Management Endpoints
+
+### Create API Key
+
+```http
+POST /api/v1/admin/api-keys
+Authorization: Bearer <admin_access_token>
+Content-Type: application/json
+
+{
+  "name": "Data Ingestion Service",
+  "service_type": "ingestion",
+  "description": "API key for job ingestion service",
+  "permissions": ["ingest_jobs", "get_ingestion_status"],
+  "rate_limit": 1000,
+  "expires_at": "2024-12-31T23:59:59Z"
+}
+```
+
+**Response (201 Created):**
+
+```json
+{
+  "id": "key-uuid",
+  "key": "js_ingestion_abc123def456",
+  "key_prefix": "js_ingestion",
+  "name": "Data Ingestion Service",
+  "service_type": "ingestion",
+  "permissions": ["ingest_jobs", "get_ingestion_status"],
+  "rate_limit": 1000,
+  "expires_at": "2024-12-31T23:59:59Z",
+  "is_active": true,
+  "last_used_at": null,
+  "usage_count": 0,
+  "created_at": "2024-01-15T10:30:00Z"
+}
+```
+
+### List API Keys
+
+```http
+GET /api/v1/admin/api-keys?service_type=ingestion&active_only=true
+Authorization: Bearer <admin_access_token>
+```
+
+**Response (200 OK):**
+
+```json
+[
+  {
+    "id": "key-uuid",
+    "key_prefix": "js_ingestion",
+    "name": "Data Ingestion Service",
+    "service_type": "ingestion",
+    "permissions": ["ingest_jobs", "get_ingestion_status"],
+    "rate_limit": 1000,
+    "expires_at": "2024-12-31T23:59:59Z",
+    "is_active": true,
+    "last_used_at": "2024-01-15T10:45:00Z",
+    "usage_count": 15,
+    "created_at": "2024-01-15T10:30:00Z"
+  }
+]
+```
+
+### Get API Key Details
+
+```http
+GET /api/v1/admin/api-keys/{key_id}
+Authorization: Bearer <admin_access_token>
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "id": "key-uuid",
+  "key_prefix": "js_ingestion",
+  "name": "Data Ingestion Service",
+  "service_type": "ingestion",
+  "permissions": ["ingest_jobs", "get_ingestion_status"],
+  "rate_limit": 1000,
+  "expires_at": "2024-12-31T23:59:59Z",
+  "is_active": true,
+  "last_used_at": "2024-01-15T10:45:00Z",
+  "usage_count": 15,
+  "created_at": "2024-01-15T10:30:00Z"
+}
+```
+
+### Revoke API Key
+
+```http
+POST /api/v1/admin/api-keys/{key_id}/revoke
+Authorization: Bearer <admin_access_token>
+```
+
+**Response (204 No Content):**
+
+### Rotate API Key
+
+```http
+POST /api/v1/admin/api-keys/{key_id}/rotate
+Authorization: Bearer <admin_access_token>
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "id": "new-key-uuid",
+  "key": "js_ingestion_new123key456",
+  "key_prefix": "js_ingestion",
+  "name": "Data Ingestion Service",
+  "service_type": "ingestion",
+  "permissions": ["ingest_jobs", "get_ingestion_status"],
+  "rate_limit": 1000,
+  "expires_at": "2024-12-31T23:59:59Z",
+  "is_active": true,
+  "last_used_at": null,
+  "usage_count": 0,
+  "created_at": "2024-01-15T11:00:00Z"
+}
+```
+
+### Get API Key Statistics
+
+```http
+GET /api/v1/admin/api-keys/{key_id}/stats?since=2024-01-01
+Authorization: Bearer <admin_access_token>
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "key_id": "key-uuid",
+  "key_name": "Data Ingestion Service",
+  "service_type": "ingestion",
+  "period_start": "2024-01-01T00:00:00Z",
+  "period_end": "2024-01-15T11:00:00Z",
+  "total_requests": 150,
+  "success_requests": 145,
+  "failed_requests": 5,
+  "avg_response_time": 0.123,
+  "rate_limit_hits": 0
+}
+```
+
+## Job Ingestion Endpoints
+
+### Sync Greenhouse Board
+
+```http
+POST /api/v1/ingestion/sources/greenhouse/sync?board_token=abc123&incremental=true
+Authorization: Bearer <admin_access_token>
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "message": "Successfully synced 25 jobs from Greenhouse board abc123",
+  "jobs_synced": 25
+}
+```
+
+### Sync Lever Postings
+
+```http
+POST /api/v1/ingestion/sources/lever/sync?org_slug=tech-corp&incremental=true
+Authorization: Bearer <admin_access_token>
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "message": "Successfully synced 18 jobs from Lever organization tech-corp",
+  "jobs_synced": 18
+}
+```
+
+### Sync RSS Feed
+
+```http
+POST /api/v1/ingestion/sources/rss/sync?feed_url=https%3A%2F%2Fexample.com%2Fjobs.rss
+Authorization: Bearer <admin_access_token>
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "message": "Successfully synced 12 jobs from RSS feed https://example.com/jobs.rss",
+  "jobs_synced": 12
+}
+```
+
+### Trigger Ingestion
+
+```http
+POST /api/v1/ingestion/ingest
+Authorization: Bearer <admin_access_token>
+Content-Type: application/json
+
+{
+  "sources": ["greenhouse", "lever"],
+  "interval_seconds": 3600
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "message": "Successfully ingested 43 jobs",
+  "jobs_ingested": 43,
+  "jobs_processed": 43,
+  "failed": 0
+}
+```
+
+### Get Ingestion Status
+
+```http
+GET /api/v1/ingestion/status
+Authorization: Bearer <admin_access_token>
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "is_running": true,
+  "last_run": "2024-01-15T10:30:00Z",
+  "next_run": "2024-01-15T11:30:00Z",
+  "total_jobs_ingested": 1234,
+  "failed_jobs": 42
+}
+```
+
+### Start Periodic Ingestion
+
+```http
+POST /api/v1/ingestion/start-periodic
+Authorization: Bearer <admin_access_token>
+Content-Type: application/json
+
+{
+  "sources": ["greenhouse", "lever"],
+  "interval_seconds": 3600
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "message": "Periodic ingestion started with interval 3600 seconds"
+}
+```
+
+### Stop Periodic Ingestion
+
+```http
+POST /api/v1/ingestion/stop-periodic
+Authorization: Bearer <admin_access_token>
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "message": "Periodic ingestion stopped"
+}
+```
+
+### Get Ingestion Sources
+
+```http
+GET /api/v1/ingestion/sources
+Authorization: Bearer <admin_access_token>
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "sources": [
+    {
+      "name": "Greenhouse",
+      "type": "greenhouse",
+      "url": "https://boards-api.greenhouse.io"
+    },
+    {
+      "name": "Lever",
+      "type": "lever",
+      "url": "https://api.lever.co"
+    }
+  ]
+}
+```
+
+## Application Automation Endpoints
+
+### Auto Apply to Job
+
+```http
+POST /api/v1/application-automation/auto-apply
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "task_id": "task-uuid",
+  "headless": true
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "task_id": "task-uuid",
+  "status": "completed",
+  "message": "Application submitted successfully",
+  "submitted": true,
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+### Auto Apply to All Jobs
+
+```http
+POST /api/v1/application-automation/auto-apply-all
+Authorization: Bearer <access_token>
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "total": 5,
+  "processed": 5,
+  "results": [
+    {
+      "task_id": "task-uuid-1",
+      "job_id": "job-uuid-1",
+      "status": "completed",
+      "submitted": true
+    },
+    {
+      "task_id": "task-uuid-2",
+      "job_id": "job-uuid-2",
+      "status": "failed",
+      "submitted": false,
+      "error": "Invalid form data"
+    }
+  ]
+}
+```
+
+### Get Pending Tasks
+
+```http
+GET /api/v1/application-automation/tasks/pending
+Authorization: Bearer <access_token>
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "pending": 3,
+  "tasks": [
+    {
+      "id": "task-uuid-1",
+      "job_id": "job-uuid-1",
+      "status": "queued",
+      "created_at": "2024-01-15T10:00:00Z",
+      "updated_at": "2024-01-15T10:00:00Z"
+    }
+  ]
+}
+```
+
+### Get Application History
+
+```http
+GET /api/v1/application-automation/tasks/history
+Authorization: Bearer <access_token>
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "total": 10,
+  "tasks": [
+    {
+      "id": "task-uuid-1",
+      "job_id": "job-uuid-1",
+      "status": "completed",
+      "submitted": true,
+      "created_at": "2024-01-15T10:00:00Z",
+      "updated_at": "2024-01-15T10:05:00Z",
+      "last_error": null
+    }
+  ]
+}
+```
+
+### Get Automation Statistics
+
+```http
+GET /api/v1/application-automation/stats
+Authorization: Bearer <access_token>
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "stats": {
+    "total": 10,
+    "pending": 3,
+    "in_progress": 1,
+    "success": 5,
+    "failed": 1,
+    "cancelled": 0
+  },
+  "success_rate": 50.0
+}
+```
+
+### Cancel Task
+
+```http
+POST /api/v1/application-automation/tasks/{task_id}/cancel
+Authorization: Bearer <access_token>
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "message": "Task cancelled successfully"
+}
+```
+
+### Generate Cover Letter
+
+```http
+POST /api/v1/application-automation/cover-letter/generate
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "job_id": "job-uuid",
+  "custom_instructions": "Focus on Python and FastAPI skills"
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "cover_letter": "Dear Hiring Manager,\n\nI am writing to apply for the Senior Software Engineer position...",
+  "word_count": 450,
+  "error": "",
+  "metadata": {
+    "generated_at": "2024-01-15T10:30:00Z",
+    "model": "gpt-4"
+  }
+}
+```
+
+### Regenerate Cover Letter
+
+```http
+POST /api/v1/application-automation/cover-letter/regenerate
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "job_id": "job-uuid",
+  "previous_letter": "Dear Hiring Manager...",
+  "feedback": "Make it more concise",
+  "custom_instructions": "Focus on Python and FastAPI skills"
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "cover_letter": "Dear Hiring Manager,\n\nI am applying for the Senior Software Engineer position...",
+  "word_count": 300,
+  "error": "",
+  "metadata": {
+    "generated_at": "2024-01-15T10:35:00Z",
+    "model": "gpt-4"
+  }
+}
+```
+
 ## Error Codes
 
 | Code | HTTP Status | Description |

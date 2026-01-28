@@ -9,12 +9,12 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from backend.api.main import get_current_user
+from backend.api.routers.auth import get_current_user, get_current_admin_user
 from backend.db.database import get_db
 from backend.db.models import User
 from backend.services.notification_service import notification_service
 
-router = APIRouter(prefix="/v1/notifications", tags=["notifications"])
+router = APIRouter()
 
 
 @router.get("/")
@@ -260,7 +260,7 @@ async def unregister_device_token(
 
 @router.get("/stats")
 async def get_notification_stats(
-    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_admin_user), db: Session = Depends(get_db)
 ):
     """
     Get notification delivery statistics (admin only).
@@ -269,7 +269,6 @@ async def get_notification_stats(
         Notification statistics and service status
     """
     try:
-        # TODO: Add admin role check here
         stats = await notification_service.get_notification_stats()
         return {"stats": stats}
     except Exception as e:

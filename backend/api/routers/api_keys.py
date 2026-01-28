@@ -16,7 +16,7 @@ from backend.db.database import get_db
 from backend.db.models import User
 from backend.services.api_key_service import ApiKeyService
 
-router = APIRouter(prefix="/admin/api-keys", tags=["API Keys"])
+router = APIRouter()
 
 
 class CreateApiKeyRequest:

@@ -32,7 +32,7 @@ from backend.api.middleware.output_encoding import OutputEncodingMiddleware
 from backend.api.routers import (analytics, application_automation,
                                  applications, auth, job_categorization,
                                  job_deduplication, jobs, jobs_ingestion,
-                                 notifications, profile)
+                                 notifications, profile, api_keys)
 from backend.config import Settings
 from backend.db.database import get_db
 from backend.metrics import MetricsMiddleware, metrics_endpoint
@@ -263,7 +263,29 @@ class SecurityHeadersMiddleware:
             await self.app(scope, receive, send)
             return
 
-        await self.app(scope, receive, send)
+        # Capture the original send to modify responses
+        async def send_wrapper(message):
+            if message["type"] == "http.response.start":
+                # Add security headers
+                message["headers"].append(
+                    (b"content-security-policy", 
+                     b"default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:")
+                )
+                message["headers"].append(
+                    (b"x-frame-options", b"DENY")
+                )
+                message["headers"].append(
+                    (b"x-xss-protection", b"1; mode=block")
+                )
+                message["headers"].append(
+                    (b"x-content-type-options", b"nosniff")
+                )
+                message["headers"].append(
+                    (b"referrer-policy", b"strict-origin-when-cross-origin")
+                )
+            await send(message)
+
+        await self.app(scope, receive, send_wrapper)
 
 
 app.add_middleware(SecurityHeadersMiddleware)
@@ -292,52 +314,55 @@ add_file_validation_middleware(app)
 from fastapi import Depends
 
 app.include_router(
-    auth.router, prefix="/v1/auth", tags=["auth"], dependencies=[Depends(auth_limiter)]
+    auth.router, prefix="/api/v1/auth", tags=["auth"], dependencies=[Depends(auth_limiter)]
 )
 app.include_router(
     profile.router,
-    prefix="/v1/profile",
+    prefix="/api/v1/profile",
     tags=["profile"],
     dependencies=[Depends(api_limiter)],
 )
 app.include_router(
-    jobs.router, prefix="/v1/jobs", tags=["jobs"], dependencies=[Depends(api_limiter)]
+    jobs.router, prefix="/api/v1/jobs", tags=["jobs"], dependencies=[Depends(api_limiter)]
 )
 app.include_router(
     applications.router,
-    prefix="/v1/applications",
+    prefix="/api/v1/applications",
     tags=["applications"],
     dependencies=[Depends(api_limiter)],
 )
 app.include_router(
     jobs_ingestion.router,
-    prefix="/v1/ingestion",
+    prefix="/api/v1/ingestion",
     tags=["ingestion"],
     dependencies=[Depends(api_limiter)],
 )
 app.include_router(
     analytics.router,
-    prefix="/v1/analytics",
+    prefix="/api/v1/analytics",
     tags=["analytics"],
     dependencies=[Depends(api_limiter)],
 )
 app.include_router(
     application_automation.router,
-    prefix="/v1/application-automation",
+    prefix="/api/v1/application-automation",
     tags=["application-automation"],
     dependencies=[Depends(api_limiter)],
 )
 app.include_router(
     job_deduplication.router,
+    prefix="/api/v1/deduplicate",
     tags=["deduplication"],
     dependencies=[Depends(api_limiter)],
 )
 app.include_router(
     job_categorization.router,
+    prefix="/api/v1/categorize",
     tags=["categorization"],
     dependencies=[Depends(api_limiter)],
 )
-app.include_router(notifications.router, dependencies=[Depends(api_limiter)])
+app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["notifications"], dependencies=[Depends(api_limiter)])
+app.include_router(api_keys.router, prefix="/api/v1/admin/api-keys", tags=["API Keys"], dependencies=[Depends(api_limiter)])
 
 
 # Global exception handler for error logging
@@ -373,7 +398,7 @@ async def root():
 @app.get("/health", dependencies=[Depends(public_limiter)])
 async def health_check():
     """Basic health check endpoint - service availability"""
-    return %s
+    return {"status": "healthy", "service": "JobSwipe API", "version": "1.0.0"}
 
 
 @app.get("/ready", ('exc', '"detail": "Internal server error"', '"service": "JobSwipe API", "version": "1.0.0", "status": "healthy"', '"status": "healthy", "service": "JobSwipe API", "version": "1.0.0"'))

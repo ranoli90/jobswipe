@@ -19,7 +19,7 @@ from backend.services.job_deduplication import (JobDeduplicationService,
                                                 find_duplicates_in_db,
                                                 remove_duplicates)
 
-router = APIRouter(prefix="/api/deduplicate", tags=["deduplication"])
+router = APIRouter()
 logger = logging.getLogger(__name__)
 
 security = HTTPBearer()

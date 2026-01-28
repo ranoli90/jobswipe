@@ -24,12 +24,16 @@ from backend.db.database import get_db
 from backend.db.models import FailedLoginAttempt, User
 from backend.services.mfa_service import mfa_service
 from backend.services.oauth2_service import oauth2_service
+from backend.services.notification_service import NotificationService
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
 
 router = APIRouter()
+
+# Initialize notification service
+notification_service = NotificationService()
 
 # Security configuration
 SECRET_KEY = settings.secret_key
@@ -41,7 +45,7 @@ pwd_context = CryptContext(
     deprecated="auto",
     pbkdf2_sha256__rounds=settings.pbkdf2_rounds,
 )
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/v1/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
 class UserCreate(BaseModel):
@@ -189,6 +193,18 @@ def get_current_user(
         )
 
     return user
+
+
+def get_current_admin_user(
+    current_user: User = Depends(get_current_user),
+):
+    """Get current authenticated admin user"""
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admin users can access this endpoint",
+        )
+    return current_user
 
 
 @router.post("/register", response_model=TokenResponse)
@@ -584,8 +600,8 @@ async def send_verification_email(
         expires_delta=timedelta(hours=24)
     )
 
-    # TODO: Send verification email via notification service
-    # notification_service.send_email_verification(user.email, verification_token)
+    # Send verification email via notification service
+    await notification_service.send_email_verification(str(user.id), verification_token)
 
     logger.info("Verification email sent to: %s", user.email)
 
@@ -671,8 +687,8 @@ async def forgot_password(
         expires_delta=timedelta(hours=1)
     )
 
-    # TODO: Send reset email via notification service
-    # notification_service.send_password_reset(user.email, reset_token)
+    # Send reset email via notification service
+    await notification_service.send_password_reset(str(user.id), reset_token)
 
     logger.info("Password reset email sent to: %s", user.email)
 

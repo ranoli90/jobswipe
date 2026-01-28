@@ -19,7 +19,7 @@ from backend.services.job_categorization import (JobCategorizationService,
                                                  categorize_all_jobs,
                                                  get_category_distribution)
 
-router = APIRouter(prefix="/api/categorize", tags=["categorization"])
+router = APIRouter()
 logger = logging.getLogger(__name__)
 
 security = HTTPBearer()
