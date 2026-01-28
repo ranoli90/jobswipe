@@ -674,6 +674,8 @@ except KeyError:
     # ============================================================
     # Helper Functions
     # ============================================================
+
+def get_metrics_score_range(score: float) -> str:
     """Convert score to range bucket"""
     if score < 0.2:
         return "0-0.2"
@@ -683,13 +685,12 @@ except KeyError:
         return "0.4-0.6"
     elif score < 0.8:
         return "0.6-0.8"
-    
 
     return "0.8-1.0"
 
 
 async def metrics_endpoint():
-"""Prometheus metrics endpoint"""
+    """Prometheus metrics endpoint"""
     return Response(media_type="text/plain; charset=utf-8", content=generate_latest())
 
 
