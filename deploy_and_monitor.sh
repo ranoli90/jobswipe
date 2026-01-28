@@ -19,6 +19,14 @@ fi
 # Function to deploy
 deploy() {
     echo ""
+    echo "Setting secrets to Fly.io..."
+    if [ -f "tools/set_secrets.sh" ]; then
+        bash tools/set_secrets.sh
+    else
+        echo "Warning: tools/set_secrets.sh not found, skipping secrets deployment"
+    fi
+
+    echo ""
     echo "Deploying to Fly.io..."
     cd "$BACKEND_DIR"
     ../flyctl deploy --app "$APP_NAME" --yes
