@@ -13,8 +13,8 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.types import TypeDecorator
 
-from db.database import Base
-from encryption import decrypt_pii, encrypt_pii
+from backend.db.database import Base
+from backend.encryption import decrypt_pii, encrypt_pii
 
 # Table name constants to avoid duplication
 USERS_TABLE = "users.id"
