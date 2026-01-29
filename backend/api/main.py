@@ -33,17 +33,14 @@ except Exception as e:
     print("Required variables: DATABASE_URL, SECRET_KEY, ENCRYPTION_PASSWORD, ENCRYPTION_SALT, OAUTH_STATE_SECRET", file=sys.stderr)
     sys.exit(1)
 
-from api.middleware.compression import add_compression_middleware
-from api.middleware.error_handling import add_error_handling_middleware
-from api.middleware.file_validation import \
+from backend.api.middleware.compression import add_compression_middleware
+from backend.api.middleware.error_handling import add_error_handling_middleware
+from backend.api.middleware.file_validation import \
     add_file_validation_middleware
-from api.middleware.input_sanitization import \
+from backend.api.middleware.input_sanitization import \
     InputSanitizationMiddleware
-from api.middleware.output_encoding import OutputEncodingMiddleware
-from backend.api.routers import (analytics, application_automation,
-                         applications, auth, job_categorization,
-                         job_deduplication, jobs, jobs_ingestion,
-                         notifications, profile, api_keys)
+from backend.api.middleware.output_encoding import OutputEncodingMiddleware
+
 from backend.db.database import get_db, engine
 from metrics import MetricsMiddleware, metrics_endpoint
 from services.embedding_service import EmbeddingService
@@ -179,6 +176,13 @@ app = FastAPI(
 )  # 10MB limit
 
 
+# Health check endpoint
+@app.get("/health")
+async def health_check():
+    """Health check endpoint that verifies the service is running"""
+    return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
+
+
 # Setup rate limiting with Redis
 @app.on_event("startup")
 async def startup():
@@ -204,8 +208,8 @@ async def startup():
         logger.info("Redis rate limiter initialized successfully")
     except Exception as e:
         logger.error("Failed to initialize Redis rate limiter: %s", e)
-        logger.warning("Continuing without rate limiting - Redis unavailable")
-        # Don't raise - allow app to start without Redis
+        logger.critical("Rate limiter initialization failed - Redis unavailable. Application cannot start without rate limiting.")
+        raise  # Raise exception to prevent app from starting without rate limiting
 
 
 @app.on_event("shutdown")
@@ -308,6 +312,11 @@ add_error_handling_middleware(app)
 # Add metrics middleware
 app.add_middleware(MetricsMiddleware)
 
+# Import routers after app is created to avoid circular dependency
+from backend.api.routers import (analytics, application_automation,
+                         applications, auth, job_categorization,
+                         job_deduplication, jobs, jobs_ingestion,
+                         notifications, profile, api_keys)
 
 # Include routers
 app.include_router(auth.router, prefix="/api/v1", tags=["auth"])

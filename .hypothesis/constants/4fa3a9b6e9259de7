@@ -1,4 +1,0 @@
-# file: /home/brooketogo98/Sorce/backend/secrets.py
-# hypothesis_version: 6.150.3
-
-['5432', 'VAULT_TOKEN', 'VAULT_URL', 'api_key', 'data', 'database', 'host', 'http://vault:8200', 'jobswipe', 'jobswipe/database', 'jobswipe/encryption', 'jobswipe/jwt', 'jobswipe/openai', 'key', 'password', 'port', 'postgres', 'secret_key', 'username']

@@ -7,12 +7,19 @@ app = 'jobswipe-9obhra'
 primary_region = 'iad'
 
 [build]
-  dockerfile = 'Dockerfile'
+  dockerfile = "Dockerfile"
+  
+  [deploy]
+    # Run migrations before starting machines
+    release_command = "python migrate_db.py --check || python migrate_db.py"
 
 [env]
   ENVIRONMENT = 'production'
   LOG_LEVEL = 'INFO'
   PORT = '8080'
+  # DATABASE_URL is required in production; set via fly secrets set.
+  # SECRET_KEY, ENCRYPTION_PASSWORD, ENCRYPTION_SALT, OAUTH_STATE_SECRET must be set via secrets.
+  # CELERY_BROKER_URL, CELERY_RESULT_BACKEND, KAFKA_BROKER_URL may be needed for workers.
   # Database URL - set via fly secrets set
   # SECRET_KEY - set via fly secrets set
   # ENCRYPTION_PASSWORD - set via fly secrets set
@@ -20,8 +27,10 @@ primary_region = 'iad'
   # OAUTH_STATE_SECRET - set via fly secrets set
 
 [processes]
-   app = 'gunicorn api.main:app --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT --workers 2 --timeout 120'
-   # worker = 'celery -A backend.workers.app_agent_worker worker --loglevel=INFO --concurrency=2'
+   # NOTE: Fly Machines does not expand "$PORT" inside the process command.
+   # Use a concrete port that matches [http_service].internal_port.
+   app = 'python -m uvicorn backend.api.main:app --host 0.0.0.0 --port 8080'
+   worker = 'celery -A backend.workers.celery_app worker --concurrency=2'
 
 [[mounts]]
   source = 'jobswipe_data'
@@ -30,7 +39,7 @@ primary_region = 'iad'
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = 'stop'
+  auto_stop_machines = true
   auto_start_machines = true
   min_machines_running = 1
   max_machines_running = 3
@@ -39,9 +48,9 @@ primary_region = 'iad'
   [[http_service.checks]]
     interval = '30s'
     timeout = '10s'
-    grace_period = '5s'
+    grace_period = '10s'
     method = 'GET'
-    path = '/ready'
+    path = '/health'
     protocol = 'http'
 
   [[http_service.scale_to_zero]]
@@ -52,3 +61,9 @@ primary_region = 'iad'
   cpus = 1
   memory_mb = 512
   processes = ['app']
+
+[[vm]]
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 512
+  processes = ['worker']

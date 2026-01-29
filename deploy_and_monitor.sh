@@ -1,9 +1,9 @@
 #!/bin/bash
 # Deploy to fly.io and monitor logs
 
-set -e
+set -euo pipefail
 
-APP_NAME="jobswipe-9obhra"
+APP_NAME=${APP_NAME:-jobswipe-9obhra}
 BACKEND_DIR="backend"
 
 echo "======================================"
@@ -11,8 +11,8 @@ echo "Fly.io Deployment and Monitor Script"
 echo "======================================"
 
 # Check if flyctl exists
-if [ ! -f "./flyctl" ]; then
-    echo "Error: flyctl not found in current directory"
+if ! command -v flyctl &> /dev/null; then
+    echo "Error: flyctl not found in PATH"
     exit 1
 fi
 
@@ -29,9 +29,7 @@ deploy() {
 
     echo ""
     echo "Deploying to Fly.io..."
-    cd "$BACKEND_DIR"
-    ../flyctl deploy --app "$APP_NAME" --yes
-    cd ..
+    (cd "$BACKEND_DIR" && flyctl deploy --config fly.toml --app "$APP_NAME" --remote-only --yes)
     echo "Deployment initiated!"
 }
 

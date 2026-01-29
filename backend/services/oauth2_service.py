@@ -25,16 +25,16 @@ class OAuth2Service:
     GOOGLE_REDIRECT_URI = os.getenv(
         "GOOGLE_REDIRECT_URI",
         (
-            f"{app_settings.cors_allow_origins[0]}/auth/callback/google"
-            if app_settings.cors_allow_origins
+            f"{settings.cors_allow_origins[0]}/auth/callback/google"
+            if settings.cors_allow_origins
             else "http://localhost:8000/auth/callback/google"
         ),
     )
     LINKEDIN_REDIRECT_URI = os.getenv(
         "LINKEDIN_REDIRECT_URI",
         (
-            f"{app_settings.cors_allow_origins[0]}/auth/callback/linkedin"
-            if app_settings.cors_allow_origins
+            f"{settings.cors_allow_origins[0]}/auth/callback/linkedin"
+            if settings.cors_allow_origins
             else "http://localhost:8000/auth/callback/linkedin"
         ),
     )
@@ -54,7 +54,7 @@ class OAuth2Service:
         self.state_secret = settings.oauth_state_secret
 
         # Validate redirect URIs in production
-        if app_settings.environment == "production":
+        if settings.environment == "production":
             if (
                 "localhost" in self.GOOGLE_REDIRECT_URI
                 or "localhost" in self.LINKEDIN_REDIRECT_URI
@@ -62,7 +62,7 @@ class OAuth2Service:
                 logger.error("OAuth2 redirect URIs contain localhost in production!")
             if (
                 self.GOOGLE_REDIRECT_URI.startswith("http://")
-                and not app_settings.debug
+                and not settings.debug
             ):
                 logger.warning(
                     "OAuth2 redirect URI uses HTTP instead of HTTPS in production"

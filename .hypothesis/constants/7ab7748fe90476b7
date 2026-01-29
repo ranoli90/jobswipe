@@ -1,4 +1,0 @@
-# file: /home/brooketogo98/Sorce/backend/api/routers/applications.py
-# hypothesis_version: 6.150.3
-
-['/', '/{job_id}/audit', '/{job_id}/cancel', '/{job_id}/status', 'message', 'success']

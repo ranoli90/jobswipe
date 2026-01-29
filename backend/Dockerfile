@@ -14,8 +14,14 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install Python dependencies
-COPY requirements.txt .
-RUN echo "Starting pip install at $(date)" && pip install --no-cache-dir --target=/app/deps -r requirements.txt && echo "Pip install completed at $(date)"
+COPY backend/requirements.txt ./requirements.txt
+RUN echo "Starting pip install at $(date)" && \
+    pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt && \
+    # Pre-install spaCy language model at build time.
+    # Runtime installs fail because the container runs as a non-root user.
+    python -m spacy download en_core_web_sm && \
+    echo "Pip install completed at $(date)"
 
 # Stage 2: Production image
 FROM base AS production
@@ -35,8 +41,9 @@ RUN apt-get update && apt-get install -y \
 RUN useradd -m -u 1000 appuser
 RUN mkdir -p /app/logs /app/data && chown -R appuser:appuser /app
 
-# Copy dependencies from builder stage
-COPY --from=builder /app/deps /usr/local/lib/python3.12/site-packages
+# Copy dependencies from builder stage (including console scripts like gunicorn)
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application code
 COPY . .
@@ -51,7 +58,8 @@ EXPOSE 8080
 
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:$PORT/health || exit 1
+    CMD curl -f http://localhost:8080/health || exit 1
 
 # Run with Gunicorn for production
-CMD ["gunicorn", "api.main:app", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:$PORT", "--workers", "2", "--timeout", "120"]
+# CMD ["gunicorn", "api.main:app", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:$PORT", "--workers", "2", "--timeout", "120"]
+# Note: fly.toml now controls the start command using uvicorn directly

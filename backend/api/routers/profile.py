@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from api.middleware.file_validation import validate_file_upload
+from backend.api.middleware.file_validation import validate_resume_file
 from backend.api.routers.auth import get_current_user
 from api.validators import (name_validator, phone_validator,
                                     string_validator)

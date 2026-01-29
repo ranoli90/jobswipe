@@ -6,6 +6,7 @@ Handles database connections and session management.
 
 import logging
 import os
+import sys
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -17,10 +18,6 @@ logger = logging.getLogger(__name__)
 DATABASE_URL = os.getenv(
     "DATABASE_URL", "sqlite:///./test.db"  # Use SQLite for testing and development
 )
-
-# Debug: Print DATABASE_URL for debugging purposes
-import sys
-print(f"DEBUG: DATABASE_URL = {repr(DATABASE_URL)}", file=sys.stderr)
 
 # Create engine - optimized for performance
 connect_args = {}

@@ -5,7 +5,7 @@ PII encryption utilities for JobSwipe
 import base64
 import logging
 import os
-from typing import Optional
+from typing import Optional, List
 
 from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.primitives import hashes
@@ -24,19 +24,27 @@ class DecryptionError(Exception):
 
 
 class PIIEncryptor:
-    """Handles encryption/decryption of PII data"""
+    """Handles encryption/decryption of PII data with key rotation support"""
 
-    def __init__(self, key: Optional[bytes] = None):
+    def __init__(self, key: Optional[bytes] = None, old_keys: Optional[List[bytes]] = None):
         """
         Initialize encryptor with a key.
 
         Args:
             key: Encryption key. If None, uses environment variable or generates one.
+            old_keys: List of old encryption keys for decryption (key rotation support)
         """
         if key is None:
             key = self._get_or_create_key()
 
         self.fernet = Fernet(key)
+        self.old_fernets = []
+        if old_keys:
+            for old_key in old_keys:
+                try:
+                    self.old_fernets.append(Fernet(old_key))
+                except Exception as e:
+                    logger.warning("Invalid old encryption key: %s", str(e))
 
     def _get_or_create_key(self) -> bytes:
         """Get encryption key from secrets manager or create one"""
@@ -93,7 +101,7 @@ class PIIEncryptor:
 
     def decrypt(self, encrypted_data: str) -> str:
         """
-        Decrypt an encrypted string.
+        Decrypt an encrypted string with key rotation support.
 
         Args:
             encrypted_data: Encrypted string (base64 encoded)
@@ -102,18 +110,28 @@ class PIIEncryptor:
             Decrypted string
 
         Raises:
-            DecryptionError: If decryption fails
+            DecryptionError: If decryption fails with all available keys
         """
         if not encrypted_data:
             return encrypted_data
 
+        # Try current key first
         try:
             decrypted = self.fernet.decrypt(encrypted_data.encode())
             result = decrypted.decode()
             logger.info("AUDIT: PII decryption successful - data length: %s", len(result))
             return result
-        except InvalidToken as e:
-            logger.warning("AUDIT: PII decryption failed - Invalid token - %s", str(e))
+        except InvalidToken:
+            # Try old keys if current key fails
+            for i, old_fernet in enumerate(self.old_fernets):
+                try:
+                    decrypted = old_fernet.decrypt(encrypted_data.encode())
+                    result = decrypted.decode()
+                    logger.info("AUDIT: PII decryption successful with old key #%d - data length: %s", i + 1, len(result))
+                    return result
+                except InvalidToken:
+                    continue
+            logger.warning("AUDIT: PII decryption failed - Invalid token with all keys")
             raise DecryptionError("Failed to decrypt data: invalid token") from e
         except Exception as e:
             logger.warning("AUDIT: PII decryption failed - %s", str(e))

@@ -1,71 +1,40 @@
-# Ignore large directories and files
+# Base ignores
+.git
+.github
+.vscode
+.idea
 __pycache__
 *.pyc
 *.pyo
 *.pyd
-
-# Virtual environment
-venv
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Logs
-logs
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Coverage directory used by tools like istanbul
-coverage
-*.lcov
-
-# nyc test coverage
-.nyc_output
-
-# Dependency directories
-node_modules
-jspm_packages
-
-# Optional npm cache directory
-.npm
-
-# Optional eslint cache
-.eslintcache
-
-# Optional REPL history
-.node_repl_history
-
-# Output of 'npm pack'
-*.tgz
-
-# Yarn Integrity file
-.yarn-integrity
-
-# dotenv environment variables file
-.env
-
-# IDE files
-.vscode
-.idea
 *.swp
 *.swo
 *~
 
-# OS generated files
-.DS_Store
-Thumbs.db
+# Envs and venvs
+.env
+.env.*
+venv
+.python-version
 
-# Large data files
+# Node / build artifacts
+node_modules
+dist
+build
+.npm
+.eslintcache
+.nyc_output
+coverage*
+*.lcov
+
+# Tests and debug helpers (not needed in image)
+tests
+test_*.py
+debug*.py
+debug*.log
+
+# Data / binaries / archives
 *.csv
 *.xlsx
 *.xls
@@ -73,28 +42,11 @@ Thumbs.db
 *.tar.gz
 *.rar
 
-# Test files
-tests/
-test_*.py
+# OS cruft
+.DS_Store
+Thumbs.db
 
-# Temporary files
-*.tmp
-*.temp
-.tmp/
-.temp/
-
-# Database files
-*.db
-*.sqlite3
-
-# Migration files (can be regenerated)
-alembic/versions/*.py
-
-# Debug files
-debug*.py
-debug*.log
-
-# Fly.io specific files
-fly.toml
-fly.staging.toml
-ollama-fly.toml
+# Fly debug artifacts
+Fly_IO_Debug_Session_Summary.md
+FLY_IO_DEBUG_REPORT.md
+fly_logs*.json

@@ -16,11 +16,6 @@ OPENAI_VAULT_PATH = "jobswipe/openai"
 JWT_VAULT_PATH = "jobswipe/jwt"
 ENCRYPTION_VAULT_PATH = "jobswipe/encryption"
 
-# Vault secret paths as constants to avoid duplication
-DATABASE_VAULT_PATH = "jobswipe/database"
-OPENAI_VAULT_PATH = "jobswipe/openai"
-JWT_VAULT_PATH = "jobswipe/jwt"
-
 
 class SecretsManager:
     """Manages secrets using HashiCorp Vault"""
@@ -67,18 +62,18 @@ class SecretsManager:
                 if response and "data" in response and "data" in response["data"]:
                     value = response["data"]["data"].get(key)
                     if value is not None:
-                        logger.info("AUDIT: Secret accessed from Vault - path: %s, key: %s", path, key)
+                        self.logger.info("AUDIT: Secret accessed from Vault - path: %s, key: %s", path, key)
                         return value
             except Exception as e:
-                logger.warning("AUDIT: Failed to read secret from Vault - path: %s, key: %s, error: %s", path, key, str(e))
+                self.logger.warning("AUDIT: Failed to read secret from Vault - path: %s, key: %s, error: %s", path, key, str(e))
 
         # Fallback to environment variables
         env_key = f"{path.replace('/', '_').upper()}_{key.upper()}"
         value = os.getenv(env_key, default)
         if value is not None and value != default:
-            logger.info("AUDIT: Secret accessed from environment - key: %s", env_key)
+            self.logger.info("AUDIT: Secret accessed from environment - key: %s", env_key)
         elif value == default:
-            logger.warning("AUDIT: Secret not found, using default - path: %s, key: %s", path, key)
+            self.logger.warning("AUDIT: Secret not found, using default - path: %s, key: %s", path, key)
         return value
 
     def set_secret(self, path: str, key: str, value: str):
@@ -95,15 +90,15 @@ class SecretsManager:
                 self.client.secrets.kv.v2.create_or_update_secret(
                     path=path, secret={key: value}
                 )
-                logger.info("AUDIT: Secret set in Vault - path: %s, key: %s", path, key)
+                self.logger.info("AUDIT: Secret set in Vault - path: %s, key: %s", path, key)
                 return
             except Exception as e:
-                logger.warning("AUDIT: Failed to set secret in Vault - path: %s, key: %s, error: %s", path, key, str(e))
+                self.logger.warning("AUDIT: Failed to set secret in Vault - path: %s, key: %s, error: %s", path, key, str(e))
 
         # Fallback: set environment variable (not persistent)
         env_key = f"{path.replace('/', '_').upper()}_{key.upper()}"
         os.environ[env_key] = value
-        logger.warning("AUDIT: Secret stored in environment variable %s (not persistent)", env_key)
+        self.logger.warning("AUDIT: Secret stored in environment variable %s (not persistent)", env_key)
 
     def get_encryption_key(self) -> str:
         """Get encryption key for PII data"""

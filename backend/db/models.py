@@ -163,7 +163,7 @@ class UserJobInteraction(Base):
     user_id = Column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True
     )
-    job_id = Column(UUID(as_uuid=True), ForeignKey("jobs.id"), nullable=False)
+    job_id = Column(UUID(as_uuid=True), ForeignKey("jobs.id"), nullable=False, index=True)
     action = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     interaction_metadata = Column(JSON)
@@ -182,7 +182,7 @@ class ApplicationTask(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey(USERS_TABLE), nullable=False)
     job_id = Column(UUID(as_uuid=True), ForeignKey("jobs.id"), nullable=False)
-    status = Column(String, default="queued")
+    status = Column(String, default="queued", index=True)
     attempt_count = Column(Integer, default=0)
     last_error = Column(Text)
     assigned_worker = Column(String)
@@ -221,7 +221,7 @@ class Domain(Base):
     __table_args__ = ({"extend_existing": True},)
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    host = Column(String, unique=True, nullable=False)
+    host = Column(String, unique=True, nullable=False, index=True)
     ats_type = Column(String)
     rate_limit_policy = Column(JSON)
     captcha_type = Column(String)

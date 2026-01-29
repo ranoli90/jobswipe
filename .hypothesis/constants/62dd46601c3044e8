@@ -1,4 +1,0 @@
-# file: /home/brooketogo98/Sorce/backend/api/routers/analytics.py
-# hypothesis_version: 6.150.3
-
-[0.08, 0.65, 0.78, 1250, 4200, 5000, 35000, '/generate-report', '/job-market-analysis', '/metrics', '2026-01-25T00:00:00Z', 'ANALYTICS_API_KEY', 'csv', 'html', 'job_market', 'json', 'matching_accuracy', 'user_behavior']

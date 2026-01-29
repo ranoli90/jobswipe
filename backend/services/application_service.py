@@ -232,36 +232,6 @@ async def run_application_task(task_id: str, db=None):
 
         return success
 
-    except Exception as e:
-        logger.error("Error running application task %s: %s", ('task_id', 'str(e)'))
-
-        if db:
-            task = (
-                db.query(ApplicationTask).filter(ApplicationTask.id == task_id).first()
-            )
-            if task:
-                task.status = "failed"
-                task.attempt_count += 1
-                task.last_error = str(e)
-                db.add(task)
-
-                # Add error to audit log
-                audit_log = ApplicationAuditLog(
-                    task_id=str(task.id),
-                    step="error",
-                    payload={"message": str(e)},
-                    artifacts={},
-                    timestamp=datetime.now(timezone.utc).isoformat(),
-                )
-                db.add(audit_log)
-
-                db.commit()
-
-        return False
-    finally:
-        if db:
-            db.close()
-
 
 def get_application_status(
     user_id: str, job_id: str, db=None

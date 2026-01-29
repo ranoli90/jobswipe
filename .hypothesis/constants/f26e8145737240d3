@@ -1,4 +1,0 @@
-# file: /home/brooketogo98/Sorce/backend/workers/application_agent/agents/greenhouse.py
-# hypothesis_version: 6.150.3
-
-[60000, '2026-01-25T00:00:00Z', '3-5 years', 'Software Engineer', 'data', 'domcontentloaded', 'email', 'en-US', 'error', 'fill_personal_info', 'full_name', 'greenhouse_error.png', 'input[name="name"]', 'input[name="phone"]', 'input[type="email"]', 'input[type="file"]', 'lever_error.png', 'location', 'message', 'navigate', 'payload', 'phone', 'result', 'resume_path', 'step', 'submit', 'success', 'text=Thank you', 'timestamp', 'upload_resume', 'url']

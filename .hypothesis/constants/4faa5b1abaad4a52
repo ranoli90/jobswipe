@@ -1,4 +1,0 @@
-# file: /home/brooketogo98/Sorce/backend/db/models.py
-# hypothesis_version: 6.150.3
-
-['active', 'application_tasks', 'application_tasks.id', 'candidate_profiles', 'domains', 'extend_existing', 'job_index', 'jobs', 'jobs.id', 'queued', 'users', 'users.id']

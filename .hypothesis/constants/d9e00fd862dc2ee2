@@ -1,4 +1,0 @@
-# file: /home/brooketogo98/Sorce/backend/db/database.py
-# hypothesis_version: 6.150.3
-
-[1800, 'DATABASE_URL', 'check_same_thread', 'sqlite', 'sqlite:///./test.db']

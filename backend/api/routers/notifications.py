@@ -4,7 +4,7 @@ Notifications API Router
 Handles user notification endpoints.
 """
 
-from typing import List
+from typing import List, Dict, Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session

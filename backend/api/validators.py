@@ -95,3 +95,14 @@ def name_validator(field_name: str):
         return v
 
     return validator(field_name, pre=True, allow_reuse=True)(validate_name)
+
+
+def validate_uuid(uuid_string: str) -> bool:
+    """Validate if a string is a valid UUID"""
+    import uuid
+    try:
+        # Try to create a UUID from the string
+        uuid_obj = uuid.UUID(uuid_string)
+        return str(uuid_obj) == uuid_string
+    except ValueError:
+        return False

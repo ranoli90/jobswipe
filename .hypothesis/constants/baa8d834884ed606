@@ -1,4 +1,0 @@
-# file: /home/brooketogo98/Sorce/backend/metrics.py
-# hypothesis_version: 6.150.3
-
-[0.2, 0.4, 0.6, 0.8, 200, '0-0.2', '0.2-0.4', '0.4-0.6', '0.6-0.8', '0.8-1.0', 'active_connections', 'api_requests_total', 'ats_type', 'endpoint', 'http', 'http.response.start', 'jobs_ingested_total', 'jobs_matched_total', 'method', 'path', 'result', 'score_range', 'source', 'status', 'status_code', 'type']

@@ -10,16 +10,18 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from api.main import get_current_user
-from api.validators import validate_uuid
+from backend.api.dependencies import get_current_user
+from backend.api.validators import validate_uuid
 from backend.db.database import get_db
 from backend.db.models import User
-from services.api_key_service import ApiKeyService
+from backend.services.api_key_service import ApiKeyService
 
 router = APIRouter()
 
 
-class CreateApiKeyRequest:
+from pydantic import BaseModel
+
+class CreateApiKeyRequest(BaseModel):
     """Request model for creating an API key"""
 
     name: str
@@ -30,7 +32,7 @@ class CreateApiKeyRequest:
     expires_at: Optional[datetime] = None
 
 
-class ApiKeyResponse:
+class ApiKeyResponse(BaseModel):
     """Response model for API key details (without the secret key)"""
 
     id: str

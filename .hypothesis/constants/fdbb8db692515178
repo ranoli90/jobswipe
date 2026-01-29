@@ -1,4 +1,0 @@
-# file: /home/brooketogo98/Sorce/backend/api/main.py
-# hypothesis_version: 6.150.3
-
-[b'x-correlation-id', 5.0, 200, '*', '/', '/health', '/metrics', '/v1/analytics', '/v1/applications', '/v1/auth', '/v1/ingestion', '/v1/jobs', '/v1/profile', '1.0.0', '2026-01-25T00:00:00Z', 'JobSwipe API', 'SELECT 1', 'analytics', 'applications', 'auth', 'categorization', 'correlation_id', 'database', 'deduplication', 'embedding_service', 'guest', 'headers', 'healthy', 'http', 'http.response.start', 'ingestion', 'jobs', 'profile', 'rabbitmq', 'redis', 'redis://', 'redis://redis:6379/0', 'service', 'services', 'status', 'timestamp', 'type', 'unhealthy', 'unknown', 'version']

@@ -46,19 +46,19 @@ def test_login(client: TestClient, test_data):
     """Test user login"""
     user_data = test_data["users"][0]
 
-    # First register
-    register_response = client.post(
-        "/v1/auth/register",
-        json={"email": user_data["email"], "password": user_data["password"]},
-    )
-    print("Register response status:", register_response.status_code)
-    print("Register response body:", register_response.json())
-
-    # Then login
-    response = client.post(
-        "/v1/auth/login",
-        data={"username": user_data["email"], "password": user_data["password"]},
-    )
+        # First register
+        register_response = client.post(
+            "/api/v1/auth/register",
+            json={"email": user_data["email"], "password": user_data["password"]},
+        )
+        print("Register response status:", register_response.status_code)
+        print("Register response body:", register_response.json())
+    
+        # Then login
+        response = client.post(
+            "/api/v1/auth/login",
+            data={"username": user_data["email"], "password": user_data["password"]},
+        )
     print("Login response status:", response.status_code)
     print("Login response body:", response.json())
 

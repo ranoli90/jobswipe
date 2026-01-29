@@ -155,86 +155,87 @@ import uuid
 async def get_personalized_jobs(
     user_id: uuid.UUID, cursor: Optional[str] = None, page_size: int = 20, db=None
 ) -> List[Dict]:
-    """
-    Get personalized job recommendations for a user.
+        """
+        Get personalized job recommendations for a user.
+    
+        Args:
+            user_id: User ID
+            cursor: Optional cursor for pagination
+            page_size: Number of jobs to return per page
+            db: Database session
+    
+        Returns:
+            List of matched jobs with scores
+        """
+        if db is None:
+            db = next(get_db())
+    
+        try:
+            # Get candidate profile
+            profile = (
+                db.query(CandidateProfile)
+                .filter(CandidateProfile.user_id == user_id)
+                .first()
+            )
+    
+            if not profile:
+                # If no profile, return latest jobs
+                query = db.query(Job).order_by(Job.created_at.desc())
+                jobs = query.limit(page_size).all()
+                return [{"id": str(job.id), "score": 0.0} for job in jobs]
+    
+            # Hybrid matching approach
+            query = db.query(Job)
+    
+            # Rule-based filters
+            if profile.skills:
+                # Filter by skills (simple keyword matching for MVP)
+                skill_filters = [
+                    Job.description.ilike("%" + skill + "%") for skill in profile.skills
+                ]
+                if skill_filters:
+                    query = query.filter(or_(*skill_filters))
 
-    Args:
-        user_id: User ID
-        cursor: Optional cursor for pagination
-        page_size: Number of jobs to return per page
-        db: Database session
+            if profile.location:
+                # Filter by location proximity (simple string matching for MVP)
+                query = query.filter(Job.location.ilike("%" + profile.location + "%"))
 
-    Returns:
-        List of matched jobs with scores
-    """
-    if db is None:
-        db = next(get_db())
+            query = query.order_by(Job.created_at.desc())
 
-    try:
-        # Get candidate profile
-        profile = (
-            db.query(CandidateProfile)
-            .filter(CandidateProfile.user_id == user_id)
-            .first()
-        )
-
-        if not profile:
-            # If no profile, return latest jobs
-            query = db.query(Job).order_by(Job.created_at.desc())
-        
-
-        # Hybrid matching approach
-        query = db.query(Job)
-
-        # Rule-based filters
-        if profile.skills:
-            # Filter by skills (simple keyword matching for MVP)
-            skill_filters = [
-                Job.description.ilike("%" + skill + "%") for skill in profile.skills
+            # Exclude jobs user has already interacted with
+            interacted_job_ids = [
+                interaction.job_id
+                for interaction in db.query(UserJobInteraction)
+                .filter(UserJobInteraction.user_id == user_id)
+                .all()
             ]
-            if skill_filters:
-                query = query.filter(or_(*skill_filters))
 
-        if profile.location:
-            # Filter by location proximity (simple string matching for MVP)
-            query = query.filter(Job.location.ilike("%" + profile.location + "%"))
+            query = query.filter(Job.id.notin_(interacted_job_ids))
 
-        query = query.order_by(Job.created_at.desc())
+            # Pagination
+            if cursor:
+                query = query.filter(Job.id > cursor)
 
-        # Exclude jobs user has already interacted with
-        interacted_job_ids = [
-            interaction.job_id
-            for interaction in db.query(UserJobInteraction)
-            .filter(UserJobInteraction.user_id == user_id)
-            .all()
-        ]
+            jobs = query.limit(page_size).all()
 
-        query = query.filter(Job.id.notin_(interacted_job_ids))
+            logger.info("Found %d jobs for user %s", len(jobs), user_id)
 
-        # Pagination
-        if cursor:
-            query = query.filter(Job.id > cursor)
+            # Calculate scores for each job
+            scored_jobs = []
+            for job in jobs:
+                score = await calculate_job_score(job, profile)
+                scored_jobs.append({"job": job, "score": score})
 
-        jobs = query.limit(page_size).all()
+            # Sort jobs by score descending
+            scored_jobs.sort(key=lambda x: x["score"], reverse=True)
 
-        logger.info("Found %s jobs for user %s", ('len(jobs)', 'user_id'))
+            logger.info("Returning %d jobs sorted by score", len(scored_jobs))
 
-        # Calculate scores for each job
-        scored_jobs = []
-        for job in jobs:
-            score = await calculate_job_score(job, profile)
-            scored_jobs.append({"job": job, "score": score})
+            return scored_jobs
 
-        # Sort jobs by score descending
-        scored_jobs.sort(key=lambda x: x["score"], reverse=True)
-
-        logger.info("Returning %s jobs sorted by score", len(scored_jobs))
-
-        return scored_jobs
-
-    except Exception as e:
-        logger.error("Error getting personalized jobs for user %s: %s", ('user_id', 'str(e)'))
-        raise
+        except Exception as e:
+            logger.error("Error getting personalized jobs for user %s: %s", user_id, str(e))
+            raise
 
 
 async def calculate_job_score(job: Job, profile: CandidateProfile) -> float:
@@ -277,7 +278,7 @@ async def calculate_job_score(job: Job, profile: CandidateProfile) -> float:
         if "score" in match_analysis:
             semantic_score = match_analysis["score"]
             score += semantic_score * 0.3
-            logger.info("Embedding semantic score: %.2f", semantic_score)
+            logger.info(f"Embedding semantic score: {float(semantic_score):.2f}")
 
     # Rule-based matching (for additional features)
     logger.info("Adding rule-based matching components")
@@ -404,8 +405,7 @@ async def get_job_matches_for_profile(
             span.set_attribute("matches.found", len(paginated_jobs))
             span.set_attribute("matches.total", len(scored_jobs))
 
-            logger.info("Found %s matches out of %s total jobs for profile %s" % (len(paginated_jobs), len(scored_jobs), profile.id)
-            )
+            logger.info("Found %d matches out of %d total jobs for profile %s", len(paginated_jobs), len(scored_jobs), profile.id)
 
             return paginated_jobs
 
@@ -418,8 +418,7 @@ async def get_job_matches_for_profile(
             span.record_exception(e)
             span.set_status(trace.Status(trace.StatusCode.ERROR, str(e)))
 
-            logger.error("Error getting job matches for profile %s: %s" % (profile.id, str(e))
-            )
+            logger.error("Error getting job matches for profile %s: %s", profile.id, str(e))
             raise
 
 
@@ -453,8 +452,7 @@ def get_job_recommendations_for_profile(
         return recommended_jobs[:limit]
 
     except Exception as e:
-        logger.error("Error getting recommendations for profile %s: %s" % (profile.id, str(e))
-        )
+        logger.error("Error getting recommendations for profile %s: %s", profile.id, str(e))
         raise
     finally:
         db.close()
