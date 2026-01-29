@@ -106,3 +106,8 @@ backend/*.pyc
 backend/__pycache__
 backend/workers/
 backend/venv/
+
+# Include workers in Docker build context: some deployments use the same image for workers.
+# We previously excluded `backend/workers/`; un-ignore it so worker code is available when needed.
+!backend/workers/
+!backend/workers/**

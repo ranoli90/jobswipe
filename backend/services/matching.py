@@ -15,12 +15,12 @@ from typing import Dict, List, Optional, Tuple
 from opentelemetry import trace
 from sqlalchemy import or_
 
-from db.database import get_db
-from db.models import CandidateProfile, Job, UserJobInteraction
-from metrics import (get_metrics_score_range, job_matching_duration,
+from backend.db.database import get_db
+from backend.db.models import CandidateProfile, Job, UserJobInteraction
+from backend.metrics import (get_metrics_score_range, job_matching_duration,
                              job_matching_requests_total, jobs_matched_total)
-from services.embedding_service import EmbeddingService
-from tracing import get_tracer
+from backend.services.embedding_service import EmbeddingService
+from backend.tracing import get_tracer
 
 tracer = get_tracer(__name__)
 

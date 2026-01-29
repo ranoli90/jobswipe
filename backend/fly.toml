@@ -13,16 +13,11 @@ primary_region = 'iad'
   ENVIRONMENT = 'production'
   LOG_LEVEL = 'INFO'
   PORT = '8080'
-  # Database URL - set as secret
-  DATABASE_URL = "secret:DATABASE_URL"
-  # Secret key for JWT - set as secret
-  SECRET_KEY = "secret:SECRET_KEY"
-  # Encryption password - set as secret
-  ENCRYPTION_PASSWORD = "secret:ENCRYPTION_PASSWORD"
-  # Encryption salt - set as secret
-  ENCRYPTION_SALT = "secret:ENCRYPTION_SALT"
-  # OAuth state secret - set as secret
-  OAUTH_STATE_SECRET = "secret:OAUTH_STATE_SECRET"
+  # Database URL - set via fly secrets set
+  # SECRET_KEY - set via fly secrets set
+  # ENCRYPTION_PASSWORD - set via fly secrets set
+  # ENCRYPTION_SALT - set via fly secrets set
+  # OAUTH_STATE_SECRET - set via fly secrets set
 
 [processes]
    app = 'gunicorn api.main:app --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT --workers 2 --timeout 120'

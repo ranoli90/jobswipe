@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 from unittest.mock import MagicMock, patch
 from api.routers.auth import get_current_user, get_current_admin_user
 from api.routers.notifications import router
-from db.models import User
+from backend.db.models import User
 
 # Create a test app
 from fastapi import FastAPI

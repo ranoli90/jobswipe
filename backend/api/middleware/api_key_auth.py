@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
-from db.database import get_db
+from backend.db.database import get_db
 from services.api_key_service import ApiKeyService
 
 

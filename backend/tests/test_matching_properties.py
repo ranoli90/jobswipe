@@ -8,7 +8,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from db.models import CandidateProfile, Job
+from backend.db.models import CandidateProfile, Job
 from services.embedding_service import EmbeddingService
 from services.matching import (calculate_job_score, compute_bm25_score,
                                        get_job_matches_for_profile,

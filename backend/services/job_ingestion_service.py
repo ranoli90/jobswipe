@@ -18,8 +18,8 @@ import aiohttp
 import feedparser
 from bs4 import BeautifulSoup
 
-from db.database import get_db
-from db.models import Job
+from backend.db.database import get_db
+from backend.db.models import Job
 from services.matching import calculate_job_score
 from services.openai_service import OpenAIService
 

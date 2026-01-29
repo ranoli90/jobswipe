@@ -11,6 +11,15 @@ primary_region = 'iad'
 [env]
   PORT = "8080"
 
+  # NOTE: Required runtime secrets are intentionally NOT stored in this file.
+  # Set them via `fly secrets set` before deploying. Missing these will cause
+  # the app to fail at startup because `backend.config.Settings` expects them.
+  # Required secrets (example): DATABASE_URL, SECRET_KEY, ENCRYPTION_PASSWORD,
+  # ENCRYPTION_SALT, OAUTH_STATE_SECRET
+  # Example command (do NOT run with real secrets here):
+  #   fly secrets set DATABASE_URL="postgres://..." SECRET_KEY="..." \
+  #     ENCRYPTION_PASSWORD="..." ENCRYPTION_SALT="..." OAUTH_STATE_SECRET="..."
+
 [http_service]
   internal_port = 8080
   force_https = true

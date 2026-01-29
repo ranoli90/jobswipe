@@ -12,10 +12,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
-from api.routers.auth import get_current_user
-from config import settings
-from db.database import get_db
-from db.models import ApplicationTask, CandidateProfile, Job, User
+from backend.api.routers.auth import get_current_user
+from backend.config import settings
+from backend.db.database import get_db
+from backend.db.models import ApplicationTask, CandidateProfile, Job, User
 from services.application_automation import \
     application_automation_service
 from services.cover_letter_service import cover_letter_service

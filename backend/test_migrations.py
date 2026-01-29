@@ -25,8 +25,8 @@ from sqlalchemy.orm import sessionmaker
 # Add backend directory to path
 sys.path.insert(0, os.path.dirname(__file__))
 
-from config import settings
-from db.database import Base
+from backend.config import settings
+from backend.db.database import Base
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

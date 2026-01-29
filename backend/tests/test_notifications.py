@@ -22,7 +22,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 # Import models and services
-from db.models import (
+from backend.db.models import (
     DeviceToken,
     Notification,
     NotificationTemplate,

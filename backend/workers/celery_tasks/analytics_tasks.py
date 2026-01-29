@@ -8,8 +8,8 @@ import json
 import logging
 from datetime import datetime, timedelta
 
-from db.database import get_db
-from db.models import ApplicationTask, Job, User, UserJobInteraction
+from backend.db.database import get_db
+from backend.db.models import ApplicationTask, Job, User, UserJobInteraction
 from workers.celery_app import celery_app
 
 logger = logging.getLogger(__name__)

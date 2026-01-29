@@ -48,16 +48,16 @@ def client():
         if module_name.startswith("backend.") or module_name in ["db", "api"]:
             del sys.modules[module_name]
 
-    from db.database import Base
+    from backend.db.database import Base
 
     # Reset SQLAlchemy registry to prevent duplicate class errors
     Base.registry._class_registry.clear()
 
     # Import models module first
-    from api.main import app
-    from db import models
+    from backend.api.main import app
+    from backend.db import models
     # Clean database before each test
-    from db.database import engine
+    from backend.db.database import engine
 
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)

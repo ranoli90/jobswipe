@@ -19,9 +19,9 @@ from pydantic import BaseModel, validator
 from sqlalchemy.orm import Session
 
 from api.validators import email_validator, string_validator
-from config import settings
-from db.database import get_db
-from db.models import FailedLoginAttempt, User
+from backend.config import settings
+from backend.db.database import get_db
+from backend.db.models import FailedLoginAttempt, User
 from services.mfa_service import mfa_service
 from services.oauth2_service import oauth2_service
 from services.notification_service import NotificationService

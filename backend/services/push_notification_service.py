@@ -13,9 +13,9 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 
-from config import settings
-from db.database import async_session
-from db.models import DeviceToken, Notification, User
+from backend.config import settings
+from backend.db.database import async_session
+from backend.db.models import DeviceToken, Notification, User
 from services.notification_service import NotificationService
 
 logger = logging.getLogger(__name__)

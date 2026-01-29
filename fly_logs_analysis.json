@@ -1,43 +1,45 @@
 {
-  "timestamp": "2026-01-28T05:47:53.705365",
+  "timestamp": "2026-01-28T11:45:43.426973",
   "total_logs": 100,
   "categories": {
-    "syntax": 2,
-    "config": 5,
-    "runtime": 1,
-    "worker": 1
+    "other_errors": 2,
+    "worker": 15,
+    "runtime": 2,
+    "database": 2,
+    "import": 2,
+    "config": 2
   },
   "missing_env_vars": [],
   "restart_info": {
     "total_restarts": 5,
     "restart_events": [
       {
-        "timestamp": "2026-01-28T10:48:33.14573985Z",
-        "instance": "e82700df007518",
-        "message": "\u001b[32m INFO\u001b[0m Main child exited normally with code: 1",
-        "index": 8
+        "timestamp": "2026-01-28T16:57:53.442179721Z",
+        "instance": "0807ddef101668",
+        "message": "\u001b[32m INFO\u001b[0m Main child exited normally with code: 2",
+        "index": 38
       },
       {
-        "timestamp": "2026-01-28T10:48:33.20817443Z",
-        "instance": "e82700df007518",
-        "message": "[    5.820984] reboot: Restarting system",
-        "index": 10
+        "timestamp": "2026-01-28T16:57:53.51807724Z",
+        "instance": "0807ddef101668",
+        "message": "[    6.839390] reboot: Restarting system",
+        "index": 40
       },
       {
-        "timestamp": "2026-01-28T10:49:16.928477638Z",
-        "instance": "e82700df007518",
-        "message": "\u001b[32m INFO\u001b[0m Main child exited normally with code: 1",
+        "timestamp": "2026-01-28T16:58:26.780638263Z",
+        "instance": "0807ddef101668",
+        "message": "\u001b[32m INFO\u001b[0m Main child exited normally with code: 2",
         "index": 96
       },
       {
-        "timestamp": "2026-01-28T10:49:17.018872751Z",
-        "instance": "e82700df007518",
-        "message": "[    5.857730] reboot: Restarting system",
+        "timestamp": "2026-01-28T16:58:26.843740237Z",
+        "instance": "0807ddef101668",
+        "message": "[    6.814245] reboot: Restarting system",
         "index": 98
       },
       {
-        "timestamp": "2026-01-28T10:49:21.198685656Z",
-        "instance": "e82700df007518",
+        "timestamp": "2026-01-28T16:58:27.3033968Z",
+        "instance": "0807ddef101668",
         "message": "machine has reached its max restart count of 10",
         "index": 99
       }

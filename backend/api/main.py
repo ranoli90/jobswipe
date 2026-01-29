@@ -24,7 +24,7 @@ from pythonjsonlogger import jsonlogger
 
 # Try to import settings with proper error handling
 try:
-    from config import Settings
+    from backend.config import Settings
     settings = Settings()
 except Exception as e:
     # Log to stderr before logging is configured
@@ -40,11 +40,11 @@ from api.middleware.file_validation import \
 from api.middleware.input_sanitization import \
     InputSanitizationMiddleware
 from api.middleware.output_encoding import OutputEncodingMiddleware
-from api.routers import (analytics, application_automation,
+from backend.api.routers import (analytics, application_automation,
                          applications, auth, job_categorization,
                          job_deduplication, jobs, jobs_ingestion,
                          notifications, profile, api_keys)
-from db.database import get_db, engine
+from backend.db.database import get_db, engine
 from metrics import MetricsMiddleware, metrics_endpoint
 from services.embedding_service import EmbeddingService
 from tracing import setup_tracing

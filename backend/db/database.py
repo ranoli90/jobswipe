@@ -18,19 +18,31 @@ DATABASE_URL = os.getenv(
     "DATABASE_URL", "sqlite:///./test.db"  # Use SQLite for testing and development
 )
 
+# Debug: Print DATABASE_URL for debugging purposes
+import sys
+print(f"DEBUG: DATABASE_URL = {repr(DATABASE_URL)}", file=sys.stderr)
+
 # Create engine - optimized for performance
 connect_args = {}
 if DATABASE_URL.startswith("sqlite"):
     connect_args["check_same_thread"] = False  # Required for SQLite
 
-engine = create_engine(
-    DATABASE_URL,
-    connect_args=connect_args,
-    pool_size=20,
-    max_overflow=30,
-    pool_timeout=30,
-    pool_recycle=1800,
-)
+# Debug: Try to parse the URL step by step
+try:
+    engine = create_engine(
+        DATABASE_URL,
+        connect_args=connect_args,
+        pool_size=20,
+        max_overflow=30,
+        pool_timeout=30,
+        pool_recycle=1800,
+    )
+    print(f"DEBUG: Engine created successfully: {engine}", file=sys.stderr)
+except Exception as e:
+    print(f"DEBUG: Failed to create engine: {type(e).__name__}: {e}", file=sys.stderr)
+    import traceback
+    traceback.print_exc(file=sys.stderr)
+    raise
 
 # Create session maker
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -68,7 +80,7 @@ def init_db():
             logger.warning(
                 "Falling back to direct table creation for SQLite development"
             )
-            from db import models
+            from backend.db import models
 
             Base.metadata.create_all(bind=engine)
             logger.info("Database initialized with create_all (development mode)")

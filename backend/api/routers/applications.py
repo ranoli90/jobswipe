@@ -11,9 +11,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from api.routers.auth import get_current_user
-from db.database import get_db
-from db.models import ApplicationAuditLog, ApplicationTask, User
+from backend.api.routers.auth import get_current_user
+from backend.db.database import get_db
+from backend.db.models import ApplicationAuditLog, ApplicationTask, User
 from services.application_service import (cancel_application,
                                                   create_application_task,
                                                   get_application_status)

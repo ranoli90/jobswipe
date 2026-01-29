@@ -10,8 +10,8 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from db.database import get_db
-from db.models import (ApplicationAuditLog, ApplicationTask,
+from backend.db.database import get_db
+from backend.db.models import (ApplicationAuditLog, ApplicationTask,
                                CandidateProfile, Job)
 from workers.application_agent.agents.greenhouse import (
     ApplicationLogger, GreenhouseAgent, LeverAgent)

@@ -13,8 +13,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 
-from db.database import async_session
-from db.models import ABTest, FeatureFlag, User
+from backend.db.database import async_session
+from backend.db.models import ABTest, FeatureFlag, User
 
 logger = logging.getLogger(__name__)
 

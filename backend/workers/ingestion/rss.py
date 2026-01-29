@@ -13,8 +13,8 @@ import feedparser
 import httpx
 from pydantic import BaseModel
 
-from db.database import get_db
-from db.models import Job
+from backend.db.database import get_db
+from backend.db.models import Job
 
 logger = logging.getLogger(__name__)
 

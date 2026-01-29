@@ -12,8 +12,8 @@ from sqlalchemy.orm import Session
 
 from api.main import get_current_user
 from api.validators import validate_uuid
-from db.database import get_db
-from db.models import User
+from backend.db.database import get_db
+from backend.db.models import User
 from services.api_key_service import ApiKeyService
 
 router = APIRouter()
