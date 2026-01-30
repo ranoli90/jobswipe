@@ -82,6 +82,8 @@ async def run_application_task(task_id: str, db=None):
     Returns:
         Boolean indicating success
     """
+    resume_path = None
+    
     if db is None:
         db = next(get_db())
 
@@ -139,6 +141,7 @@ async def run_application_task(task_id: str, db=None):
         success = False
         error = None
 
+        print(f"DEBUG: job.source = '{getattr(job, 'source', 'NONE')}', type = {type(getattr(job, 'source', 'NONE'))}")
         if job.source == "greenhouse":
             success, error = await GreenhouseAgent.apply(
                 job.apply_url,
@@ -151,6 +154,23 @@ async def run_application_task(task_id: str, db=None):
                 resume_path,
                 audit_logger,
             )
+            # Update task status based on success
+            task.attempt_count += 1
+            if success:
+                task.status = "success"
+                logger.info("Application task completed successfully: %s", task_id)
+            else:
+                if error and ("CAPTCHA" in error or "captcha" in error):
+                    task.status = "waiting_human"
+                    task.last_error = error
+                    logger.warning("CAPTCHA detected for task %s: %s", task_id, error)
+                else:
+                    task.status = "failed"
+                    task.last_error = error
+                    logger.error("Application task failed: %s - %s", task_id, error)
+            db.add(task)
+            db.commit()
+            return success
         elif job.source == "lever":
             success, error = await LeverAgent.apply(
                 job.apply_url,
@@ -163,14 +183,29 @@ async def run_application_task(task_id: str, db=None):
                 resume_path,
                 audit_logger,
             )
-        
-
-        logger.warning("Unknown job source: %s", job.source)
-        task.status = "needs_review"
-        db.add(task)
-        db.commit()
-        return False
-
+            # Update task status based on success
+            task.attempt_count += 1
+            if success:
+                task.status = "success"
+                logger.info("Application task completed successfully: %s", task_id)
+            else:
+                if error and ("CAPTCHA" in error or "captcha" in error):
+                    task.status = "waiting_human"
+                    task.last_error = error
+                    logger.warning("CAPTCHA detected for task %s: %s", task_id, error)
+                else:
+                    task.status = "failed"
+                    task.last_error = error
+                    logger.error("Application task failed: %s - %s", task_id, error)
+            db.add(task)
+            db.commit()
+            return success
+        else:
+            logger.warning("Unknown job source: %s", job.source)
+            task.status = "needs_review"
+            db.add(task)
+            db.commit()
+            return False
     except Exception as e:
         logger.error("Error running application task %s: %s", task_id, str(e))
         if db:
@@ -183,54 +218,6 @@ async def run_application_task(task_id: str, db=None):
                 os.unlink(resume_path)
             except OSError:
                 pass
-
-    def _update_task_status(self, task_id: str, success: bool, db: Session, error: str = None) -> None:
-        """Update task status after application attempt."""
-        task = db.query(ApplicationTask).filter(ApplicationTask.id == task_id).first()
-        if not task:
-            return
-
-        # Update task status
-        task.attempt_count += 1
-
-        if success:
-            task.status = "success"
-            logger.info("Application task completed successfully: %s", task_id)
-        else:
-            # Check if error is CAPTCHA-related
-            if error and ("CAPTCHA" in error or "captcha" in error):
-                task.status = "waiting_human"
-                task.last_error = error
-                logger.warning("CAPTCHA detected for task %s: %s", task_id, error)
-            else:
-                task.status = "failed"
-                task.last_error = error
-                logger.error("Application task failed: %s - %s", task_id, error)
-
-        # Save audit logs
-        for log_entry in audit_logger.get_logs():
-            audit_log = ApplicationAuditLog(
-                task_id=str(task.id),
-                step=log_entry["step"],
-                payload=log_entry["payload"],
-                artifacts={},
-                timestamp=log_entry["timestamp"],
-            )
-            db.add(audit_log)
-
-        db.add(task)
-        db.commit()
-
-        # Cleanup temporary resume file
-        if resume_path:
-            import os
-
-            try:
-                os.unlink(resume_path)
-            except Exception as e:
-                logger.warning("Failed to delete temporary resume file: %s", str(e))
-
-        return success
 
 
 def get_application_status(

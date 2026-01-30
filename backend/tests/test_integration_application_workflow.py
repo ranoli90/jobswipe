@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
-from api.main import app
+from backend.api.main import app
 
 
 class TestApplicationWorkflowIntegration:
@@ -23,7 +23,7 @@ class TestApplicationWorkflowIntegration:
     @pytest.fixture
     def mock_celery(self):
         """Mock Celery task"""
-        with patch('backend.api.routers.applications.celery_app') as mock_celery_app:
+        with patch('backend.api.routers.applications.create_application_task') as mock_celery_app:
             mock_task = MagicMock()
             mock_celery_app.send_task.return_value = mock_task
             yield mock_celery_app
@@ -52,8 +52,13 @@ class TestApplicationWorkflowIntegration:
 
     def test_application_submission_api_to_celery(self, client, mock_celery, mock_db_session):
         """Test API endpoint queues Celery task for application submission"""
+        # Initialize limiter on app.state
+        from slowapi import Limiter
+        from slowapi.util import get_remote_address
+        app.state.limiter = Limiter(key_func=get_remote_address)
+        
         # Mock authentication
-        with patch('backend.api.middleware.api_key_auth.verify_api_key', return_value="test-user-id"):
+        with patch('backend.services.api_key_service.ApiKeyService.verify_key', return_value=True):
             # Mock task creation
             with patch('backend.services.application_service.create_application_task') as mock_create_task:
                 mock_task = MagicMock()
@@ -61,10 +66,9 @@ class TestApplicationWorkflowIntegration:
                 mock_create_task.return_value = mock_task
 
                 response = client.post(
-                    "/api/applications/submit",
+                    "/api/applications/",
                     json={
-                        "job_id": "test-job-id",
-                        "cover_letter": "Test cover letter"
+                        "job_id": "test-job-id"
                     },
                     headers={"X-API-Key": "test-key"}
                 )
@@ -81,7 +85,9 @@ class TestApplicationWorkflowIntegration:
                     queue='applications'
                 )
 
-    def test_application_workflow_with_external_site_success(self, mock_db_session):
+    @pytest.mark.asyncio
+    @pytest.mark.asyncio
+    async def test_application_workflow_with_external_site_success(self, mock_db_session):
         """Test full workflow with mocked external site success"""
         from services.application_service import run_application_task
 
@@ -112,9 +118,10 @@ class TestApplicationWorkflowIntegration:
         ]
 
         # Mock resume download
-        with patch('backend.services.application_service.download_file', return_value=b"resume content"):
+        with patch('services.storage.storage_service', spec=True) as mock_storage_service:
+            mock_storage_service.download_file.return_value = b"resume content"
             # Mock tempfile
-            with patch('backend.services.application_service.tempfile.NamedTemporaryFile') as mock_tempfile:
+            with patch('tempfile.NamedTemporaryFile') as mock_tempfile:
                 mock_temp_file = MagicMock()
                 mock_temp_file.name = "/tmp/resume.pdf"
                 mock_tempfile.return_value.__enter__.return_value = mock_temp_file
@@ -139,7 +146,8 @@ class TestApplicationWorkflowIntegration:
                             assert mock_task.attempt_count == 1
                             mock_apply.assert_called_once()
 
-    def test_application_workflow_with_captcha_handling(self, mock_db_session):
+    @pytest.mark.asyncio
+    async def test_application_workflow_with_captcha_handling(self, mock_db_session):
         """Test workflow when CAPTCHA is encountered"""
         from services.application_service import run_application_task
 
@@ -164,8 +172,9 @@ class TestApplicationWorkflowIntegration:
         ]
 
         # Mock resume download
-        with patch('backend.services.application_service.download_file', return_value=b"resume content"):
-            with patch('backend.services.application_service.tempfile.NamedTemporaryFile') as mock_tempfile:
+        with patch('services.storage.storage_service', spec=True) as mock_storage_service:
+            mock_storage_service.download_file.return_value = b"resume content"
+            with patch('tempfile.NamedTemporaryFile') as mock_tempfile:
                 mock_temp_file = MagicMock()
                 mock_tempfile.return_value.__enter__.return_value = mock_temp_file
 
@@ -185,7 +194,8 @@ class TestApplicationWorkflowIntegration:
                             assert mock_task.status == "waiting_human"
                             assert "CAPTCHA" in mock_task.last_error
 
-    def test_application_workflow_with_multiple_sources(self, mock_db_session):
+    @pytest.mark.asyncio
+    async def test_application_workflow_with_multiple_sources(self, mock_db_session):
         """Test workflow handles different job sources correctly"""
         from services.application_service import run_application_task
 
@@ -216,15 +226,21 @@ class TestApplicationWorkflowIntegration:
             ]
 
             # Mock resume download
-            with patch('backend.services.application_service.download_file', return_value=b"resume content"):
-                with patch('backend.services.application_service.tempfile.NamedTemporaryFile') as mock_tempfile:
+            with patch('services.storage.storage_service', spec=True) as mock_storage_service:
+                mock_storage_service.download_file.return_value = b"resume content"
+                with patch('tempfile.NamedTemporaryFile') as mock_tempfile:
                     mock_temp_file = MagicMock()
                     mock_tempfile.return_value.__enter__.return_value = mock_temp_file
 
                     # Mock agent success
-                    agent_mock = MagicMock()
-                    with patch(f'backend.services.application_service.{agent_class}', agent_mock):
-                        agent_mock.apply = AsyncMock(return_value=(True, None))
+                    if source == "greenhouse":
+                        with patch('backend.services.application_service.GreenhouseAgent.apply', new_callable=AsyncMock) as mock_apply:
+                            mock_apply.return_value = (True, None)
+                            result = await run_application_task(f"task-{source}", mock_db_session)
+                    else:
+                        with patch('backend.services.application_service.LeverAgent.apply', new_callable=AsyncMock) as mock_apply:
+                            mock_apply.return_value = (True, None)
+                            result = await run_application_task(f"task-{source}", mock_db_session)
 
                         with patch('backend.services.application_service.ApplicationLogger') as mock_logger_class:
                             mock_logger = MagicMock()
@@ -237,7 +253,8 @@ class TestApplicationWorkflowIntegration:
                                 assert result is True
                                 agent_mock.apply.assert_called_once()
 
-    def test_application_workflow_error_handling(self, mock_db_session):
+    @pytest.mark.asyncio
+    async def test_application_workflow_error_handling(self, mock_db_session):
         """Test workflow handles various error conditions"""
         from services.application_service import run_application_task
 
@@ -270,12 +287,13 @@ class TestApplicationWorkflowIntegration:
             mock_task, mock_job, mock_profile
         ]
 
-        with patch('backend.services.application_service.download_file', return_value=b"resume"):
-            with patch('backend.services.application_service.tempfile.NamedTemporaryFile') as mock_tempfile:
+        with patch('services.storage.storage_service', spec=True) as mock_storage_service:
+            mock_storage_service.download_file.return_value = b"resume"
+            with patch('tempfile.NamedTemporaryFile') as mock_tempfile:
                 mock_temp_file = MagicMock()
                 mock_tempfile.return_value.__enter__.return_value = mock_temp_file
 
-                    result = await run_application_task("task-123", mock_db_session)
+                result = await run_application_task("task-123", mock_db_session)
 
-                    assert result is False
-                    assert mock_task.status == "needs_review"
+                assert result is False
+                assert mock_task.status == "needs_review"

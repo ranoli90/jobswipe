@@ -1,0 +1,249 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  PYTHON_VERSION: '3.12'
+  FLUTTER_VERSION: '3.10.0'
+  FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.12.x]
+        flutter-version: [3.10.0]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+        
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ matrix.flutter-version }}
+        
+    - name: Install backend dependencies
+      run: |
+        cd backend && pip install --no-cache-dir -r requirements.txt
+        python -m spacy download en_core_web_sm
+        
+    - name: Install mobile app dependencies
+      run: |
+        cd mobile-app && flutter pub get
+        
+    - name: Run backend tests
+      run: |
+        cd backend && python -m pytest -v tests/unit/ tests/integration/
+        
+    - name: Run mobile app tests
+      run: |
+        cd mobile-app && flutter test
+        flutter test --coverage
+        
+    - name: Run security tests
+      run: |
+        cd backend && pip install bandit && bandit -r . -c "bandit.yaml"
+        cd ../mobile-app && flutter pub get && flutter pub run dependency_validator
+        
+    - name: Run linting
+      run: |
+        cd backend && flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        cd ../mobile-app && flutter analyze
+        
+    - name: Generate coverage report
+      run: |
+        cd backend && python -m pytest tests/unit/ tests/integration/ --cov=. --cov-report=xml
+        cd ../mobile-app && flutter test --coverage
+        
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        
+    - name: Security scan
+      uses: github/codeql-action/analyze@v2
+      
+    - name: Dependency vulnerability scan
+      uses: snyk/actions/python@master
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        args: --severity-threshold=high
+        
+    - name: Build artifacts
+      run: |
+        cd backend && python -m build
+        cd ../mobile-app && flutter build apk --release
+        
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts
+        path: |
+          backend/dist
+          mobile-app/build/app/outputs/flutter-apk/app-release.apk
+
+  security:
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run SAST scan
+      uses: ShiftLeftSecurity/scan-action@master
+      with:
+        type: "sast"
+        
+    - name: Run dependency scan
+      uses: ShiftLeftSecurity/scan-action@master
+      with:
+        type: "dependency_scanning"
+        
+    - name: Run container scan
+      uses: ShiftLeftSecurity/scan-action@master
+      with:
+        type: "container"
+        
+    - name: Upload security scan results
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: results.sarif
+
+  quality:
+    runs-on: ubuntu-latest
+    needs: security
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run CodeQL analysis
+      uses: github/codeql-action/analyze@v2
+      
+    - name: Run SonarQube analysis
+      uses: SonarSource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [test, security, quality]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Docker BuildKit
+      run: |
+        echo 'DOCKER_BUILDKIT=1' >> $GITHUB_ENV
+        echo 'COMPOSE_DOCKER_CLI_BUILD=1' >> $GITHUB_ENV
+        
+    - name: Build backend Docker image
+      run: |
+        cd backend && docker build -f Dockerfile -t jobswipe-backend:${{ github.sha }} .
+        
+    - name: Run Docker security scan
+      uses: anchore/scan-action@v3
+      with:
+        image: "jobswipe-backend:${{ github.sha }}"
+        
+    - name: Upload Docker scan results
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: results.sarif
+
+  deploy-preview:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/develop'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Deploy to Fly.io staging
+      uses: superfly/flyctl-actions@1.0
+      with:
+        args: "deploy --remote-only --build-target=staging"
+      env:
+        FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        
+    - name: Run health checks
+      run: |
+        sleep 30
+        curl -f http://staging.jobswipe.fly.dev/health
+        
+    - name: Notify deployment
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Deploy to Fly.io production
+      uses: superfly/flyctl-actions@1.0
+      with:
+        args: "deploy --remote-only --build-target=production"
+      env:
+        FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        
+    - name: Run health checks
+      run: |
+        sleep 30
+        curl -f https://jobswipe.fly.dev/health
+        
+    - name: Notify deployment
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  rollback:
+    runs-on: ubuntu-latest
+    needs: deploy-production
+    if: failure()
+    
+    steps:
+    - name: Rollback to previous version
+      uses: superfly/flyctl-actions@1.0
+      with:
+        args: "rollback --app=jobswipe"
+      env:
+        FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        
+    - name: Notify rollback
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

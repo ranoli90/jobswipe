@@ -274,10 +274,10 @@ def main():
 
     tester = MigrationTester(database_url)
 
-    success = tester.run_full_test_suite()
+success = tester.run_full_test_suite()
 
-    sys.exit(0 if success else 1)
+sys.exit(0 if success else 1)
 
 
-    if __name__ == "__main__":
-        main()
+if __name__ == "__main__":
+    main()

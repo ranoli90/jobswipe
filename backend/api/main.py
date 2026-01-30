@@ -18,8 +18,10 @@ import redis.asyncio as redis
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi_limiter import FastAPILimiter
-from fastapi_limiter.depends import RateLimiter
+from slowapi import Limiter
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from pythonjsonlogger import jsonlogger
 
 # Try to import settings with proper error handling
@@ -183,11 +185,18 @@ async def health_check():
     return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
 
 
-# Setup rate limiting with Redis
+# Initialize rate limiter with Redis or in-memory fallback
+try:
+    limiter = Limiter(key_func=get_remote_address, storage_uri=settings.redis_url)
+    logger.info("Redis rate limiter initialized successfully")
+except Exception as e:
+    limiter = Limiter(key_func=get_remote_address, storage_uri="memory://")
+    logger.warning("Redis rate limiter failed, using in-memory fallback: %s", e)
+
+
+# Setup rate limiting with Redis fallback to in-memory
 @app.on_event("startup")
 async def startup():
-    global redis_instance
-    redis_instance = None
     # Validate environment configuration on startup
     logger.info("Validating environment configuration...")
     try:
@@ -199,82 +208,42 @@ async def startup():
         logger.error("Environment configuration validation failed: %s", e)
         raise
 
-    # Initialize Redis with error handling
-    try:
-        redis_instance = redis.from_url(
-            settings.redis_url, encoding="utf8", decode_responses=True
-        )
-        await FastAPILimiter.init(redis_instance)
-        logger.info("Redis rate limiter initialized successfully")
-    except Exception as e:
-        logger.error("Failed to initialize Redis rate limiter: %s", e)
-        logger.critical("Rate limiter initialization failed - Redis unavailable. Application cannot start without rate limiting.")
-        raise  # Raise exception to prevent app from starting without rate limiting
-
 
 @app.on_event("shutdown")
 async def shutdown():
-    global redis_instance
-    if redis_instance:
-        await redis_instance.close()
-        logger.info("Redis connection closed gracefully")
     engine.dispose()
     logger.info("Database engine disposed gracefully")
     logger.info("Application shutdown complete")
 
 
 # Rate limiters
-auth_limiter = RateLimiter(
-    times=5,
-    seconds=60,
-    identifier=lambda request: request.client.host if request.client else "unknown",
-)
-api_limiter = RateLimiter(
-    times=60,
-    seconds=60,
-    identifier=lambda request: getattr(
-        request.state, "user_id", request.client.host if request.client else "unknown"
-    ),
-)
-public_limiter = RateLimiter(
-    times=100,
-    seconds=60,
-    identifier=lambda request: request.client.host if request.client else "unknown",
-)
+auth_limiter = limiter.limit("5/minute")
+api_limiter = limiter.limit("60/minute")
+public_limiter = limiter.limit("100/minute")
 
 
 # Rate limit exception handler
-@app.exception_handler(HTTPException)
-async def rate_limit_exceeded_handler(request: Request, exc: HTTPException):
-    if exc.status_code == 429:
-        client_ip = request.client.host if request.client else "unknown"
-        user_id = (
-            getattr(request.state, "user_id", "anonymous")
-            if hasattr(request.state, "user_id")
-            else "anonymous"
-        )
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
+    client_ip = request.client.host if request.client else "unknown"
+    user_id = getattr(request.state, "user_id", "anonymous") if hasattr(request.state, "user_id") else "anonymous"
 
-        # Log rate limit violation
-        security_logger.warning(
-            "Rate limit exceeded",
-            extra={
-                "ip": client_ip,
-                "user": user_id,
-                "path": str(request.url.path),
-                "method": request.method,
-            },
-        )
+    # Log rate limit violation
+    security_logger.warning(
+        "Rate limit exceeded",
+        extra={
+            "ip": client_ip,
+            "user": user_id,
+            "path": str(request.url.path),
+            "method": request.method,
+        },
+    )
 
-        # Calculate retry-after (assume 60 seconds for simplicity, or get from exc if available)
-        retry_after = 60  # seconds
-
-        return JSONResponse(
-            status_code=429,
-            content={"detail": "Too many requests"},
-            headers={"Retry-After": str(retry_after)},
-        )
-    # For other HTTPExceptions, re-raise them
-    raise exc
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Too many requests"},
+        headers={"Retry-After": str(exc.retry_after)},
+    )
 
 
 # Setup OpenTelemetry tracing
@@ -311,6 +280,7 @@ add_error_handling_middleware(app)
 
 # Add metrics middleware
 app.add_middleware(MetricsMiddleware)
+app.add_middleware(SlowAPIMiddleware)
 
 # Import routers after app is created to avoid circular dependency
 from backend.api.routers import (analytics, application_automation,
@@ -383,6 +353,41 @@ async def readiness_check():
 def metrics():
     """Prometheus metrics endpoint."""
     return metrics_endpoint()
+
+
+@app.get("/health/worker")
+async def worker_health_check():
+    """Health check endpoint for worker processes"""
+    try:
+        # Check if Celery is available
+        from backend.workers.celery_app import celery_app
+        # Try to ping the broker
+        inspector = celery_app.control.inspect()
+        # Get active workers
+        active_workers = inspector.active()
+        
+        if active_workers:
+            worker_count = len(active_workers)
+            return {
+                "status": "healthy",
+                "timestamp": datetime.utcnow().isoformat(),
+                "worker_count": worker_count,
+                "workers": list(active_workers.keys())
+            }
+        else:
+            return {
+                "status": "warning",
+                "timestamp": datetime.utcnow().isoformat(),
+                "worker_count": 0,
+                "message": "No active workers found"
+            }
+    except Exception as e:
+        logger.error(f"Worker health check failed: {e}")
+        return {
+            "status": "unhealthy",
+            "timestamp": datetime.utcnow().isoformat(),
+            "error": str(e)
+        }
 
 
 @app.get("/")

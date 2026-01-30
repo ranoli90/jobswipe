@@ -13,7 +13,7 @@ def test_register(client: TestClient, test_data):
     user_data = test_data["users"][0]
 
     response = client.post(
-        "/v1/auth/register",
+        "/api/v1/auth/register",
         json={"email": user_data["email"], "password": user_data["password"]},
     )
 
@@ -29,13 +29,13 @@ def test_register_duplicate_email(client: TestClient, test_data):
 
     # First registration
     client.post(
-        "/v1/auth/register",
+        "/api/v1/auth/register",
         json={"email": user_data["email"], "password": user_data["password"]},
     )
 
     # Second registration should fail
     response = client.post(
-        "/v1/auth/register",
+        "/api/v1/auth/register",
         json={"email": user_data["email"], "password": "DifferentPass123!"},
     )
 
@@ -46,18 +46,18 @@ def test_login(client: TestClient, test_data):
     """Test user login"""
     user_data = test_data["users"][0]
 
-        # First register
-        register_response = client.post(
-            "/api/v1/auth/register",
-            json={"email": user_data["email"], "password": user_data["password"]},
-        )
-        print("Register response status:", register_response.status_code)
-        print("Register response body:", register_response.json())
+    # First register
+    register_response = client.post(
+        "/api/v1/auth/register",
+        json={"email": user_data["email"], "password": user_data["password"]},
+    )
+    print("Register response status:", register_response.status_code)
+    print("Register response body:", register_response.json())
     
-        # Then login
-        response = client.post(
-            "/api/v1/auth/login",
-            data={"username": user_data["email"], "password": user_data["password"]},
+    # Then login
+    response = client.post(
+        "/api/v1/auth/login",
+        data={"username": user_data["email"], "password": user_data["password"]},
         )
     print("Login response status:", response.status_code)
     print("Login response body:", response.json())

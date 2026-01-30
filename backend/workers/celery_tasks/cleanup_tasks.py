@@ -8,9 +8,8 @@ import logging
 from datetime import datetime, timedelta
 
 from backend.db.database import get_db
-from backend.db.models import (OAuth2State, RefreshToken, Session,
-                               UserJobInteraction)
-from workers.celery_app import celery_app
+from backend.db.models import UserJobInteraction
+from backend.workers.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
 

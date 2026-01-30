@@ -25,6 +25,7 @@ Thumbs.db
 *.log
 logs/
 *.pid
+*.json
 
 # Data
 *.sqlite3
@@ -34,6 +35,7 @@ data/
 # Temporary files
 *.tmp
 *.temp
+*.bak
 .cache/
 
 # Environment variables

@@ -1,0 +1,267 @@
+name: CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.12'
+  FLUTTER_VERSION: '3.10.0'
+  FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+  DOCKER_REGISTRY: ghcr.io
+  DOCKER_USERNAME: ${{ github.actor }}
+  DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  build-backend:
+    runs-on: ubuntu-latest
+    outputs:
+      image_digest: ${{ steps.build.outputs.digest }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Docker BuildKit
+      run: |
+        echo 'DOCKER_BUILDKIT=1' >> $GITHUB_ENV
+        echo 'COMPOSE_DOCKER_CLI_BUILD=1' >> $GITHUB_ENV
+        
+    - name: Build backend image
+      id: build
+      uses: docker/build-push-action@v5
+      with:
+        context: ./backend
+        file: ./backend/Dockerfile
+        push: false
+        tags: ${{ env.DOCKER_REGISTRY }}/jobswipe/backend:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args: |
+          NODE_ENV=production
+          NPM_TOKEN=${{ secrets.NPM_TOKEN }}
+        
+    - name: Scan backend image
+      uses: anchore/scan-action@v3
+      with:
+        image: "${{ env.DOCKER_REGISTRY }}/jobswipe/backend:${{ github.sha }}"
+        
+    - name: Upload scan results
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: results.sarif
+
+  build-mobile:
+    runs-on: ubuntu-latest
+    outputs:
+      image_digest: ${{ steps.build.outputs.digest }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Docker BuildKit
+      run: |
+        echo 'DOCKER_BUILDKIT=1' >> $GITHUB_ENV
+        echo 'COMPOSE_DOCKER_CLI_BUILD=1' >> $GITHUB_ENV
+        
+    - name: Build mobile image
+      id: build
+      uses: docker/build-push-action@v5
+      with:
+        context: ./mobile-app
+        file: ./mobile-app/Dockerfile
+        push: false
+        tags: ${{ env.DOCKER_REGISTRY }}/jobswipe/mobile:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args: |
+          NODE_ENV=production
+          NPM_TOKEN=${{ secrets.NPM_TOKEN }}
+        
+    - name: Scan mobile image
+      uses: anchore/scan-action@v3
+      with:
+        image: "${{ env.DOCKER_REGISTRY }}/jobswipe/mobile:${{ github.sha }}"
+        
+    - name: Upload scan results
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: results.sarif
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: [build-backend, build-mobile]
+    if: github.ref == 'refs/heads/develop'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Deploy backend to staging
+      uses: superfly/flyctl-actions@1.0
+      with:
+        args: "deploy --remote-only --build-target=staging --image=${{ env.DOCKER_REGISTRY }}/jobswipe/backend:${{ github.sha }}"
+      env:
+        FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        
+    - name: Run staging health checks
+      run: |
+        sleep 30
+        curl -f http://staging.jobswipe.fly.dev/health
+        curl -f https://staging.jobswipe.fly.dev/api/health
+        
+    - name: Run performance tests
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install performance testing tools
+      run: |
+        npm install -g artillery
+        
+    - name: Run load tests
+      run: |
+        artillery quick --duration 60 --rate 10 http://staging.jobswipe.fly.dev/
+        
+    - name: Notify staging deployment
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: [build-backend, build-mobile]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Deploy backend to production
+      uses: superfly/flyctl-actions@1.0
+      with:
+        args: "deploy --remote-only --build-target=production --image=${{ env.DOCKER_REGISTRY }}/jobswipe/backend:${{ github.sha }}"
+      env:
+        FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        
+    - name: Run production health checks
+      run: |
+        sleep 30
+        curl -f https://jobswipe.fly.dev/health
+        curl -f https://jobswipe.fly.dev/api/health
+        
+    - name: Run smoke tests
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install testing tools
+      run: |
+        npm install -g newman
+        
+    - name: Run API smoke tests
+      run: |
+        newman run ./tests/smoke-tests.json
+        
+    - name: Notify production deployment
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  rollback-staging:
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: failure()
+    
+    steps:
+    - name: Rollback staging
+      uses: superfly/flyctl-actions@1.0
+      with:
+        args: "rollback --app=jobswipe-staging"
+      env:
+        FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        
+    - name: Notify staging rollback
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  rollback-production:
+    runs-on: ubuntu-latest
+    needs: deploy-production
+    if: failure()
+    
+    steps:
+    - name: Rollback production
+      uses: superfly/flyctl-actions@1.0
+      with:
+        args: "rollback --app=jobswipe"
+      env:
+        FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        
+    - name: Notify production rollback
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  monitoring:
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production]
+    
+    steps:
+    - name: Setup monitoring
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install monitoring tools
+      run: |
+        npm install -g @datadog/datadog-ci
+        
+    - name: Submit coverage to Datadog
+      run: |
+        datadog-ci code-coverage upload ./coverage.xml --service jobswipe --tag github-sha:${{ github.sha }}
+        
+    - name: Submit performance metrics
+      run: |
+        datadog-ci performance upload ./performance-metrics.json --service jobswipe --tag github-sha:${{ github.sha }}
+        
+    - name: Submit security scan results
+      run: |
+        datadog-ci security upload ./security-results.json --service jobswipe --tag github-sha:${{ github.sha }}
+        
+    - name: Create deployment event
+      run: |
+        curl -X POST "https://api.datadoghq.com/api/v1/events" \
+          -H "Content-Type: application/json" \
+          -H "DD-API-KEY: ${{ secrets.DATADOG_API_KEY }}" \
+          -d "{\"msg_title\": \"JobSwipe Deployment\", \"msg_text\": \"Deployment completed for ${{ github.ref }} with SHA ${{ github.sha }}.\", \"alert_type\": \"info\"}"
+
+  cleanup:
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production, monitoring]
+    
+    steps:
+    - name: Cleanup old Docker images
+      run: |
+        docker system prune -f
+        
+    - name: Cleanup workspace
+      run: |
+        rm -rf node_modules
+        rm -rf .next
+        rm -rf build

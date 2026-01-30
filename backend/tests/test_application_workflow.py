@@ -14,8 +14,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-# Import test fixtures
-from tests.conftest import client, db_session
+# Import test fixtures - use pytest fixtures directly
+# from tests.conftest import client, mock_db_session
 
 
 class TestJobApplicationWorkflow:

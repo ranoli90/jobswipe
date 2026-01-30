@@ -10,7 +10,10 @@ from celery import Celery
 from celery.schedules import crontab
 
 # Setup tracing
-from tracing import setup_tracing
+try:
+    from backend.tracing import setup_tracing
+except ImportError:
+    from tracing import setup_tracing
 
 # Configure Celery to use Redis as broker and result backend
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")

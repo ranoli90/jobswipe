@@ -1,16 +1,9 @@
-import os
-import sys
 from logging.config import fileConfig
 
+from sqlalchemy import engine_from_config
+from sqlalchemy import pool
+
 from alembic import context
-from sqlalchemy import engine_from_config, pool, text
-
-# Add the parent directory to the path so we can import our modules
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-
-from backend.config import settings
-# Import our database models and configuration
-from backend.db.database import Base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -23,37 +16,30 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
+import sys
+import os
+from pathlib import Path
+
+# Add the backend directory to Python path
+BACKEND_DIR = str(Path(__file__).parent.parent)
+sys.path.insert(0, BACKEND_DIR)
+
+# Import our models
+from db.models import Base
+from config import Settings
+
+# Load settings
+settings = Settings()
+
+# Set database URL from environment variables
+config.set_main_option('sqlalchemy.url', settings.database_url)
+
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
-
-logger = logging.getLogger(__name__)
-
-
-def validate_database_connection(engine):
-    """Validate database connection and basic functionality."""
-    try:
-        with engine.connect() as conn:
-            # Test basic connectivity
-            result = conn.execute(text("SELECT 1"))
-            result.fetchone()
-
-            # Check if we're using PostgreSQL (required for production)
-            if settings.environment == "production":
-                result = conn.execute(text("SELECT version()"))
-                version = result.fetchone()[0]
-                if "postgresql" not in version.lower():
-                    raise ValueError(
-                        "Production environment requires PostgreSQL database"
-                    )
-
-            logger.info("Database connection validated successfully")
-    except Exception as e:
-        logger.error("Database connection validation failed: %s", e)
-        raise
 
 
 def run_migrations_offline() -> None:
@@ -68,7 +54,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = settings.database_url
+    url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -87,20 +73,16 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = settings.database_url
-
     connectable = engine_from_config(
-        configuration,
+        config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
 
-    # Validate database connection before running migrations
-    validate_database_connection(connectable)
-
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        context.configure(
+            connection=connection, target_metadata=target_metadata
+        )
 
         with context.begin_transaction():
             context.run_migrations()

@@ -8,10 +8,10 @@ import logging
 from datetime import datetime
 
 from backend.db.database import get_db
-from backend.db.models import Job, JobSource
-from services.embedding_service import EmbeddingService
-from services.job_ingestion_service import job_ingestion_service
-from workers.celery_app import celery_app
+from backend.db.models import Job
+from backend.services.embedding_service import EmbeddingService
+from backend.services.job_ingestion_service import job_ingestion_service
+from backend.workers.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
 

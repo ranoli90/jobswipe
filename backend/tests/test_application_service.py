@@ -308,10 +308,10 @@ class TestApplicationService:
                 mock_temp_file = MagicMock()
                 mock_tempfile.return_value.__enter__.return_value = mock_temp_file
 
-                    result = await run_application_task(str(mock_task.id), mock_db)
+                result = await run_application_task(str(mock_task.id), mock_db)
 
-                    assert result is False
-                    assert mock_task.status == "needs_review"
+                assert result is False
+                assert mock_task.status == "needs_review"
 
     @pytest.mark.asyncio
     @patch('backend.services.application_service.get_db')

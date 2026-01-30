@@ -191,6 +191,25 @@ class Settings(BaseSettings):
                 )
         return v
 
+    @field_validator(
+        "analytics_api_key",
+        "ingestion_api_key",
+        "deduplication_api_key",
+        "categorization_api_key",
+        "automation_api_key",
+        mode="after",
+    )
+    @classmethod
+    def validate_no_dev_keys_in_production(cls, v, info):
+        """Prevent API keys from using 'dev-*' defaults in production."""
+        env = os.getenv("ENVIRONMENT", "development")
+        if env == "production" and v.startswith("dev-"):
+            raise ValueError(
+                f"{info.field_name} cannot start with 'dev-' in production environment. "
+                "Please set a proper API key via the corresponding environment variable."
+            )
+        return v
+
 
 # Create settings instance with error handling for better debugging
 try:
