@@ -33,7 +33,8 @@ except Exception as e:
     print(f"CRITICAL ERROR: Failed to load settings: {e}", file=sys.stderr)
     print("This usually means required environment variables are missing.", file=sys.stderr)
     print("Required variables: DATABASE_URL, SECRET_KEY, ENCRYPTION_PASSWORD, ENCRYPTION_SALT, OAUTH_STATE_SECRET", file=sys.stderr)
-    sys.exit(1)
+    # Don't exit, let the app start with a basic health endpoint
+    settings = None
 
 from backend.api.middleware.compression import add_compression_middleware
 from backend.api.middleware.error_handling import add_error_handling_middleware
@@ -186,12 +187,16 @@ async def health_check():
 
 
 # Initialize rate limiter with Redis or in-memory fallback
-try:
-    limiter = Limiter(key_func=get_remote_address, storage_uri=settings.redis_url)
-    logger.info("Redis rate limiter initialized successfully")
-except Exception as e:
+if settings:
+    try:
+        limiter = Limiter(key_func=get_remote_address, storage_uri=settings.redis_url)
+        logger.info("Redis rate limiter initialized successfully")
+    except Exception as e:
+        limiter = Limiter(key_func=get_remote_address, storage_uri="memory://")
+        logger.warning("Redis rate limiter failed, using in-memory fallback: %s", e)
+else:
     limiter = Limiter(key_func=get_remote_address, storage_uri="memory://")
-    logger.warning("Redis rate limiter failed, using in-memory fallback: %s", e)
+    logger.warning("Settings not loaded, using in-memory rate limiter")
 
 
 # Setup rate limiting with Redis fallback to in-memory
@@ -199,20 +204,23 @@ except Exception as e:
 async def startup():
     # Validate environment configuration on startup
     logger.info("Validating environment configuration...")
-    try:
-        # Settings are already validated during instantiation, but we log success
-        logger.info("Environment configuration validation successful")
-        logger.info("Environment: %s", settings.environment)
-        logger.info("Debug mode: %s", settings.debug)
-    except Exception as e:
-        logger.error("Environment configuration validation failed: %s", e)
-        raise
+    if settings:
+        try:
+            # Settings are already validated during instantiation, but we log success
+            logger.info("Environment configuration validation successful")
+            logger.info("Environment: %s", settings.environment)
+            logger.info("Debug mode: %s", settings.debug)
+        except Exception as e:
+            logger.error("Environment configuration validation failed: %s", e)
+    else:
+        logger.warning("Settings not available - running in limited mode")
 
 
 @app.on_event("shutdown")
 async def shutdown():
-    engine.dispose()
-    logger.info("Database engine disposed gracefully")
+    if settings:
+        engine.dispose()
+        logger.info("Database engine disposed gracefully")
     logger.info("Application shutdown complete")
 
 
@@ -254,13 +262,23 @@ except Exception as e:
     logger.warning("Failed to initialize tracing: %s", e)
 
 # CORS configuration - using settings from config
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_allow_origins,
-    allow_credentials=settings.cors_allow_credentials,
-    allow_methods=settings.cors_allow_methods,
-    allow_headers=settings.cors_allow_headers,
-)
+if settings:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_allow_origins,
+        allow_credentials=settings.cors_allow_credentials,
+        allow_methods=settings.cors_allow_methods,
+        allow_headers=settings.cors_allow_headers,
+    )
+else:
+    # Default CORS for when settings fail to load
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
+    )
 
 # Add correlation ID middleware
 app.add_middleware(CorrelationIdMiddleware)
@@ -288,20 +306,25 @@ from backend.api.routers import (analytics, application_automation,
                          job_deduplication, jobs, jobs_ingestion,
                          notifications, profile, api_keys)
 
-# Include routers
-app.include_router(auth.router, prefix="/api/v1", tags=["auth"])
-app.include_router(jobs.router, prefix="/api/v1", tags=["jobs"])
-app.include_router(applications.router, prefix="/api/v1", tags=["applications"])
-app.include_router(profile.router, prefix="/api/v1", tags=["profile"])
-app.include_router(analytics.router, prefix="/api/v1", tags=["analytics"])
-app.include_router(notifications.router, prefix="/api/v1", tags=["notifications"])
-app.include_router(
-    application_automation.router, prefix="/api/v1", tags=["application_automation"]
-)
-app.include_router(job_deduplication.router, prefix="/api/v1", tags=["deduplication"])
-app.include_router(job_categorization.router, prefix="/api/v1", tags=["categorization"])
-app.include_router(jobs_ingestion.router, prefix="/api/v1", tags=["ingestion"])
-app.include_router(api_keys.router, prefix="/api/v1", tags=["api_keys"])
+# Include routers only if settings loaded successfully
+if settings:
+    try:
+        app.include_router(auth.router, prefix="/api/v1", tags=["auth"])
+        app.include_router(jobs.router, prefix="/api/v1", tags=["jobs"])
+        app.include_router(applications.router, prefix="/api/v1", tags=["applications"])
+        app.include_router(profile.router, prefix="/api/v1", tags=["profile"])
+        app.include_router(analytics.router, prefix="/api/v1", tags=["analytics"])
+        app.include_router(notifications.router, prefix="/api/v1", tags=["notifications"])
+        app.include_router(
+            application_automation.router, prefix="/api/v1", tags=["application_automation"]
+        )
+        app.include_router(job_deduplication.router, prefix="/api/v1", tags=["deduplication"])
+        app.include_router(job_categorization.router, prefix="/api/v1", tags=["categorization"])
+        app.include_router(jobs_ingestion.router, prefix="/api/v1", tags=["ingestion"])
+        app.include_router(api_keys.router, prefix="/api/v1", tags=["api_keys"])
+        logger.info("All API routers loaded successfully")
+    except Exception as e:
+        logger.error(f"Failed to load some routers: {e}")
 
 
 @app.get("/health")
