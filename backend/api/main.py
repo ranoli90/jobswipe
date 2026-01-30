@@ -36,18 +36,32 @@ except Exception as e:
     # Don't exit, let the app start with a basic health endpoint
     settings = None
 
-from backend.api.middleware.compression import add_compression_middleware
-from backend.api.middleware.error_handling import add_error_handling_middleware
-from backend.api.middleware.file_validation import \
-    add_file_validation_middleware
-from backend.api.middleware.input_sanitization import \
-    InputSanitizationMiddleware
-from backend.api.middleware.output_encoding import OutputEncodingMiddleware
+# Import middleware modules with error handling
+try:
+    from backend.api.middleware.compression import add_compression_middleware
+    from backend.api.middleware.error_handling import add_error_handling_middleware
+    from backend.api.middleware.file_validation import \
+        add_file_validation_middleware
+    from backend.api.middleware.input_sanitization import \
+        InputSanitizationMiddleware
+    from backend.api.middleware.output_encoding import OutputEncodingMiddleware
+    from metrics import MetricsMiddleware, metrics_endpoint
+    from tracing import setup_tracing
+    middleware_available = True
+except Exception as e:
+    print(f"Warning: Some middleware not available: {e}", file=sys.stderr)
+    middleware_available = False
 
-from backend.db.database import get_db, engine
-from metrics import MetricsMiddleware, metrics_endpoint
-from services.embedding_service import EmbeddingService
-from tracing import setup_tracing
+# Import database and services with error handling
+try:
+    from backend.db.database import get_db, engine
+    from services.embedding_service import EmbeddingService
+    db_available = True
+except Exception as e:
+    print(f"Warning: Database not available: {e}", file=sys.stderr)
+    db_available = False
+    get_db = None
+    engine = None
 
 # Configure structured logging
 log_level = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -255,11 +269,12 @@ async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
 
 
 # Setup OpenTelemetry tracing
-try:
-    setup_tracing(app)
-    logger.info("OpenTelemetry tracing initialized")
-except Exception as e:
-    logger.warning("Failed to initialize tracing: %s", e)
+if middleware_available:
+    try:
+        setup_tracing(app)
+        logger.info("OpenTelemetry tracing initialized")
+    except Exception as e:
+        logger.warning("Failed to initialize tracing: %s", e)
 
 # CORS configuration - using settings from config
 if settings:
@@ -283,22 +298,23 @@ else:
 # Add correlation ID middleware
 app.add_middleware(CorrelationIdMiddleware)
 
-# Add security middleware
-app.add_middleware(InputSanitizationMiddleware)
-app.add_middleware(OutputEncodingMiddleware)
-
-# Add compression middleware
-add_compression_middleware(app)
-
-# Add file validation middleware
-add_file_validation_middleware(app)
-
-# Add error handling middleware
-add_error_handling_middleware(app)
-
-# Add metrics middleware
-app.add_middleware(MetricsMiddleware)
-app.add_middleware(SlowAPIMiddleware)
+# Add security middleware (only if available)
+if middleware_available:
+    app.add_middleware(InputSanitizationMiddleware)
+    app.add_middleware(OutputEncodingMiddleware)
+    
+    # Add compression middleware
+    add_compression_middleware(app)
+    
+    # Add file validation middleware
+    add_file_validation_middleware(app)
+    
+    # Add error handling middleware
+    add_error_handling_middleware(app)
+    
+    # Add metrics middleware
+    app.add_middleware(MetricsMiddleware)
+    app.add_middleware(SlowAPIMiddleware)
 
 # Import routers after app is created to avoid circular dependency
 from backend.api.routers import (analytics, application_automation,
@@ -341,23 +357,32 @@ async def health_check():
 async def readiness_check():
     """Readiness check for Kubernetes-style deployments."""
     # Check database connectivity
-    try:
-        db = next(get_db())
-        db.execute("SELECT 1")
-        db_status = "connected"
-    except Exception as e:
-        logger.error(f"Database health check failed: {e}")
-        db_status = "disconnected"
+    db_status = "unknown"
+    redis_status = "unknown"
+    
+    if db_available and get_db:
+        try:
+            db = next(get_db())
+            db.execute("SELECT 1")
+            db_status = "connected"
+        except Exception as e:
+            logger.error(f"Database health check failed: {e}")
+            db_status = "disconnected"
+    else:
+        db_status = "not_configured"
     
     # Check Redis connectivity
-    try:
-        import redis as redis_sync
-        r = redis_sync.from_url(settings.redis_url)
-        r.ping()
-        redis_status = "connected"
-    except Exception as e:
-        logger.warning(f"Redis health check failed: {e}")
-        redis_status = "disconnected"
+    if settings:
+        try:
+            import redis as redis_sync
+            r = redis_sync.from_url(settings.redis_url)
+            r.ping()
+            redis_status = "connected"
+        except Exception as e:
+            logger.warning(f"Redis health check failed: {e}")
+            redis_status = "disconnected"
+    else:
+        redis_status = "not_configured"
     
     status_code = 200 if db_status == "connected" else 503
     
@@ -375,7 +400,9 @@ async def readiness_check():
 @app.get("/metrics")
 def metrics():
     """Prometheus metrics endpoint."""
-    return metrics_endpoint()
+    if middleware_available:
+        return metrics_endpoint()
+    return {"status": "metrics not available"}
 
 
 @app.get("/health/worker")
