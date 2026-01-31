@@ -3,6 +3,12 @@ allprojects {
         google()
         mavenCentral()
     }
+    
+    // Memory optimization for all subprojects
+    tasks.withType<JavaCompile> {
+        options.isFork = false
+        options.isIncremental = true
+    }
 }
 
 val newBuildDir: Directory =

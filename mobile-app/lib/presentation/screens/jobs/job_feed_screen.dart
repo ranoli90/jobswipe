@@ -220,7 +220,10 @@ class _JobFeedScreenState extends State<JobFeedScreen> {
                   onLike: () => _cardController.swipeRight(),
                   onDislike: () => _cardController.swipeLeft(),
                   onTap: () {
-                    // TODO: Navigate to job detail
+                    Navigator.of(context).pushNamed(
+                      '/jobs/detail',
+                      arguments: job.id,
+                    );
                   },
                 );
               },

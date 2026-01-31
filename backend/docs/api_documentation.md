@@ -17,32 +17,49 @@ All API endpoints require authentication via Bearer token (JWT) or API key.
 ### Bearer Token (JWT)
 
 ```bash
-curl -H "Authorization: Bearer <your_jwt_token>" https://api.jobswipe.app/api/v1/jobs
+curl -H "Authorization: Bearer <your_jwt_token>" https://api.jobswipe.app/v1/jobs
 ```
 
 ### API Key
 
 ```bash
-curl -H "X-API-Key: <your_api_key>" https://api.jobswipe.app/api/v1/jobs
+curl -H "X-API-Key: <your_api_key>" https://api.jobswipe.app/v1/jobs
 ```
 
 ## Response Format
 
-All responses follow this structure:
+Successful responses for most endpoints return the data directly:
+
+```json
+[
+  {
+    "id": "job-uuid",
+    "title": "Senior Software Engineer",
+    "company": "Tech Corp",
+    "location": "Remote",
+    "snippet": "We are looking for a senior engineer...",
+    "score": 0.85,
+    "apply_url": "https://example.com/apply"
+  }
+]
+```
+
+Some endpoints may return structured responses:
 
 ```json
 {
-  "success": true,
-  "data": { ... },
-  "meta": {
-    "page": 1,
-    "per_page": 20,
-    "total": 100
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "ref_tok_...",
+  "token_type": "bearer",
+  "user": {
+    "id": "user-uuid",
+    "email": "user@example.com",
+    "created_at": "2024-01-15T10:30:00Z"
   }
 }
 ```
 
-Error responses:
+Error responses follow this structure:
 
 ```json
 {
@@ -50,8 +67,9 @@ Error responses:
   "error": {
     "code": "VALIDATION_ERROR",
     "message": "Invalid request parameters",
-    "details": [...]
-  }
+    "details": {}
+  },
+  "request_id": "unique-request-id"
 }
 ```
 
@@ -60,25 +78,26 @@ Error responses:
 ### Register User
 
 ```http
-POST /api/v1/auth/register
+POST /v1/auth/register
 Content-Type: application/json
 
 {
   "email": "user@example.com",
-  "password": "secure_password123",
-  "confirm_password": "secure_password123"
+  "password": "SecurePass123!"
 }
 ```
 
-**Response (201 Created):**
+**Response (200 OK):**
 
 ```json
 {
-  "success": true,
-  "data": {
-    "user_id": "550e8400-e29b-41d4-a716-446655440000",
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "ref_tok_...",
+  "token_type": "bearer",
+  "user": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
     "email": "user@example.com",
-    "message": "Registration successful. Please verify your email."
+    "created_at": "2024-01-15T10:30:00Z"
   }
 }
 ```
@@ -86,25 +105,23 @@ Content-Type: application/json
 ### Login
 
 ```http
-POST /api/v1/auth/login
-Content-Type: application/json
+POST /v1/auth/login
+Content-Type: application/x-www-form-urlencoded
 
-{
-  "email": "user@example.com",
-  "password": "secure_password123"
-}
+username=user@example.com&password=SecurePass123!
 ```
 
 **Response (200 OK):**
 
 ```json
 {
-  "success": true,
-  "data": {
-    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "token_type": "bearer",
-    "expires_in": 3600,
-    "refresh_token": "ref_tok_..."
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "ref_tok_...",
+  "token_type": "bearer",
+  "user": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "email": "user@example.com",
+    "created_at": "2024-01-15T10:30:00Z"
   }
 }
 ```
@@ -112,27 +129,28 @@ Content-Type: application/json
 ### Refresh Token
 
 ```http
-POST /api/v1/auth/refresh
-Authorization: Bearer <refresh_token>
+POST /v1/auth/refresh
+Content-Type: application/json
+
+{
+  "refresh_token": "ref_tok_..."
+}
 ```
 
 **Response (200 OK):**
 
 ```json
 {
-  "success": true,
-  "data": {
-    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "token_type": "bearer",
-    "expires_in": 3600
-  }
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "new_ref_tok_...",
+  "token_type": "bearer"
 }
 ```
 
 ### Get Current User
 
 ```http
-GET /api/v1/auth/me
+GET /v1/auth/me
 Authorization: Bearer <access_token>
 ```
 
@@ -140,12 +158,9 @@ Authorization: Bearer <access_token>
 
 ```json
 {
-  "success": true,
-  "data": {
+  "user": {
     "id": "550e8400-e29b-41d4-a716-446655440000",
     "email": "user@example.com",
-    "status": "active",
-    "mfa_enabled": false,
     "created_at": "2024-01-15T10:30:00Z"
   }
 }
@@ -153,10 +168,70 @@ Authorization: Bearer <access_token>
 
 ## Jobs Endpoints
 
+### Get Job Feed
+
+```http
+GET /v1/jobs/feed?cursor=optional_cursor&page_size=20
+Authorization: Bearer <access_token>
+```
+
+**Query Parameters:**
+- `cursor` (string): Optional cursor for pagination
+- `page_size` (int): Number of jobs to return per page (default: 20)
+
+**Response (200 OK):**
+
+```json
+[
+  {
+    "id": "job-uuid",
+    "title": "Senior Software Engineer",
+    "company": "Tech Corp",
+    "location": "Remote",
+    "snippet": "We are looking for a senior engineer...",
+    "score": 0.85,
+    "apply_url": "https://example.com/apply"
+  }
+]
+```
+
+### Get Job Matches
+
+```http
+GET /v1/jobs/matches?limit=20&offset=0&min_score=0.0
+Authorization: Bearer <access_token>
+```
+
+**Query Parameters:**
+- `limit` (int): Number of matches to return (1-100, default: 20)
+- `offset` (int): Offset for pagination (default: 0)
+- `min_score` (float): Minimum score threshold (0.0-1.0, default: 0.0)
+
+**Response (200 OK):**
+
+```json
+[
+  {
+    "id": "job-uuid",
+    "title": "Senior Software Engineer",
+    "company": "Tech Corp",
+    "location": "Remote",
+    "snippet": "We are looking for a senior engineer...",
+    "score": 0.92,
+    "metadata": {
+      "bm25_score": 0.85,
+      "has_skill_match": true,
+      "has_location_match": true
+    },
+    "apply_url": "https://example.com/apply"
+  }
+]
+```
+
 ### List Jobs
 
 ```http
-GET /api/v1/jobs?page=1&per_page=20&location=Remote&type=full_time
+GET /v1/jobs?page=1&per_page=20&location=Remote&type=full_time
 Authorization: Bearer <access_token>
 ```
 
@@ -196,7 +271,7 @@ Authorization: Bearer <access_token>
 ### Get Job Details
 
 ```http
-GET /api/v1/jobs/{job_id}
+GET /v1/jobs/{job_id}
 Authorization: Bearer <access_token>
 ```
 
@@ -221,47 +296,32 @@ Authorization: Bearer <access_token>
 }
 ```
 
-### Swipe Right (Save Job)
+### Swipe Job
 
 ```http
-POST /api/v1/jobs/{job_id}/like
+POST /v1/jobs/{job_id}/swipe
 Authorization: Bearer <access_token>
-```
+Content-Type: application/json
 
-**Response (200 OK):**
-
-```json
 {
-  "success": true,
-  "data": {
-    "message": "Job saved to your list",
-    "match_score": 0.85
-  }
+  "action": "right"  // or "left"
 }
 ```
 
-### Swipe Left (Skip Job)
-
-```http
-POST /api/v1/jobs/{job_id}/skip
-Authorization: Bearer <access_token>
-```
-
 **Response (200 OK):**
 
 ```json
 {
   "success": true,
-  "data": {
-    "message": "Job skipped"
-  }
+  "message": "Successfully swiped right",
+  "job_id": "job-uuid"
 }
 ```
 
 ### Get Job Matches
 
 ```http
-GET /api/v1/jobs/matches
+GET /v1/jobs/matches
 Authorization: Bearer <access_token>
 ```
 
@@ -289,7 +349,7 @@ Authorization: Bearer <access_token>
 ### Get Profile
 
 ```http
-GET /api/v1/profile
+GET /v1/profile
 Authorization: Bearer <access_token>
 ```
 
@@ -332,7 +392,7 @@ Authorization: Bearer <access_token>
 ### Update Profile
 
 ```http
-PUT /api/v1/profile
+PUT /v1/profile
 Authorization: Bearer <access_token>
 Content-Type: application/json
 
@@ -357,7 +417,7 @@ Content-Type: application/json
 ### Upload Resume
 
 ```http
-POST /api/v1/profile/resume
+POST /v1/profile/resume
 Authorization: Bearer <access_token>
 Content-Type: multipart/form-data
 
@@ -384,7 +444,7 @@ file: (binary PDF)
 ### Add Work Experience
 
 ```http
-POST /api/v1/profile/work_experience
+POST /v1/profile/work_experience
 Authorization: Bearer <access_token>
 Content-Type: application/json
 
@@ -412,7 +472,7 @@ Content-Type: application/json
 ### Add Education
 
 ```http
-POST /api/v1/profile/education
+POST /v1/profile/education
 Authorization: Bearer <access_token>
 Content-Type: application/json
 
@@ -439,7 +499,7 @@ Content-Type: application/json
 ### Update Skills
 
 ```http
-PUT /api/v1/profile/skills
+PUT /v1/profile/skills
 Authorization: Bearer <access_token>
 Content-Type: application/json
 
@@ -464,7 +524,7 @@ Content-Type: application/json
 ### Submit Application
 
 ```http
-POST /api/v1/applications
+POST /v1/applications
 Authorization: Bearer <access_token>
 Content-Type: application/json
 
@@ -498,7 +558,7 @@ Content-Type: application/json
 ### List Applications
 
 ```http
-GET /api/v1/applications?status=submitted&page=1
+GET /v1/applications?status=submitted&page=1
 Authorization: Bearer <access_token>
 ```
 
@@ -529,7 +589,7 @@ Authorization: Bearer <access_token>
 ### Get Application Status
 
 ```http
-GET /api/v1/applications/{application_id}
+GET /v1/applications/{application_id}
 Authorization: Bearer <access_token>
 ```
 
@@ -571,7 +631,7 @@ Authorization: Bearer <access_token>
 ### Get User Analytics
 
 ```http
-GET /api/v1/analytics/user
+GET /v1/analytics/user
 Authorization: Bearer <access_token>
 ```
 
@@ -609,7 +669,7 @@ Authorization: Bearer <access_token>
 ### Get Platform Analytics (Admin)
 
 ```http
-GET /api/v1/analytics/platform
+GET /v1/analytics/platform
 Authorization: Bearer <admin_access_token>
 ```
 
@@ -640,7 +700,7 @@ Authorization: Bearer <admin_access_token>
 ### Get Notifications
 
 ```http
-GET /api/v1/notifications?unread_only=true&page=1
+GET /v1/notifications?unread_only=true&page=1
 Authorization: Bearer <access_token>
 ```
 
@@ -669,7 +729,7 @@ Authorization: Bearer <access_token>
 ### Mark as Read
 
 ```http
-PUT /api/v1/notifications/{notification_id}/read
+PUT /v1/notifications/{notification_id}/read
 Authorization: Bearer <access_token>
 ```
 
@@ -687,7 +747,7 @@ Authorization: Bearer <access_token>
 ### Mark All as Read
 
 ```http
-PUT /api/v1/notifications/read_all
+PUT /v1/notifications/read_all
 Authorization: Bearer <access_token>
 ```
 
@@ -705,7 +765,7 @@ Authorization: Bearer <access_token>
 ### Get Notification Preferences
 
 ```http
-GET /api/v1/notifications/preferences
+GET /v1/notifications/preferences
 Authorization: Bearer <access_token>
 ```
 
@@ -731,7 +791,7 @@ Authorization: Bearer <access_token>
 ### Update Notification Preferences
 
 ```http
-PUT /api/v1/notifications/preferences
+PUT /v1/notifications/preferences
 Authorization: Bearer <access_token>
 Content-Type: application/json
 
@@ -758,7 +818,7 @@ Content-Type: application/json
 ### Get Notification Statistics (Admin Only)
 
 ```http
-GET /api/v1/notifications/stats
+GET /v1/notifications/stats
 Authorization: Bearer <admin_access_token>
 ```
 
@@ -799,7 +859,7 @@ Authorization: Bearer <admin_access_token>
 ### Find Duplicate Jobs
 
 ```http
-GET /api/v1/deduplicate/find
+GET /v1/deduplicate/find
 Authorization: Bearer <admin_access_token>
 ```
 
@@ -835,7 +895,7 @@ Authorization: Bearer <admin_access_token>
 ### Remove Duplicate Jobs
 
 ```http
-POST /api/v1/deduplicate/remove
+POST /v1/deduplicate/remove
 Authorization: Bearer <admin_access_token>
 ```
 
@@ -853,7 +913,7 @@ Authorization: Bearer <admin_access_token>
 ### Run Deduplication Process
 
 ```http
-POST /api/v1/deduplicate/run
+POST /v1/deduplicate/run
 Authorization: Bearer <admin_access_token>
 ```
 
@@ -873,7 +933,7 @@ Authorization: Bearer <admin_access_token>
 ### Categorize All Jobs
 
 ```http
-POST /api/v1/categorize/all
+POST /v1/categorize/all
 Authorization: Bearer <admin_access_token>
 ```
 
@@ -896,7 +956,7 @@ Authorization: Bearer <admin_access_token>
 ### Get Category Distribution
 
 ```http
-GET /api/v1/categorize/distribution
+GET /v1/categorize/distribution
 Authorization: Bearer <admin_access_token>
 ```
 
@@ -918,7 +978,7 @@ Authorization: Bearer <admin_access_token>
 ### Run Categorization Process
 
 ```http
-POST /api/v1/categorize/run
+POST /v1/categorize/run
 Authorization: Bearer <admin_access_token>
 ```
 
@@ -943,7 +1003,7 @@ Authorization: Bearer <admin_access_token>
 ### Create API Key
 
 ```http
-POST /api/v1/admin/api-keys
+POST /v1/admin/api-keys
 Authorization: Bearer <admin_access_token>
 Content-Type: application/json
 
@@ -979,7 +1039,7 @@ Content-Type: application/json
 ### List API Keys
 
 ```http
-GET /api/v1/admin/api-keys?service_type=ingestion&active_only=true
+GET /v1/admin/api-keys?service_type=ingestion&active_only=true
 Authorization: Bearer <admin_access_token>
 ```
 
@@ -1006,7 +1066,7 @@ Authorization: Bearer <admin_access_token>
 ### Get API Key Details
 
 ```http
-GET /api/v1/admin/api-keys/{key_id}
+GET /v1/admin/api-keys/{key_id}
 Authorization: Bearer <admin_access_token>
 ```
 
@@ -1031,7 +1091,7 @@ Authorization: Bearer <admin_access_token>
 ### Revoke API Key
 
 ```http
-POST /api/v1/admin/api-keys/{key_id}/revoke
+POST /v1/admin/api-keys/{key_id}/revoke
 Authorization: Bearer <admin_access_token>
 ```
 
@@ -1040,7 +1100,7 @@ Authorization: Bearer <admin_access_token>
 ### Rotate API Key
 
 ```http
-POST /api/v1/admin/api-keys/{key_id}/rotate
+POST /v1/admin/api-keys/{key_id}/rotate
 Authorization: Bearer <admin_access_token>
 ```
 
@@ -1066,7 +1126,7 @@ Authorization: Bearer <admin_access_token>
 ### Get API Key Statistics
 
 ```http
-GET /api/v1/admin/api-keys/{key_id}/stats?since=2024-01-01
+GET /v1/admin/api-keys/{key_id}/stats?since=2024-01-01
 Authorization: Bearer <admin_access_token>
 ```
 
@@ -1092,7 +1152,7 @@ Authorization: Bearer <admin_access_token>
 ### Sync Greenhouse Board
 
 ```http
-POST /api/v1/ingestion/sources/greenhouse/sync?board_token=abc123&incremental=true
+POST /v1/ingestion/sources/greenhouse/sync?board_token=abc123&incremental=true
 Authorization: Bearer <admin_access_token>
 ```
 
@@ -1109,7 +1169,7 @@ Authorization: Bearer <admin_access_token>
 ### Sync Lever Postings
 
 ```http
-POST /api/v1/ingestion/sources/lever/sync?org_slug=tech-corp&incremental=true
+POST /v1/ingestion/sources/lever/sync?org_slug=tech-corp&incremental=true
 Authorization: Bearer <admin_access_token>
 ```
 
@@ -1126,7 +1186,7 @@ Authorization: Bearer <admin_access_token>
 ### Sync RSS Feed
 
 ```http
-POST /api/v1/ingestion/sources/rss/sync?feed_url=https%3A%2F%2Fexample.com%2Fjobs.rss
+POST /v1/ingestion/sources/rss/sync?feed_url=https%3A%2F%2Fexample.com%2Fjobs.rss
 Authorization: Bearer <admin_access_token>
 ```
 
@@ -1143,7 +1203,7 @@ Authorization: Bearer <admin_access_token>
 ### Trigger Ingestion
 
 ```http
-POST /api/v1/ingestion/ingest
+POST /v1/ingestion/ingest
 Authorization: Bearer <admin_access_token>
 Content-Type: application/json
 
@@ -1168,7 +1228,7 @@ Content-Type: application/json
 ### Get Ingestion Status
 
 ```http
-GET /api/v1/ingestion/status
+GET /v1/ingestion/status
 Authorization: Bearer <admin_access_token>
 ```
 
@@ -1187,7 +1247,7 @@ Authorization: Bearer <admin_access_token>
 ### Start Periodic Ingestion
 
 ```http
-POST /api/v1/ingestion/start-periodic
+POST /v1/ingestion/start-periodic
 Authorization: Bearer <admin_access_token>
 Content-Type: application/json
 
@@ -1209,7 +1269,7 @@ Content-Type: application/json
 ### Stop Periodic Ingestion
 
 ```http
-POST /api/v1/ingestion/stop-periodic
+POST /v1/ingestion/stop-periodic
 Authorization: Bearer <admin_access_token>
 ```
 
@@ -1225,7 +1285,7 @@ Authorization: Bearer <admin_access_token>
 ### Get Ingestion Sources
 
 ```http
-GET /api/v1/ingestion/sources
+GET /v1/ingestion/sources
 Authorization: Bearer <admin_access_token>
 ```
 
@@ -1253,7 +1313,7 @@ Authorization: Bearer <admin_access_token>
 ### Auto Apply to Job
 
 ```http
-POST /api/v1/application-automation/auto-apply
+POST /v1/application-automation/auto-apply
 Authorization: Bearer <access_token>
 Content-Type: application/json
 
@@ -1279,7 +1339,7 @@ Content-Type: application/json
 ### Auto Apply to All Jobs
 
 ```http
-POST /api/v1/application-automation/auto-apply-all
+POST /v1/application-automation/auto-apply-all
 Authorization: Bearer <access_token>
 ```
 
@@ -1311,7 +1371,7 @@ Authorization: Bearer <access_token>
 ### Get Pending Tasks
 
 ```http
-GET /api/v1/application-automation/tasks/pending
+GET /v1/application-automation/tasks/pending
 Authorization: Bearer <access_token>
 ```
 
@@ -1336,7 +1396,7 @@ Authorization: Bearer <access_token>
 ### Get Application History
 
 ```http
-GET /api/v1/application-automation/tasks/history
+GET /v1/application-automation/tasks/history
 Authorization: Bearer <access_token>
 ```
 
@@ -1363,7 +1423,7 @@ Authorization: Bearer <access_token>
 ### Get Automation Statistics
 
 ```http
-GET /api/v1/application-automation/stats
+GET /v1/application-automation/stats
 Authorization: Bearer <access_token>
 ```
 
@@ -1387,7 +1447,7 @@ Authorization: Bearer <access_token>
 ### Cancel Task
 
 ```http
-POST /api/v1/application-automation/tasks/{task_id}/cancel
+POST /v1/application-automation/tasks/{task_id}/cancel
 Authorization: Bearer <access_token>
 ```
 
@@ -1403,7 +1463,7 @@ Authorization: Bearer <access_token>
 ### Generate Cover Letter
 
 ```http
-POST /api/v1/application-automation/cover-letter/generate
+POST /v1/application-automation/cover-letter/generate
 Authorization: Bearer <access_token>
 Content-Type: application/json
 
@@ -1431,7 +1491,7 @@ Content-Type: application/json
 ### Regenerate Cover Letter
 
 ```http
-POST /api/v1/application-automation/cover-letter/regenerate
+POST /v1/application-automation/cover-letter/regenerate
 Authorization: Bearer <access_token>
 Content-Type: application/json
 
@@ -1484,7 +1544,7 @@ Content-Type: application/json
 ### Configure Webhook
 
 ```http
-POST /api/v1/webhooks
+POST /v1/webhooks
 Authorization: Bearer <access_token>
 Content-Type: application/json
 
@@ -1543,7 +1603,7 @@ class JobSwipeClient:
     
     def get_jobs(self, page: int = 1, per_page: int = 20):
         response = requests.get(
-            f"{self.base_url}/api/v1/jobs",
+            f"{self.base_url}/v1/jobs",
             headers=self.headers,
             params={"page": page, "per_page": per_page}
         )
@@ -1551,7 +1611,7 @@ class JobSwipeClient:
     
     def submit_application(self, job_id: str, resume_id: str):
         response = requests.post(
-            f"{self.base_url}/api/v1/applications",
+            f"{self.base_url}/v1/applications",
             headers=self.headers,
             json={"job_id": job_id, "resume_id": resume_id}
         )
@@ -1576,7 +1636,7 @@ class JobSwipeClient {
 
   async getJobs(page = 1, perPage = 20) {
     const response = await fetch(
-      `${this.baseUrl}/api/v1/jobs?page=${page}&per_page=${perPage}`,
+      `${this.baseUrl}/v1/jobs?page=${page}&per_page=${perPage}`,
       { headers: this.headers }
     );
     return response.json();
@@ -1584,7 +1644,7 @@ class JobSwipeClient {
 
   async submitApplication(jobId, resumeId) {
     const response = await fetch(
-      `${this.baseUrl}/api/v1/applications`,
+      `${this.baseUrl}/v1/applications`,
       {
         method: 'POST',
         headers: this.headers,

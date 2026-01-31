@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../screens/auth/onboarding_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/jobs/job_feed_screen.dart';
+import '../screens/jobs/job_detail_screen.dart';
 import '../screens/applications/applications_screen.dart';
 import '../screens/profile/profile_screen.dart';
 
@@ -11,6 +12,11 @@ class AppRouter {
       case '/feed':
         return MaterialPageRoute(
           builder: (_) => const JobFeedScreen(),
+        );
+      case '/jobs/detail':
+        final jobId = settings.arguments as String;
+        return MaterialPageRoute(
+          builder: (_) => JobDetailScreen(jobId: jobId),
         );
       case '/applications':
         return MaterialPageRoute(

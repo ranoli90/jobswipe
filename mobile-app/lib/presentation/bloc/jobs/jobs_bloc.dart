@@ -215,10 +215,10 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
     Emitter<JobsState> emit,
   ) async {
     emit(JobsLoading());
-    final result = await _jobRepository.getJobDetail(event.jobId);
+    final result = await _jobRepository.getJobDetails(event.jobId);
 
     result.fold(
-      (error) => emit(JobsError(error)),
+      (error) => emit(JobsError(error.message)),
       (job) => emit(JobsJobDetailLoaded(job)),
     );
   }

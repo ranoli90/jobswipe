@@ -1,0 +1,14 @@
+{
+  "android-sdk": "",
+  "enable-web": false,
+  "enable-desktop": false,
+  "enable-android": true,
+  "enable-ios": false,
+  "enable-fuchsia": false,
+  "enable-custom-devices": false,
+  "build-cache": true,
+  "analytics-enabled": false,
+  "enable-macos-desktop": false,
+  "enable-windows-desktop": false,
+  "enable-linux-desktop": false
+}
