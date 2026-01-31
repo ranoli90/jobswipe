@@ -16,11 +16,11 @@ class AppConfig {
   static String get baseUrl {
     switch (env) {
       case 'production':
-        return 'https://jobswipe.fly.dev';
+        return 'https://jobswipe-9obhra.fly.dev/api';
       case 'staging':
-        return 'https://jobswipe-staging.fly.dev';
+        return 'https://jobswipe-9obhra.fly.dev/api';
       default:
-        return 'http://localhost:8000';
+        return 'https://jobswipe-9obhra.fly.dev/api'; // Use live backend by default for testing
     }
   }
   

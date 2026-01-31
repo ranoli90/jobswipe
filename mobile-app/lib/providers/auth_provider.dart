@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/di/service_locator.dart';
+import '../core/data/auth_repository.dart';
 import '../models/user.dart';
 
 enum AuthStatus {
@@ -34,6 +36,8 @@ class AuthState {
 }
 
 class AuthNotifier extends StateNotifier<AuthState> {
+  final AuthRepository _authRepository = getIt<AuthRepository>();
+
   AuthNotifier() : super(const AuthState());
 
   Future<void> login({
@@ -43,18 +47,26 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(status: AuthStatus.loading);
 
     try {
-      // Simulate API call - replace with actual authentication logic
-      await Future.delayed(const Duration(seconds: 1));
-
-      // Mock successful login
-      final user = User(
-        id: '1',
+      final response = await _authRepository.login(
         email: email,
-        fullName: 'John Doe',
-        phone: '+1234567890',
-        isEmailVerified: true,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
+        password: password,
+      );
+
+      // Save tokens
+      await _authRepository.saveTokens(
+        accessToken: response['access_token'],
+        refreshToken: response['refresh_token'],
+      );
+
+      // Create user from response
+      final user = User(
+        id: response['user']['id'],
+        email: response['user']['email'],
+        fullName: response['user']['full_name'] ?? 'User',
+        phone: response['user']['phone'] ?? '',
+        isEmailVerified: response['user']['is_email_verified'] ?? false,
+        createdAt: DateTime.parse(response['user']['created_at']),
+        updatedAt: DateTime.parse(response['user']['updated_at']),
       );
 
       state = state.copyWith(
@@ -77,17 +89,27 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(status: AuthStatus.loading);
 
     try {
-      // Simulate API call - replace with actual registration logic
-      await Future.delayed(const Duration(seconds: 1));
-
-      // Mock successful registration
-      final user = User(
-        id: '1',
+      final response = await _authRepository.register(
         email: email,
+        password: password,
         fullName: fullName,
-        isEmailVerified: false,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
+      );
+
+      // Save tokens
+      await _authRepository.saveTokens(
+        accessToken: response['access_token'],
+        refreshToken: response['refresh_token'],
+      );
+
+      // Create user from response
+      final user = User(
+        id: response['user']['id'],
+        email: response['user']['email'],
+        fullName: response['user']['full_name'] ?? fullName,
+        phone: response['user']['phone'] ?? '',
+        isEmailVerified: response['user']['is_email_verified'] ?? false,
+        createdAt: DateTime.parse(response['user']['created_at']),
+        updatedAt: DateTime.parse(response['user']['updated_at']),
       );
 
       state = state.copyWith(
@@ -106,9 +128,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(status: AuthStatus.loading);
 
     try {
-      // Simulate logout - replace with actual logout logic
-      await Future.delayed(const Duration(milliseconds: 500));
-
+      await _authRepository.logout();
       state = const AuthState(
         status: AuthStatus.unauthenticated,
       );
@@ -117,6 +137,34 @@ class AuthNotifier extends StateNotifier<AuthState> {
         status: AuthStatus.error,
         errorMessage: e.toString(),
       );
+    }
+  }
+
+  Future<void> checkAuthStatus() async {
+    state = state.copyWith(status: AuthStatus.loading);
+
+    try {
+      final isAuthenticated = await _authRepository.isAuthenticated();
+      if (isAuthenticated) {
+        final userResponse = await _authRepository.getCurrentUser();
+        final user = User(
+          id: userResponse['user']['id'],
+          email: userResponse['user']['email'],
+          fullName: userResponse['user']['full_name'] ?? 'User',
+          phone: userResponse['user']['phone'] ?? '',
+          isEmailVerified: userResponse['user']['is_email_verified'] ?? false,
+          createdAt: DateTime.parse(userResponse['user']['created_at']),
+          updatedAt: DateTime.parse(userResponse['user']['updated_at']),
+        );
+        state = state.copyWith(
+          status: AuthStatus.authenticated,
+          user: user,
+        );
+      } else {
+        state = const AuthState(status: AuthStatus.unauthenticated);
+      }
+    } catch (e) {
+      state = const AuthState(status: AuthStatus.unauthenticated);
     }
   }
 

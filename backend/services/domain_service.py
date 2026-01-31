@@ -33,6 +33,9 @@ class DomainRateLimiter:
         """Load domain configurations from database"""
         try:
             db = next(get_db())
+            # Check if domains table exists before querying
+            from sqlalchemy import text
+            db.execute(text("SELECT 1 FROM domains LIMIT 1"))
             domains = db.query(Domain).all()
 
             for domain in domains:
@@ -50,9 +53,8 @@ class DomainRateLimiter:
             db.close()
         except Exception as e:
             import logging
-
             logging.error("Error loading domain configurations: %s", str(e))
-            # Use default config if database connection fails
+            # Use default config if database or table is not available
             self.domain_limits = {}
 
     def _default_rate_limit(self):

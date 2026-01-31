@@ -9,7 +9,14 @@ import os
 import re
 from typing import Callable, Optional, Set, Tuple
 
-import magic
+# Make libmagic optional
+try:
+    import magic
+    HAS_LIBMAGIC = True
+except ImportError:
+    HAS_LIBMAGIC = False
+    logging.warning("libmagic not available, MIME type detection will be limited")
+
 from fastapi import HTTPException, Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
@@ -187,9 +194,36 @@ class FileValidationMiddleware(BaseHTTPMiddleware):
         return True, ""
 
     def _get_content_type(self, content: bytes) -> str:
-        """Get MIME type using magic bytes"""
-        mime_type = magic.from_buffer(content, mime=True)
-        return mime_type
+        """Get MIME type using magic bytes (fallback if libmagic not available)"""
+        if HAS_LIBMAGIC:
+            try:
+                return magic.from_buffer(content, mime=True)
+            except Exception:
+                pass
+        # Fallback to basic content type detection
+        if content.startswith(b"%PDF"):
+            return "application/pdf"
+        if content.startswith(b"\x50\x4B\x03\x04"):  # Zip file
+            # Can't distinguish between docx, xlsx, etc. without libmagic
+            return "application/zip"
+        if content.startswith(b"\xD0\xCF\x11\xE0"):  # OLE Compound File
+            return "application/msword"
+        if content.startswith(b"\x25\x50\x44\x46"):
+            return "application/pdf"
+        if content.startswith(b"\x49\x44\x33"):  # ID3 audio
+            return "audio/mpeg"
+        if content.startswith(b"\xFF\xD8"):
+            return "image/jpeg"
+        if content.startswith(b"\x89PNG"):
+            return "image/png"
+        if content.startswith(b"GIF8"):
+            return "image/gif"
+        if content.startswith(b"RIFF") and content[8:12] == b"WEBP":
+            return "image/webp"
+        if content.strip().startswith(b"{") or content.strip().startswith(b"["):
+            return "application/json"
+        # Default to binary
+        return "application/octet-stream"
 
     async def dispatch(self, request: Request, call_next: Callable):
         """Process the request and validate file uploads"""
@@ -308,10 +342,18 @@ def validate_file(
     if not valid:
         return False, error
 
-    # Check MIME type
-    mime_type = magic.from_buffer(content[:1024], mime=True)
-    if allowed_file_types and mime_type not in allowed_file_types:
-        return False, f"File type '{mime_type}' is not allowed"
+    # Check MIME type (fallback if libmagic not available)
+    if allowed_file_types:
+        if HAS_LIBMAGIC:
+            try:
+                mime_type = magic.from_buffer(content[:1024], mime=True)
+                if mime_type not in allowed_file_types:
+                    return False, f"File type '{mime_type}' is not allowed"
+            except Exception:
+                pass
+        else:
+            # If libmagic not available, skip MIME type check but still allow based on extension
+            logging.warning("libmagic not available, skipping MIME type validation")
 
     return True, ""
 
