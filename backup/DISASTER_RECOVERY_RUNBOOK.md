@@ -53,6 +53,28 @@ psql $DATABASE_URL -c "SELECT COUNT(*) FROM users;"
 psql $DATABASE_URL -c "SELECT COUNT(*) FROM jobs;"
 ```
 
+#### Point-in-Time Recovery (PITR)
+```bash
+# 1. Access backup environment
+flyctl ssh console --app jobswipe-backup
+
+# 2. List available full and incremental backups
+ls -la /var/backups/postgres/full/
+ls -la /var/backups/postgres/incremental/
+
+# 3. Choose a base backup to restore from
+BASE_BACKUP=$(ls -la /var/backups/postgres/full/ | sort | tail -n 1 | awk '{print $9}')
+
+# 4. Restore to specific point-in-time (e.g., 2024-01-26 14:30:00)
+./backup/incremental_backup.sh restore \
+  --base-backup "$BASE_BACKUP" \
+  --recovery-time "2024-01-26 14:30:00"
+
+# 5. Verify recovery
+psql $DATABASE_URL -c "SELECT COUNT(*) FROM users;"
+psql $DATABASE_URL -c "SELECT COUNT(*) FROM jobs;"
+```
+
 #### Partial Data Corruption
 ```bash
 # 1. Identify corrupted tables/data
@@ -149,14 +171,15 @@ flyctl restart --app jobswipe-grafana
 
 ## Recovery Time Objectives (RTO)
 
-- **Database Recovery**: 2-4 hours
+- **Database Recovery (Full)**: 2-4 hours
+- **Database Recovery (PITR)**: 30 minutes - 2 hours
 - **Service Recovery**: 30 minutes - 2 hours
 - **Full System Recovery**: 4-8 hours
-- **Data Loss**: < 24 hours (daily backups)
 
 ## Recovery Point Objectives (RPO)
 
-- **Database**: 24 hours (daily backups)
+- **Database (Full)**: 24 hours
+- **Database (PITR)**: 30 minutes (WAL archiving)
 - **Application Code**: 0 hours (Git-based)
 - **Configuration**: 0 hours (version controlled)
 

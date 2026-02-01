@@ -17,13 +17,13 @@ All API endpoints require authentication via Bearer token (JWT) or API key.
 ### Bearer Token (JWT)
 
 ```bash
-curl -H "Authorization: Bearer <your_jwt_token>" https://api.jobswipe.app/v1/jobs
+curl -H "Authorization: Bearer <your_jwt_token>" https://api.jobswipe.app/api/v1/jobs
 ```
 
 ### API Key
 
 ```bash
-curl -H "X-API-Key: <your_api_key>" https://api.jobswipe.app/v1/jobs
+curl -H "X-API-Key: <your_api_key>" https://api.jobswipe.app/api/v1/jobs
 ```
 
 ## Response Format
@@ -63,22 +63,282 @@ Error responses follow this structure:
 
 ```json
 {
-  "success": false,
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Invalid request parameters",
-    "details": {}
-  },
+  "detail": "Error message here",
   "request_id": "unique-request-id"
 }
 ```
+
+Or for validation errors:
+
+```json
+{
+  "detail": [
+    {
+      "loc": ["body", "email"],
+      "msg": "field required",
+      "type": "value_error.missing"
+    }
+  ]
+}
+```
+
+## Rate Limits
+
+| Endpoint Type | Requests per minute | Description |
+|---------------|---------------------|-------------|
+| Auth endpoints (/api/v1/auth/*) | 5 | Registration, login, password reset |
+| General API | 60 | Standard API endpoints |
+| Read-only (/api/v1/jobs/*) | 100 | Job browsing and matching |
+| Admin operations | 30 | API key management, ingestion |
+| WebSocket | 1000 connections | Real-time connections |
+
+Rate limit headers are included in responses:
+- `X-RateLimit-Limit`: Maximum requests allowed
+- `X-RateLimit-Remaining`: Remaining requests in window
+- `X-RateLimit-Reset`: Unix timestamp when limit resets
+
+## Health Check Endpoints
+
+### Basic Health Check
+
+```http
+GET /health
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "status": "healthy",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "version": "1.0.0"
+}
+```
+
+**Rate Limit:** 100/minute (public)
+
+### Readiness Check
+
+```http
+GET /ready
+```
+
+Checks database and Redis connectivity.
+
+**Response (200 OK):**
+
+```json
+{
+  "status": "ready",
+  "database": "connected",
+  "redis": "connected",
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+**Response (503 Service Unavailable):**
+
+```json
+{
+  "status": "not_ready",
+  "database": "disconnected",
+  "redis": "connected",
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+**Rate Limit:** 100/minute (public)
+
+### RabbitMQ Health Check
+
+```http
+GET /health/rabbitmq
+```
+
+Checks RabbitMQ message broker health.
+
+**Response (200 OK):**
+
+```json
+{
+  "service": "rabbitmq",
+  "status": "healthy",
+  "latency_ms": 15.2,
+  "message": "RabbitMQ is healthy",
+  "details": {
+    "status": "ok"
+  },
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+**Response (503 Service Unavailable):**
+
+```json
+{
+  "service": "rabbitmq",
+  "status": "unhealthy",
+  "latency_ms": 5000.0,
+  "message": "RabbitMQ connection timed out",
+  "error": "Timeout after 5s",
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+**Rate Limit:** 60/minute (public)
+
+### OpenSearch Health Check
+
+```http
+GET /health/opensearch
+```
+
+Checks OpenSearch cluster health.
+
+**Response (200 OK):**
+
+```json
+{
+  "service": "opensearch",
+  "status": "healthy",
+  "latency_ms": 25.5,
+  "message": "OpenSearch cluster status: green",
+  "details": {
+    "cluster_name": "jobswipe-cluster",
+    "status": "green",
+    "number_of_nodes": 1,
+    "active_shards": 5
+  },
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+**Rate Limit:** 60/minute (public)
+
+### Celery Worker Health Check
+
+```http
+GET /health/celery
+```
+
+Checks Celery worker availability.
+
+**Response (200 OK):**
+
+```json
+{
+  "service": "celery",
+  "status": "healthy",
+  "latency_ms": 45.0,
+  "message": "2 Celery worker(s) active",
+  "details": {
+    "worker_count": 2,
+    "workers": ["celery@worker1", "celery@worker2"],
+    "worker_stats": {
+      "celery@worker1": {
+        "processed": 150,
+        "prefetch_count": 4
+      }
+    }
+  },
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+**Rate Limit:** 60/minute (public)
+
+### Comprehensive Health Check
+
+```http
+GET /health/detailed
+```
+
+Performs health checks on all dependencies.
+
+**Response (200 OK):**
+
+```json
+{
+  "status": "healthy",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "total_latency_ms": 150.5,
+  "services": {
+    "database": {
+      "service": "database",
+      "status": "healthy",
+      "latency_ms": 25.3,
+      "message": "Database connection successful",
+      "details": {},
+      "timestamp": "2024-01-15T10:30:00Z"
+    },
+    "redis": {
+      "service": "redis",
+      "status": "healthy",
+      "latency_ms": 5.2,
+      "message": "Redis connection successful",
+      "details": {
+        "version": "7.0.0",
+        "used_memory_human": "1.5M",
+        "connected_clients": 10
+      },
+      "timestamp": "2024-01-15T10:30:00Z"
+    },
+    "rabbitmq": {
+      "service": "rabbitmq",
+      "status": "healthy",
+      "latency_ms": 15.2,
+      "message": "RabbitMQ is healthy",
+      "details": {},
+      "timestamp": "2024-01-15T10:30:00Z"
+    },
+    "opensearch": {
+      "service": "opensearch",
+      "status": "healthy",
+      "latency_ms": 25.5,
+      "message": "OpenSearch cluster status: green",
+      "details": {},
+      "timestamp": "2024-01-15T10:30:00Z"
+    },
+    "celery": {
+      "service": "celery",
+      "status": "healthy",
+      "latency_ms": 45.0,
+      "message": "2 Celery worker(s) active",
+      "details": {},
+      "timestamp": "2024-01-15T10:30:00Z"
+    }
+  }
+}
+```
+
+**Response (503 Service Unavailable):**
+
+```json
+{
+  "status": "unhealthy",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "total_latency_ms": 5000.0,
+  "services": {
+    "database": {
+      "service": "database",
+      "status": "unhealthy",
+      "latency_ms": 5000.0,
+      "message": "Database connection timed out",
+      "error": "Timeout after 5s",
+      "timestamp": "2024-01-15T10:30:00Z"
+    }
+  }
+}
+```
+
+**Rate Limit:** 30/minute (public)
 
 ## Authentication Endpoints
 
 ### Register User
 
 ```http
-POST /v1/auth/register
+POST /api/v1/auth/register
 Content-Type: application/json
 
 {
@@ -87,6 +347,8 @@ Content-Type: application/json
 }
 ```
 
+**Rate Limit:** 5/minute
+
 **Response (200 OK):**
 
 ```json
@@ -99,17 +361,35 @@ Content-Type: application/json
     "email": "user@example.com",
     "created_at": "2024-01-15T10:30:00Z"
   }
+}
+```
+
+**Response (400 Bad Request - Validation Error):**
+
+```json
+{
+  "detail": "Email already registered"
+}
+```
+
+**Response (400 Bad Request - Password Validation):**
+
+```json
+{
+  "detail": "Password must be at least 8 characters long and contain uppercase, lowercase, number, and special character"
 }
 ```
 
 ### Login
 
 ```http
-POST /v1/auth/login
+POST /api/v1/auth/login
 Content-Type: application/x-www-form-urlencoded
 
 username=user@example.com&password=SecurePass123!
 ```
+
+**Rate Limit:** 5/minute
 
 **Response (200 OK):**
 
@@ -126,16 +406,34 @@ username=user@example.com&password=SecurePass123!
 }
 ```
 
+**Response (401 Unauthorized):**
+
+```json
+{
+  "detail": "Incorrect email or password"
+}
+```
+
+**Response (429 Too Many Requests - Account Locked):**
+
+```json
+{
+  "detail": "Account is temporarily locked due to too many failed attempts. Try again in 30 minutes."
+}
+```
+
 ### Refresh Token
 
 ```http
-POST /v1/auth/refresh
+POST /api/v1/auth/refresh
 Content-Type: application/json
 
 {
   "refresh_token": "ref_tok_..."
 }
 ```
+
+**Rate Limit:** 10/minute
 
 **Response (200 OK):**
 
@@ -147,12 +445,39 @@ Content-Type: application/json
 }
 ```
 
+**Response (401 Unauthorized):**
+
+```json
+{
+  "detail": "Invalid or expired refresh token"
+}
+```
+
+### Logout
+
+```http
+POST /api/v1/auth/logout
+Authorization: Bearer <access_token>
+```
+
+**Rate Limit:** 10/minute
+
+**Response (200 OK):**
+
+```json
+{
+  "message": "Successfully logged out"
+}
+```
+
 ### Get Current User
 
 ```http
-GET /v1/auth/me
+GET /api/v1/auth/me
 Authorization: Bearer <access_token>
 ```
+
+**Rate Limit:** 60/minute
 
 **Response (200 OK):**
 
@@ -166,18 +491,139 @@ Authorization: Bearer <access_token>
 }
 ```
 
+**Response (401 Unauthorized):**
+
+```json
+{
+  "detail": "Could not validate credentials"
+}
+```
+
+### OAuth2 Login
+
+```http
+GET /api/v1/auth/oauth2/{provider}
+```
+
+Supported providers: `google`, `linkedin`
+
+**Response (200 OK):**
+
+```json
+{
+  "authorization_url": "https://accounts.google.com/o/oauth2/v2/auth?...",
+  "state": "random-state-string"
+}
+```
+
+### OAuth2 Callback
+
+```http
+GET /api/v1/auth/oauth2/callback/{provider}?code=auth_code&state=state_value
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "ref_tok_...",
+  "token_type": "bearer",
+  "user": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "email": "user@example.com",
+    "created_at": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+## MFA Endpoints
+
+### Setup MFA
+
+```http
+GET /api/v1/auth/mfa/setup
+Authorization: Bearer <access_token>
+```
+
+**Rate Limit:** 10/minute
+
+**Response (200 OK):**
+
+```json
+{
+  "secret": "JBSWY3DPEHPK3PXP",
+  "qr_code": "data:image/png;base64,iVBORw0KGgo...",
+  "backup_codes": ["12345678", "87654321", "..."]
+}
+```
+
+### Enable MFA
+
+```http
+POST /api/v1/auth/mfa/enable
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "token": "123456"
+}
+```
+
+**Rate Limit:** 5/minute
+
+**Response (200 OK):**
+
+```json
+{
+  "message": "MFA enabled successfully"
+}
+```
+
+**Response (400 Bad Request):**
+
+```json
+{
+  "detail": "Invalid verification token"
+}
+```
+
+### Verify MFA
+
+```http
+POST /api/v1/auth/mfa/verify
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "token": "123456"
+}
+```
+
+**Rate Limit:** 10/minute
+
+**Response (200 OK):**
+
+```json
+{
+  "message": "MFA verification successful"
+}
+```
+
 ## Jobs Endpoints
 
 ### Get Job Feed
 
 ```http
-GET /v1/jobs/feed?cursor=optional_cursor&page_size=20
+GET /api/v1/jobs/feed?cursor=optional_cursor&page_size=20
 Authorization: Bearer <access_token>
 ```
 
+**Rate Limit:** 100/minute
+
 **Query Parameters:**
-- `cursor` (string): Optional cursor for pagination
-- `page_size` (int): Number of jobs to return per page (default: 20)
+- `cursor` (string, optional): Cursor for pagination
+- `page_size` (integer, optional): Number of jobs per page (default: 20, max: 100)
 
 **Response (200 OK):**
 
@@ -198,14 +644,16 @@ Authorization: Bearer <access_token>
 ### Get Job Matches
 
 ```http
-GET /v1/jobs/matches?limit=20&offset=0&min_score=0.0
+GET /api/v1/jobs/matches?limit=20&offset=0&min_score=0.0
 Authorization: Bearer <access_token>
 ```
 
+**Rate Limit:** 100/minute
+
 **Query Parameters:**
-- `limit` (int): Number of matches to return (1-100, default: 20)
-- `offset` (int): Offset for pagination (default: 0)
-- `min_score` (float): Minimum score threshold (0.0-1.0, default: 0.0)
+- `limit` (integer, optional): Number of matches to return (default: 20, min: 1, max: 100)
+- `offset` (integer, optional): Offset for pagination (default: 0)
+- `min_score` (float, optional): Minimum match score threshold (default: 0.0, range: 0.0-1.0)
 
 **Response (200 OK):**
 
@@ -228,85 +676,69 @@ Authorization: Bearer <access_token>
 ]
 ```
 
-### List Jobs
-
-```http
-GET /v1/jobs?page=1&per_page=20&location=Remote&type=full_time
-Authorization: Bearer <access_token>
-```
-
-**Query Parameters:**
-- `page` (int): Page number (default: 1)
-- `per_page` (int): Items per page (default: 20, max: 100)
-- `location` (string): Filter by location
-- `type` (string): Job type filter
-- `search` (string): Search query
-
-**Response (200 OK):**
+**Response (404 Not Found):**
 
 ```json
 {
-  "success": true,
-  "data": [
-    {
-      "id": "job-uuid",
-      "title": "Senior Software Engineer",
-      "company": "Tech Corp",
-      "location": "Remote",
-      "type": "full_time",
-      "salary_range": "$150k - $200k",
-      "description": "We are looking for a senior engineer...",
-      "apply_url": "https://example.com/apply",
-      "created_at": "2024-01-20T10:00:00Z"
-    }
-  ],
-  "meta": {
-    "page": 1,
-    "per_page": 20,
-    "total": 150
-  }
+  "detail": "Candidate profile not found"
 }
 ```
 
 ### Get Job Details
 
 ```http
-GET /v1/jobs/{job_id}
+GET /api/v1/jobs/{job_id}
 Authorization: Bearer <access_token>
 ```
+
+**Rate Limit:** 100/minute
 
 **Response (200 OK):**
 
 ```json
 {
-  "success": true,
-  "data": {
-    "id": "job-uuid",
-    "title": "Senior Software Engineer",
-    "company": "Tech Corp",
-    "location": "Remote",
-    "type": "full_time",
-    "salary_range": "$150k - $200k",
-    "description": "Full job description...",
-    "raw_json": {...},
-    "apply_url": "https://example.com/apply",
-    "created_at": "2024-01-20T10:00:00Z",
-    "updated_at": "2024-01-20T10:00:00Z"
-  }
+  "id": "job-uuid",
+  "title": "Senior Software Engineer",
+  "company": "Tech Corp",
+  "location": "Remote",
+  "snippet": "Full job description...",
+  "score": 0.85,
+  "apply_url": "https://example.com/apply"
+}
+```
+
+**Response (400 Bad Request):**
+
+```json
+{
+  "detail": "Invalid job ID format"
+}
+```
+
+**Response (404 Not Found):**
+
+```json
+{
+  "detail": "Job not found"
 }
 ```
 
 ### Swipe Job
 
 ```http
-POST /v1/jobs/{job_id}/swipe
+POST /api/v1/jobs/{job_id}/swipe
 Authorization: Bearer <access_token>
 Content-Type: application/json
 
 {
-  "action": "right"  // or "left"
+  "action": "right"
 }
 ```
+
+**Rate Limit:** 60/minute
+
+**Request Body:**
+- `action` (string, required): Either "right" (like/apply) or "left" (pass)
 
 **Response (200 OK):**
 
@@ -318,29 +750,19 @@ Content-Type: application/json
 }
 ```
 
-### Get Job Matches
-
-```http
-GET /v1/jobs/matches
-Authorization: Bearer <access_token>
-```
-
-**Response (200 OK):**
+**Response (400 Bad Request):**
 
 ```json
 {
-  "success": true,
-  "data": [
-    {
-      "job": {...},
-      "match_score": 0.92,
-      "match_reasons": ["Skills match", "Location match"]
-    }
-  ],
-  "meta": {
-    "total_matches": 5,
-    "average_score": 0.78
-  }
+  "detail": "Invalid swipe action. Must be 'right' or 'left'"
+}
+```
+
+**Response (400 Bad Request - Duplicate):**
+
+```json
+{
+  "detail": "You have already interacted with this job"
 }
 ```
 
@@ -349,349 +771,385 @@ Authorization: Bearer <access_token>
 ### Get Profile
 
 ```http
-GET /v1/profile
+GET /api/v1/profile
 Authorization: Bearer <access_token>
 ```
+
+**Rate Limit:** 60/minute
 
 **Response (200 OK):**
 
 ```json
 {
-  "success": true,
-  "data": {
-    "id": "profile-uuid",
-    "user_id": "user-uuid",
-    "full_name": "John Doe",
-    "phone": "+1234567890",
-    "location": "San Francisco, CA",
-    "headline": "Senior Software Engineer",
-    "work_experience": [
-      {
-        "company": "Tech Corp",
-        "title": "Senior Engineer",
-        "start_date": "2020-01",
-        "end_date": null,
-        "current": true,
-        "description": "Led team of 5 engineers..."
-      }
-    ],
-    "education": [
-      {
-        "institution": "Stanford University",
-        "degree": "M.S. Computer Science",
-        "graduation_year": 2019
-      }
-    ],
-    "skills": ["Python", "FastAPI", "PostgreSQL", "AWS"],
-    "resume_file_url": "https://storage.example.com/resumes/...",
-    "parsed_at": "2024-01-15T10:30:00Z"
+  "id": "profile-uuid",
+  "full_name": "John Doe",
+  "phone": "+1234567890",
+  "location": "San Francisco, CA",
+  "headline": "Senior Software Engineer",
+  "work_experience": [
+    {
+      "company": "Tech Corp",
+      "title": "Senior Engineer",
+      "start_date": "2020-01",
+      "end_date": null,
+      "current": true,
+      "description": "Led team of 5 engineers..."
+    }
+  ],
+  "education": [
+    {
+      "institution": "Stanford University",
+      "degree": "M.S. Computer Science",
+      "graduation_year": 2019
+    }
+  ],
+  "skills": ["Python", "FastAPI", "PostgreSQL", "AWS"],
+  "resume_file_url": "https://storage.example.com/resumes/...",
+  "parsed_at": "2024-01-15T10:30:00Z",
+  "preferences": {
+    "job_types": ["full-time", "contract"],
+    "remote_preference": "remote",
+    "experience_level": "senior"
   }
+}
+```
+
+**Response (404 Not Found):**
+
+```json
+{
+  "detail": "Profile not found. Please upload a resume first."
 }
 ```
 
 ### Update Profile
 
 ```http
-PUT /v1/profile
+PUT /api/v1/profile
 Authorization: Bearer <access_token>
 Content-Type: application/json
 
 {
   "full_name": "John Doe",
+  "phone": "+1234567890",
   "location": "San Francisco, CA",
-  "headline": "Senior Software Engineer"
+  "headline": "Senior Software Engineer",
+  "skills": ["Python", "FastAPI", "PostgreSQL", "AWS"],
+  "experience": [...],
+  "education": [...],
+  "preferences": {
+    "job_types": ["full-time"],
+    "remote_preference": "hybrid",
+    "experience_level": "senior"
+  }
 }
 ```
+
+**Rate Limit:** 30/minute
 
 **Response (200 OK):**
 
 ```json
 {
-  "success": true,
-  "data": {
-    "message": "Profile updated successfully"
-  }
+  "id": "profile-uuid",
+  "full_name": "John Doe",
+  "phone": "+1234567890",
+  "location": "San Francisco, CA",
+  "headline": "Senior Software Engineer",
+  "work_experience": [...],
+  "education": [...],
+  "skills": ["Python", "FastAPI", "PostgreSQL", "AWS"],
+  "resume_file_url": "https://storage.example.com/resumes/...",
+  "parsed_at": "2024-01-15T10:30:00Z",
+  "preferences": {...}
 }
 ```
 
 ### Upload Resume
 
 ```http
-POST /v1/profile/resume
+POST /api/v1/profile/resume
 Authorization: Bearer <access_token>
 Content-Type: multipart/form-data
 
-file: (binary PDF)
+file: (binary PDF or DOCX)
 ```
+
+**Rate Limit:** 10/minute
+
+**Supported Formats:** PDF, DOCX
+
+**Max File Size:** 10MB
 
 **Response (200 OK):**
 
 ```json
 {
-  "success": true,
-  "data": {
-    "resume_url": "https://storage.example.com/resumes/...",
-    "parsed": true,
-    "parsing_summary": {
-      "skills_extracted": 15,
-      "experience_years": 5,
-      "education_entries": 2
-    }
-  }
+  "id": "profile-uuid",
+  "full_name": "John Doe",
+  "phone": "+1234567890",
+  "location": "San Francisco, CA",
+  "headline": "Senior Software Engineer",
+  "work_experience": [...],
+  "education": [...],
+  "skills": ["Python", "FastAPI", "PostgreSQL", "AWS"],
+  "resume_file_url": "resumes/user-uuid/resume.pdf",
+  "parsed_at": "2024-01-15T10:30:00Z"
 }
 ```
 
-### Add Work Experience
-
-```http
-POST /v1/profile/work_experience
-Authorization: Bearer <access_token>
-Content-Type: application/json
-
-{
-  "company": "New Company",
-  "title": "Staff Engineer",
-  "start_date": "2023-06",
-  "current": true,
-  "description": "Leading infrastructure initiatives..."
-}
-```
-
-**Response (201 Created):**
+**Response (400 Bad Request - Invalid File):**
 
 ```json
 {
-  "success": true,
-  "data": {
-    "id": "exp-uuid",
-    "message": "Work experience added successfully"
-  }
+  "detail": "Invalid file type. Only PDF and DOCX files are allowed."
 }
 ```
 
-### Add Education
-
-```http
-POST /v1/profile/education
-Authorization: Bearer <access_token>
-Content-Type: application/json
-
-{
-  "institution": "MIT",
-  "degree": "Ph.D. Computer Science",
-  "field_of_study": "Artificial Intelligence",
-  "graduation_year": 2025
-}
-```
-
-**Response (201 Created):**
+**Response (400 Bad Request - File Too Large):**
 
 ```json
 {
-  "success": true,
-  "data": {
-    "id": "edu-uuid",
-    "message": "Education added successfully"
-  }
-}
-```
-
-### Update Skills
-
-```http
-PUT /v1/profile/skills
-Authorization: Bearer <access_token>
-Content-Type: application/json
-
-{
-  "skills": ["Python", "FastAPI", "PostgreSQL", "AWS", "Docker"]
-}
-```
-
-**Response (200 OK):**
-
-```json
-{
-  "success": true,
-  "data": {
-    "message": "Skills updated successfully"
-  }
+  "detail": "File too large. Maximum size is 10MB."
 }
 ```
 
 ## Applications Endpoints
 
-### Submit Application
+### Create Application
 
 ```http
-POST /v1/applications
+POST /api/v1/applications
 Authorization: Bearer <access_token>
 Content-Type: application/json
 
 {
-  "job_id": "job-uuid",
-  "resume_id": "resume-uuid",
-  "cover_letter": "optional cover letter text",
-  "answers": [
-    {
-      "question": "Years of experience?",
-      "answer": "5"
-    }
-  ]
+  "job_id": "job-uuid"
 }
 ```
 
-**Response (202 Accepted):**
+**Rate Limit:** 30/minute
+
+**Response (200 OK):**
 
 ```json
 {
-  "success": true,
-  "data": {
-    "application_id": "app-uuid",
-    "task_id": "task-uuid",
-    "status": "queued",
-    "message": "Application submitted successfully"
-  }
+  "id": "app-uuid",
+  "job_id": "job-uuid",
+  "status": "queued",
+  "attempt_count": 0,
+  "last_error": null,
+  "assigned_worker": null,
+  "created_at": "2024-01-15T10:30:00Z",
+  "updated_at": "2024-01-15T10:30:00Z"
 }
 ```
 
 ### List Applications
 
 ```http
-GET /v1/applications?status=submitted&page=1
+GET /api/v1/applications
 Authorization: Bearer <access_token>
 ```
+
+**Rate Limit:** 60/minute
 
 **Response (200 OK):**
 
 ```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": "app-uuid",
-      "job_id": "job-uuid",
-      "job_title": "Senior Software Engineer",
-      "company": "Tech Corp",
-      "status": "completed",
-      "submitted_at": "2024-01-20T10:00:00Z",
-      "completed_at": "2024-01-20T10:05:00Z"
-    }
-  ],
-  "meta": {
-    "page": 1,
-    "per_page": 20,
-    "total": 5
+[
+  {
+    "id": "app-uuid",
+    "job_id": "job-uuid",
+    "status": "completed",
+    "attempt_count": 1,
+    "last_error": null,
+    "assigned_worker": "celery@worker1",
+    "created_at": "2024-01-15T10:30:00Z",
+    "updated_at": "2024-01-15T10:35:00Z"
   }
-}
+]
 ```
 
 ### Get Application Status
 
 ```http
-GET /v1/applications/{application_id}
+GET /api/v1/applications/{job_id}/status
 Authorization: Bearer <access_token>
 ```
+
+**Rate Limit:** 60/minute
+
+**Response (200 OK):**
+
+```json
+{
+  "id": "app-uuid",
+  "job_id": "job-uuid",
+  "status": "completed",
+  "attempt_count": 1,
+  "last_error": null,
+  "assigned_worker": "celery@worker1",
+  "created_at": "2024-01-15T10:30:00Z",
+  "updated_at": "2024-01-15T10:35:00Z"
+}
+```
+
+**Response (404 Not Found):**
+
+```json
+{
+  "detail": "Application not found"
+}
+```
+
+### Get Application Audit Log
+
+```http
+GET /api/v1/applications/{job_id}/audit
+Authorization: Bearer <access_token>
+```
+
+**Rate Limit:** 60/minute
+
+**Response (200 OK):**
+
+```json
+[
+  {
+    "id": "audit-uuid",
+    "step": "form_submission",
+    "payload": {...},
+    "artifacts": {...},
+    "timestamp": "2024-01-15T10:30:00Z"
+  }
+]
+```
+
+### Cancel Application
+
+```http
+POST /api/v1/applications/{job_id}/cancel
+Authorization: Bearer <access_token>
+```
+
+**Rate Limit:** 30/minute
 
 **Response (200 OK):**
 
 ```json
 {
   "success": true,
-  "data": {
-    "id": "app-uuid",
-    "job_id": "job-uuid",
-    "status": "completed",
-    "steps": [
-      {
-        "step": "form_submission",
-        "status": "completed",
-        "completed_at": "2024-01-20T10:01:00Z"
-      },
-      {
-        "step": "resume_upload",
-        "status": "completed",
-        "completed_at": "2024-01-20T10:02:00Z"
-      },
-      {
-        "step": "assessment",
-        "status": "completed",
-        "completed_at": "2024-01-20T10:05:00Z"
-      }
-    ],
-    "artifacts": {
-      "submitted_application_id": "GH-12345"
-    }
-  }
+  "message": "Application cancelled successfully"
+}
+```
+
+**Response (400 Bad Request):**
+
+```json
+{
+  "detail": "Only pending or in-progress tasks can be cancelled"
 }
 ```
 
 ## Analytics Endpoints
 
-### Get User Analytics
+### Get Analytics Metrics
 
 ```http
-GET /v1/analytics/user
-Authorization: Bearer <access_token>
+GET /api/v1/analytics/metrics
+Authorization: Bearer <analytics_api_key>
 ```
+
+**Rate Limit:** 60/minute
+
+**Authentication:** Requires Analytics API Key in Authorization header
 
 **Response (200 OK):**
 
 ```json
 {
-  "success": true,
-  "data": {
-    "period": "30d",
-    "summary": {
-      "jobs_viewed": 150,
-      "jobs_saved": 45,
-      "jobs_applied": 12,
-      "interviews_scheduled": 3
-    },
-    "trends": [
-      {
-        "date": "2024-01-20",
-        "jobs_viewed": 10,
-        "jobs_applied": 2
-      }
-    ],
-    "top_companies": [
-      {
-        "name": "Tech Corp",
-        "applications": 3,
-        "interviews": 1
-      }
-    ]
-  }
+  "total_users": 1250,
+  "total_jobs": 5000,
+  "total_interactions": 35000,
+  "total_applications": 4200,
+  "avg_match_score": 0.78,
+  "success_rate": 0.65,
+  "daily_growth": 0.08
 }
 ```
 
-### Get Platform Analytics (Admin)
+**Response (401 Unauthorized):**
+
+```json
+{
+  "detail": "Invalid analytics API key"
+}
+```
+
+### Generate Report
 
 ```http
-GET /v1/analytics/platform
-Authorization: Bearer <admin_access_token>
+POST /api/v1/analytics/generate-report
+Authorization: Bearer <analytics_api_key>
+Content-Type: application/json
+
+{
+  "report_type": "matching_accuracy",
+  "time_range": 30,
+  "format": "json"
+}
 ```
+
+**Rate Limit:** 10/minute
+
+**Report Types:** `matching_accuracy`, `user_behavior`, `job_market`
+
+**Formats:** `json`, `csv`, `html`
 
 **Response (200 OK):**
 
 ```json
 {
   "success": true,
-  "data": {
-    "period": "30d",
-    "metrics": {
-      "total_users": 10000,
-      "active_users": 5000,
-      "total_jobs": 50000,
-      "total_applications": 25000,
-      "success_rate": 0.45
-    },
-    "growth": {
-      "users": {"current": 10000, "previous": 8500},
-      "applications": {"current": 25000, "previous": 20000}
-    }
-  }
+  "report_type": "matching_accuracy",
+  "time_range": 30,
+  "format": "json",
+  "file_path": "/tmp/report_123.json",
+  "file_name": "report_123.json",
+  "size": 1024,
+  "generated_at": "2024-01-15T10:30:00Z"
+}
+```
+
+**Response (400 Bad Request):**
+
+```json
+{
+  "detail": "Invalid report type. Valid types: matching_accuracy, user_behavior, job_market"
+}
+```
+
+### Get Dashboard Summary
+
+```http
+GET /api/v1/analytics/dashboard-summary
+Authorization: Bearer <analytics_api_key>
+```
+
+**Rate Limit:** 60/minute
+
+**Response (200 OK):**
+
+```json
+{
+  "total_users": 1250,
+  "active_users_today": 450,
+  "total_jobs": 5000,
+  "new_jobs_today": 150,
+  "total_applications": 4200,
+  "applications_today": 85,
+  "success_rate": 0.65
 }
 ```
 
@@ -700,88 +1158,108 @@ Authorization: Bearer <admin_access_token>
 ### Get Notifications
 
 ```http
-GET /v1/notifications?unread_only=true&page=1
+GET /api/v1/notifications?limit=50
 Authorization: Bearer <access_token>
 ```
+
+**Rate Limit:** 60/minute
+
+**Query Parameters:**
+- `limit` (integer, optional): Maximum notifications to return (default: 50, max: 100)
 
 **Response (200 OK):**
 
 ```json
 {
-  "success": true,
-  "data": [
+  "notifications": [
     {
       "id": "notif-uuid",
       "type": "application_completed",
       "title": "Application Completed",
       "message": "Your application to Tech Corp has been submitted.",
       "read": false,
-      "created_at": "2024-01-20T10:05:00Z"
+      "created_at": "2024-01-15T10:30:00Z"
     }
-  ],
-  "meta": {
-    "unread_count": 5,
-    "total": 50
-  }
+  ]
 }
 ```
 
-### Mark as Read
+### Get Unread Count
 
 ```http
-PUT /v1/notifications/{notification_id}/read
+GET /api/v1/notifications/unread-count
 Authorization: Bearer <access_token>
 ```
+
+**Rate Limit:** 60/minute
 
 **Response (200 OK):**
 
 ```json
 {
-  "success": true,
-  "data": {
-    "message": "Notification marked as read"
-  }
+  "unread_count": 5
 }
 ```
 
-### Mark All as Read
+### Mark Notification as Read
 
 ```http
-PUT /v1/notifications/read_all
+PUT /api/v1/notifications/{notification_id}/read
 Authorization: Bearer <access_token>
 ```
+
+**Rate Limit:** 60/minute
 
 **Response (200 OK):**
 
 ```json
 {
-  "success": true,
-  "data": {
-    "message": "All notifications marked as read"
-  }
+  "message": "Notification marked as read"
+}
+```
+
+### Mark All Notifications as Read
+
+```http
+PUT /api/v1/notifications/mark-all-read
+Authorization: Bearer <access_token>
+```
+
+**Rate Limit:** 30/minute
+
+**Response (200 OK):**
+
+```json
+{
+  "message": "Marked 5 notifications as read"
 }
 ```
 
 ### Get Notification Preferences
 
 ```http
-GET /v1/notifications/preferences
+GET /api/v1/notifications/preferences
 Authorization: Bearer <access_token>
 ```
+
+**Rate Limit:** 60/minute
 
 **Response (200 OK):**
 
 ```json
 {
-  "success": true,
-  "data": {
+  "preferences": {
     "push_enabled": true,
     "push_application_submitted": true,
     "push_application_completed": true,
-    "push_application_failed": false,
+    "push_application_failed": true,
+    "push_captcha_detected": true,
+    "push_job_match_found": true,
     "email_enabled": true,
+    "email_application_submitted": false,
     "email_application_completed": true,
-    "quiet_hours_enabled": true,
+    "email_application_failed": true,
+    "quiet_hours_enabled": false,
     "quiet_hours_start": "22:00",
     "quiet_hours_end": "08:00"
   }
@@ -791,7 +1269,7 @@ Authorization: Bearer <access_token>
 ### Update Notification Preferences
 
 ```http
-PUT /v1/notifications/preferences
+PUT /api/v1/notifications/preferences
 Authorization: Bearer <access_token>
 Content-Type: application/json
 
@@ -804,30 +1282,90 @@ Content-Type: application/json
 }
 ```
 
+**Rate Limit:** 30/minute
+
 **Response (200 OK):**
 
 ```json
 {
-  "success": true,
-  "data": {
-    "message": "Preferences updated successfully"
-  }
+  "message": "Notification preferences updated successfully"
 }
 ```
 
-### Get Notification Statistics (Admin Only)
+### Register Device Token
 
 ```http
-GET /v1/notifications/stats
-Authorization: Bearer <admin_access_token>
+POST /api/v1/notifications/device-token
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "device_id": "device-123",
+  "platform": "ios",
+  "token": "apns-device-token",
+  "app_version": "1.0.0"
+}
 ```
+
+**Rate Limit:** 30/minute
+
+**Platforms:** `ios`, `android`
 
 **Response (200 OK):**
 
 ```json
 {
-  "success": true,
-  "data": {
+  "message": "Device token registered successfully"
+}
+```
+
+**Response (400 Bad Request):**
+
+```json
+{
+  "detail": "Platform must be 'ios' or 'android'"
+}
+```
+
+### Unregister Device Token
+
+```http
+DELETE /api/v1/notifications/device-token/{device_id}
+Authorization: Bearer <access_token>
+```
+
+**Rate Limit:** 30/minute
+
+**Response (200 OK):**
+
+```json
+{
+  "message": "Device token unregistered successfully"
+}
+```
+
+**Response (404 Not Found):**
+
+```json
+{
+  "detail": "Device token not found"
+}
+```
+
+### Get Notification Statistics (Admin)
+
+```http
+GET /api/v1/notifications/stats
+Authorization: Bearer <admin_access_token>
+```
+
+**Rate Limit:** 30/minute
+
+**Response (200 OK):**
+
+```json
+{
+  "stats": {
     "total_notifications": 1500,
     "delivered_push": 1200,
     "delivered_email": 850,
@@ -842,15 +1380,210 @@ Authorization: Bearer <admin_access_token>
 }
 ```
 
-**Response (403 Forbidden - Non-Admin):**
+## API Keys Management Endpoints
+
+### Create API Key
+
+```http
+POST /api/v1/admin/api-keys
+Authorization: Bearer <admin_access_token>
+Content-Type: application/json
+
+{
+  "name": "Data Ingestion Service",
+  "service_type": "ingestion",
+  "description": "API key for job ingestion service",
+  "permissions": ["ingest_jobs", "get_ingestion_status"],
+  "rate_limit": 1000,
+  "expires_at": "2024-12-31T23:59:59Z"
+}
+```
+
+**Rate Limit:** 10/minute
+
+**Service Types:** `ingestion`, `automation`, `analytics`, `webhook`
+
+**Response (201 Created):**
 
 ```json
 {
-  "success": false,
-  "error": {
-    "code": "AUTHORIZATION_ERROR",
-    "message": "Only admin users can access this endpoint"
+  "id": "key-uuid",
+  "key": "js_ingestion_abc123def456",
+  "key_prefix": "js_ingestion",
+  "name": "Data Ingestion Service",
+  "service_type": "ingestion",
+  "permissions": ["ingest_jobs", "get_ingestion_status"],
+  "rate_limit": 1000,
+  "expires_at": "2024-12-31T23:59:59Z",
+  "is_active": true,
+  "last_used_at": null,
+  "usage_count": 0,
+  "created_at": "2024-01-15T10:30:00Z"
+}
+```
+
+**Response (400 Bad Request):**
+
+```json
+{
+  "detail": "Invalid service_type. Must be one of: ['ingestion', 'automation', 'analytics', 'webhook']"
+}
+```
+
+**Response (403 Forbidden):**
+
+```json
+{
+  "detail": "Only admin users can create API keys"
+}
+```
+
+### List API Keys
+
+```http
+GET /api/v1/admin/api-keys?service_type=ingestion&active_only=true
+Authorization: Bearer <admin_access_token>
+```
+
+**Rate Limit:** 60/minute
+
+**Query Parameters:**
+- `service_type` (string, optional): Filter by service type
+- `active_only` (boolean, optional): Only show active keys (default: true)
+
+**Response (200 OK):**
+
+```json
+[
+  {
+    "id": "key-uuid",
+    "key_prefix": "js_ingestion",
+    "name": "Data Ingestion Service",
+    "service_type": "ingestion",
+    "permissions": ["ingest_jobs", "get_ingestion_status"],
+    "rate_limit": 1000,
+    "expires_at": "2024-12-31T23:59:59Z",
+    "is_active": true,
+    "last_used_at": "2024-01-15T10:45:00Z",
+    "usage_count": 15,
+    "created_at": "2024-01-15T10:30:00Z"
   }
+]
+```
+
+### Get API Key Details
+
+```http
+GET /api/v1/admin/api-keys/{key_id}
+Authorization: Bearer <admin_access_token>
+```
+
+**Rate Limit:** 60/minute
+
+**Response (200 OK):**
+
+```json
+{
+  "id": "key-uuid",
+  "key_prefix": "js_ingestion",
+  "name": "Data Ingestion Service",
+  "service_type": "ingestion",
+  "permissions": ["ingest_jobs", "get_ingestion_status"],
+  "rate_limit": 1000,
+  "expires_at": "2024-12-31T23:59:59Z",
+  "is_active": true,
+  "last_used_at": "2024-01-15T10:45:00Z",
+  "usage_count": 15,
+  "created_at": "2024-01-15T10:30:00Z"
+}
+```
+
+**Response (400 Bad Request):**
+
+```json
+{
+  "detail": "Invalid key ID format"
+}
+```
+
+**Response (404 Not Found):**
+
+```json
+{
+  "detail": "API key not found"
+}
+```
+
+### Revoke API Key
+
+```http
+POST /api/v1/admin/api-keys/{key_id}/revoke
+Authorization: Bearer <admin_access_token>
+```
+
+**Rate Limit:** 30/minute
+
+**Response (204 No Content)**
+
+**Response (404 Not Found):**
+
+```json
+{
+  "detail": "API key not found"
+}
+```
+
+### Rotate API Key
+
+```http
+POST /api/v1/admin/api-keys/{key_id}/rotate
+Authorization: Bearer <admin_access_token>
+```
+
+**Rate Limit:** 10/minute
+
+**Response (200 OK):**
+
+```json
+{
+  "id": "new-key-uuid",
+  "key": "js_ingestion_new123key456",
+  "key_prefix": "js_ingestion",
+  "name": "Data Ingestion Service",
+  "service_type": "ingestion",
+  "permissions": ["ingest_jobs", "get_ingestion_status"],
+  "rate_limit": 1000,
+  "expires_at": "2024-12-31T23:59:59Z",
+  "is_active": true,
+  "last_used_at": null,
+  "usage_count": 0,
+  "created_at": "2024-01-15T11:00:00Z"
+}
+```
+
+### Get API Key Statistics
+
+```http
+GET /api/v1/admin/api-keys/{key_id}/stats?since=2024-01-01
+Authorization: Bearer <admin_access_token>
+```
+
+**Rate Limit:** 60/minute
+
+**Response (200 OK):**
+
+```json
+{
+  "key_id": "key-uuid",
+  "key_name": "Data Ingestion Service",
+  "service_type": "ingestion",
+  "period_start": "2024-01-01T00:00:00Z",
+  "period_end": "2024-01-15T11:00:00Z",
+  "total_requests": 150,
+  "success_requests": 145,
+  "failed_requests": 5,
+  "avg_response_time": 0.123,
+  "rate_limit_hits": 0
 }
 ```
 
@@ -859,9 +1592,13 @@ Authorization: Bearer <admin_access_token>
 ### Find Duplicate Jobs
 
 ```http
-GET /v1/deduplicate/find
-Authorization: Bearer <admin_access_token>
+GET /api/v1/deduplicate/find
+Authorization: Bearer <deduplication_api_key>
 ```
+
+**Rate Limit:** 30/minute
+
+**Authentication:** Requires Deduplication API Key
 
 **Response (200 OK):**
 
@@ -895,9 +1632,11 @@ Authorization: Bearer <admin_access_token>
 ### Remove Duplicate Jobs
 
 ```http
-POST /v1/deduplicate/remove
-Authorization: Bearer <admin_access_token>
+POST /api/v1/deduplicate/remove
+Authorization: Bearer <deduplication_api_key>
 ```
+
+**Rate Limit:** 10/minute
 
 **Response (200 OK):**
 
@@ -906,16 +1645,19 @@ Authorization: Bearer <admin_access_token>
   "success": true,
   "message": "Removed 2 duplicate jobs from 1 groups",
   "duplicate_groups_found": 1,
-  "duplicates_removed": 2
+  "duplicates_removed": 2,
+  "unique_jobs_count": 100
 }
 ```
 
 ### Run Deduplication Process
 
 ```http
-POST /v1/deduplicate/run
-Authorization: Bearer <admin_access_token>
+POST /api/v1/deduplicate/run
+Authorization: Bearer <deduplication_api_key>
 ```
+
+**Rate Limit:** 5/minute
 
 **Response (200 OK):**
 
@@ -924,7 +1666,8 @@ Authorization: Bearer <admin_access_token>
   "success": true,
   "message": "Removed 5 duplicate jobs from 3 groups",
   "duplicate_groups_found": 3,
-  "duplicates_removed": 5
+  "duplicates_removed": 5,
+  "unique_jobs_count": 95
 }
 ```
 
@@ -933,9 +1676,13 @@ Authorization: Bearer <admin_access_token>
 ### Categorize All Jobs
 
 ```http
-POST /v1/categorize/all
-Authorization: Bearer <admin_access_token>
+POST /api/v1/categorize/all
+Authorization: Bearer <categorization_api_key>
 ```
+
+**Rate Limit:** 5/minute
+
+**Authentication:** Requires Categorization API Key
 
 **Response (200 OK):**
 
@@ -956,9 +1703,11 @@ Authorization: Bearer <admin_access_token>
 ### Get Category Distribution
 
 ```http
-GET /v1/categorize/distribution
-Authorization: Bearer <admin_access_token>
+GET /api/v1/categorize/distribution
+Authorization: Bearer <categorization_api_key>
 ```
+
+**Rate Limit:** 60/minute
 
 **Response (200 OK):**
 
@@ -978,9 +1727,11 @@ Authorization: Bearer <admin_access_token>
 ### Run Categorization Process
 
 ```http
-POST /v1/categorize/run
-Authorization: Bearer <admin_access_token>
+POST /api/v1/categorize/run
+Authorization: Bearer <categorization_api_key>
 ```
+
+**Rate Limit:** 5/minute
 
 **Response (200 OK):**
 
@@ -998,163 +1749,22 @@ Authorization: Bearer <admin_access_token>
 }
 ```
 
-## API Keys Management Endpoints
-
-### Create API Key
-
-```http
-POST /v1/admin/api-keys
-Authorization: Bearer <admin_access_token>
-Content-Type: application/json
-
-{
-  "name": "Data Ingestion Service",
-  "service_type": "ingestion",
-  "description": "API key for job ingestion service",
-  "permissions": ["ingest_jobs", "get_ingestion_status"],
-  "rate_limit": 1000,
-  "expires_at": "2024-12-31T23:59:59Z"
-}
-```
-
-**Response (201 Created):**
-
-```json
-{
-  "id": "key-uuid",
-  "key": "js_ingestion_abc123def456",
-  "key_prefix": "js_ingestion",
-  "name": "Data Ingestion Service",
-  "service_type": "ingestion",
-  "permissions": ["ingest_jobs", "get_ingestion_status"],
-  "rate_limit": 1000,
-  "expires_at": "2024-12-31T23:59:59Z",
-  "is_active": true,
-  "last_used_at": null,
-  "usage_count": 0,
-  "created_at": "2024-01-15T10:30:00Z"
-}
-```
-
-### List API Keys
-
-```http
-GET /v1/admin/api-keys?service_type=ingestion&active_only=true
-Authorization: Bearer <admin_access_token>
-```
-
-**Response (200 OK):**
-
-```json
-[
-  {
-    "id": "key-uuid",
-    "key_prefix": "js_ingestion",
-    "name": "Data Ingestion Service",
-    "service_type": "ingestion",
-    "permissions": ["ingest_jobs", "get_ingestion_status"],
-    "rate_limit": 1000,
-    "expires_at": "2024-12-31T23:59:59Z",
-    "is_active": true,
-    "last_used_at": "2024-01-15T10:45:00Z",
-    "usage_count": 15,
-    "created_at": "2024-01-15T10:30:00Z"
-  }
-]
-```
-
-### Get API Key Details
-
-```http
-GET /v1/admin/api-keys/{key_id}
-Authorization: Bearer <admin_access_token>
-```
-
-**Response (200 OK):**
-
-```json
-{
-  "id": "key-uuid",
-  "key_prefix": "js_ingestion",
-  "name": "Data Ingestion Service",
-  "service_type": "ingestion",
-  "permissions": ["ingest_jobs", "get_ingestion_status"],
-  "rate_limit": 1000,
-  "expires_at": "2024-12-31T23:59:59Z",
-  "is_active": true,
-  "last_used_at": "2024-01-15T10:45:00Z",
-  "usage_count": 15,
-  "created_at": "2024-01-15T10:30:00Z"
-}
-```
-
-### Revoke API Key
-
-```http
-POST /v1/admin/api-keys/{key_id}/revoke
-Authorization: Bearer <admin_access_token>
-```
-
-**Response (204 No Content):**
-
-### Rotate API Key
-
-```http
-POST /v1/admin/api-keys/{key_id}/rotate
-Authorization: Bearer <admin_access_token>
-```
-
-**Response (200 OK):**
-
-```json
-{
-  "id": "new-key-uuid",
-  "key": "js_ingestion_new123key456",
-  "key_prefix": "js_ingestion",
-  "name": "Data Ingestion Service",
-  "service_type": "ingestion",
-  "permissions": ["ingest_jobs", "get_ingestion_status"],
-  "rate_limit": 1000,
-  "expires_at": "2024-12-31T23:59:59Z",
-  "is_active": true,
-  "last_used_at": null,
-  "usage_count": 0,
-  "created_at": "2024-01-15T11:00:00Z"
-}
-```
-
-### Get API Key Statistics
-
-```http
-GET /v1/admin/api-keys/{key_id}/stats?since=2024-01-01
-Authorization: Bearer <admin_access_token>
-```
-
-**Response (200 OK):**
-
-```json
-{
-  "key_id": "key-uuid",
-  "key_name": "Data Ingestion Service",
-  "service_type": "ingestion",
-  "period_start": "2024-01-01T00:00:00Z",
-  "period_end": "2024-01-15T11:00:00Z",
-  "total_requests": 150,
-  "success_requests": 145,
-  "failed_requests": 5,
-  "avg_response_time": 0.123,
-  "rate_limit_hits": 0
-}
-```
-
 ## Job Ingestion Endpoints
 
 ### Sync Greenhouse Board
 
 ```http
-POST /v1/ingestion/sources/greenhouse/sync?board_token=abc123&incremental=true
-Authorization: Bearer <admin_access_token>
+POST /api/v1/ingestion/sources/greenhouse/sync?board_token=abc123&incremental=true
+Authorization: Bearer <ingestion_api_key>
 ```
+
+**Rate Limit:** 30/minute
+
+**Authentication:** Requires Ingestion API Key
+
+**Query Parameters:**
+- `board_token` (string, required): Greenhouse board token
+- `incremental` (boolean, optional): Use incremental sync (default: true)
 
 **Response (200 OK):**
 
@@ -1169,9 +1779,15 @@ Authorization: Bearer <admin_access_token>
 ### Sync Lever Postings
 
 ```http
-POST /v1/ingestion/sources/lever/sync?org_slug=tech-corp&incremental=true
-Authorization: Bearer <admin_access_token>
+POST /api/v1/ingestion/sources/lever/sync?org_slug=tech-corp&incremental=true
+Authorization: Bearer <ingestion_api_key>
 ```
+
+**Rate Limit:** 30/minute
+
+**Query Parameters:**
+- `org_slug` (string, required): Lever organization slug
+- `incremental` (boolean, optional): Use incremental sync (default: true)
 
 **Response (200 OK):**
 
@@ -1186,9 +1802,14 @@ Authorization: Bearer <admin_access_token>
 ### Sync RSS Feed
 
 ```http
-POST /v1/ingestion/sources/rss/sync?feed_url=https%3A%2F%2Fexample.com%2Fjobs.rss
-Authorization: Bearer <admin_access_token>
+POST /api/v1/ingestion/sources/rss/sync?feed_url=https%3A%2F%2Fexample.com%2Fjobs.rss
+Authorization: Bearer <ingestion_api_key>
 ```
+
+**Rate Limit:** 30/minute
+
+**Query Parameters:**
+- `feed_url` (string, required): URL-encoded RSS feed URL
 
 **Response (200 OK):**
 
@@ -1203,8 +1824,8 @@ Authorization: Bearer <admin_access_token>
 ### Trigger Ingestion
 
 ```http
-POST /v1/ingestion/ingest
-Authorization: Bearer <admin_access_token>
+POST /api/v1/ingestion/ingest
+Authorization: Bearer <ingestion_api_key>
 Content-Type: application/json
 
 {
@@ -1212,6 +1833,8 @@ Content-Type: application/json
   "interval_seconds": 3600
 }
 ```
+
+**Rate Limit:** 10/minute
 
 **Response (200 OK):**
 
@@ -1228,9 +1851,11 @@ Content-Type: application/json
 ### Get Ingestion Status
 
 ```http
-GET /v1/ingestion/status
-Authorization: Bearer <admin_access_token>
+GET /api/v1/ingestion/status
+Authorization: Bearer <ingestion_api_key>
 ```
+
+**Rate Limit:** 60/minute
 
 **Response (200 OK):**
 
@@ -1247,8 +1872,8 @@ Authorization: Bearer <admin_access_token>
 ### Start Periodic Ingestion
 
 ```http
-POST /v1/ingestion/start-periodic
-Authorization: Bearer <admin_access_token>
+POST /api/v1/ingestion/start-periodic
+Authorization: Bearer <ingestion_api_key>
 Content-Type: application/json
 
 {
@@ -1256,6 +1881,8 @@ Content-Type: application/json
   "interval_seconds": 3600
 }
 ```
+
+**Rate Limit:** 5/minute
 
 **Response (200 OK):**
 
@@ -1269,9 +1896,11 @@ Content-Type: application/json
 ### Stop Periodic Ingestion
 
 ```http
-POST /v1/ingestion/stop-periodic
-Authorization: Bearer <admin_access_token>
+POST /api/v1/ingestion/stop-periodic
+Authorization: Bearer <ingestion_api_key>
 ```
+
+**Rate Limit:** 5/minute
 
 **Response (200 OK):**
 
@@ -1285,9 +1914,11 @@ Authorization: Bearer <admin_access_token>
 ### Get Ingestion Sources
 
 ```http
-GET /v1/ingestion/sources
-Authorization: Bearer <admin_access_token>
+GET /api/v1/ingestion/sources
+Authorization: Bearer <ingestion_api_key>
 ```
+
+**Rate Limit:** 60/minute
 
 **Response (200 OK):**
 
@@ -1313,8 +1944,9 @@ Authorization: Bearer <admin_access_token>
 ### Auto Apply to Job
 
 ```http
-POST /v1/application-automation/auto-apply
+POST /api/v1/application-automation/auto-apply
 Authorization: Bearer <access_token>
+Authorization: Bearer <automation_api_key>
 Content-Type: application/json
 
 {
@@ -1322,6 +1954,10 @@ Content-Type: application/json
   "headless": true
 }
 ```
+
+**Rate Limit:** 10/minute
+
+**Authentication:** Requires both user JWT and Automation API Key
 
 **Response (200 OK):**
 
@@ -1336,12 +1972,23 @@ Content-Type: application/json
 }
 ```
 
+**Response (403 Forbidden):**
+
+```json
+{
+  "detail": "Not authorized to access this task"
+}
+```
+
 ### Auto Apply to All Jobs
 
 ```http
-POST /v1/application-automation/auto-apply-all
+POST /api/v1/application-automation/auto-apply-all
 Authorization: Bearer <access_token>
+Authorization: Bearer <automation_api_key>
 ```
+
+**Rate Limit:** 5/minute
 
 **Response (200 OK):**
 
@@ -1371,9 +2018,11 @@ Authorization: Bearer <access_token>
 ### Get Pending Tasks
 
 ```http
-GET /v1/application-automation/tasks/pending
+GET /api/v1/application-automation/tasks/pending
 Authorization: Bearer <access_token>
 ```
+
+**Rate Limit:** 60/minute
 
 **Response (200 OK):**
 
@@ -1396,9 +2045,11 @@ Authorization: Bearer <access_token>
 ### Get Application History
 
 ```http
-GET /v1/application-automation/tasks/history
+GET /api/v1/application-automation/tasks/history
 Authorization: Bearer <access_token>
 ```
+
+**Rate Limit:** 60/minute
 
 **Response (200 OK):**
 
@@ -1423,9 +2074,11 @@ Authorization: Bearer <access_token>
 ### Get Automation Statistics
 
 ```http
-GET /v1/application-automation/stats
+GET /api/v1/application-automation/stats
 Authorization: Bearer <access_token>
 ```
+
+**Rate Limit:** 60/minute
 
 **Response (200 OK):**
 
@@ -1447,9 +2100,11 @@ Authorization: Bearer <access_token>
 ### Cancel Task
 
 ```http
-POST /v1/application-automation/tasks/{task_id}/cancel
+POST /api/v1/application-automation/tasks/{task_id}/cancel
 Authorization: Bearer <access_token>
 ```
+
+**Rate Limit:** 30/minute
 
 **Response (200 OK):**
 
@@ -1460,10 +2115,18 @@ Authorization: Bearer <access_token>
 }
 ```
 
+**Response (400 Bad Request):**
+
+```json
+{
+  "detail": "Only pending or in-progress tasks can be cancelled"
+}
+```
+
 ### Generate Cover Letter
 
 ```http
-POST /v1/application-automation/cover-letter/generate
+POST /api/v1/application-automation/cover-letter/generate
 Authorization: Bearer <access_token>
 Content-Type: application/json
 
@@ -1472,6 +2135,8 @@ Content-Type: application/json
   "custom_instructions": "Focus on Python and FastAPI skills"
 }
 ```
+
+**Rate Limit:** 30/minute
 
 **Response (200 OK):**
 
@@ -1488,10 +2153,26 @@ Content-Type: application/json
 }
 ```
 
+**Response (404 Not Found):**
+
+```json
+{
+  "detail": "Job not found"
+}
+```
+
+**Response (404 Not Found - Profile):**
+
+```json
+{
+  "detail": "Candidate profile not found"
+}
+```
+
 ### Regenerate Cover Letter
 
 ```http
-POST /v1/application-automation/cover-letter/regenerate
+POST /api/v1/application-automation/cover-letter/regenerate
 Authorization: Bearer <access_token>
 Content-Type: application/json
 
@@ -1502,6 +2183,8 @@ Content-Type: application/json
   "custom_instructions": "Focus on Python and FastAPI skills"
 }
 ```
+
+**Rate Limit:** 30/minute
 
 **Response (200 OK):**
 
@@ -1518,6 +2201,81 @@ Content-Type: application/json
 }
 ```
 
+## WebSocket Endpoints
+
+### Connect
+
+```http
+WS /api/v1/ws/connect?token=<jwt_token>&connection_types=notifications,job_updates
+```
+
+**Connection Types:**
+- `notifications` - Real-time notifications
+- `job_updates` - Job posting updates
+- `application_status` - Application status changes
+- `matches` - New job matches
+
+**Connection Message:**
+
+```json
+{
+  "type": "connected",
+  "connection_id": "conn-uuid",
+  "user_id": "user-uuid",
+  "connection_types": ["notifications", "job_updates"],
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+### Ping/Pong
+
+**Client sends:**
+
+```json
+{
+  "type": "ping"
+}
+```
+
+**Server responds:**
+
+```json
+{
+  "type": "pong",
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+### Subscribe to Topics
+
+```json
+{
+  "type": "subscribe",
+  "connection_types": ["matches"]
+}
+```
+
+### Unsubscribe from Topics
+
+```json
+{
+  "type": "unsubscribe",
+  "connection_types": ["job_updates"]
+}
+```
+
+### Job Preferences Update
+
+```json
+{
+  "type": "job_preference",
+  "preferences": {
+    "remote_only": true,
+    "min_salary": 100000
+  }
+}
+```
+
 ## Error Codes
 
 | Code | HTTP Status | Description |
@@ -1530,132 +2288,162 @@ Content-Type: application/json
 | INTERNAL_ERROR | 500 | Server error |
 | SERVICE_UNAVAILABLE | 503 | Service temporarily unavailable |
 
-## Rate Limits
-
-| Endpoint Type | Requests per minute |
-|---------------|---------------------|
-| Auth endpoints | 10 |
-| General API | 60 |
-| Read-only | 120 |
-| Webhooks | 30 |
-
-## Webhooks
-
-### Configure Webhook
-
-```http
-POST /v1/webhooks
-Authorization: Bearer <access_token>
-Content-Type: application/json
-
-{
-  "url": "https://your-server.com/webhook",
-  "events": ["application.submitted", "application.completed"],
-  "secret": "webhook_secret_key"
-}
-```
-
-**Response (201 Created):**
-
-```json
-{
-  "success": true,
-  "data": {
-    "webhook_id": "wh-uuid",
-    "url": "https://your-server.com/webhook",
-    "events": ["application.submitted", "application.completed"],
-    "status": "active"
-  }
-}
-```
-
-### Webhook Payload Example
-
-```json
-{
-  "event": "application.completed",
-  "timestamp": "2024-01-20T10:05:00Z",
-  "data": {
-    "application_id": "app-uuid",
-    "job_id": "job-uuid",
-    "job_title": "Senior Software Engineer",
-    "company": "Tech Corp",
-    "status": "completed",
-    "artifacts": {
-      "submitted_application_id": "GH-12345"
-    }
-  },
-  "signature": "sha256=..."
-}
-```
-
 ## SDK Examples
 
 ### Python
 
 ```python
 import requests
+from typing import Optional
 
 class JobSwipeClient:
-    def __init__(self, base_url: str, api_key: str):
-        self.base_url = base_url
-        self.headers = {"Authorization": f"Bearer {api_key}"}
+    def __init__(self, base_url: str, api_key: Optional[str] = None, token: Optional[str] = None):
+        self.base_url = base_url.rstrip('/')
+        self.headers = {}
+        if token:
+            self.headers["Authorization"] = f"Bearer {token}"
+        elif api_key:
+            self.headers["X-API-Key"] = api_key
     
     def get_jobs(self, page: int = 1, per_page: int = 20):
+        """Get job listings"""
         response = requests.get(
-            f"{self.base_url}/v1/jobs",
+            f"{self.base_url}/api/v1/jobs/feed",
             headers=self.headers,
-            params={"page": page, "per_page": per_page}
+            params={"page_size": per_page}
         )
+        response.raise_for_status()
         return response.json()
     
-    def submit_application(self, job_id: str, resume_id: str):
-        response = requests.post(
-            f"{self.base_url}/v1/applications",
+    def get_matches(self, limit: int = 20, min_score: float = 0.0):
+        """Get personalized job matches"""
+        response = requests.get(
+            f"{self.base_url}/api/v1/jobs/matches",
             headers=self.headers,
-            json={"job_id": job_id, "resume_id": resume_id}
+            params={"limit": limit, "min_score": min_score}
         )
+        response.raise_for_status()
+        return response.json()
+    
+    def swipe_job(self, job_id: str, action: str = "right"):
+        """Swipe right (apply) or left (pass) on a job"""
+        response = requests.post(
+            f"{self.base_url}/api/v1/jobs/{job_id}/swipe",
+            headers=self.headers,
+            json={"action": action}
+        )
+        response.raise_for_status()
+        return response.json()
+    
+    def submit_application(self, job_id: str):
+        """Submit an application for a job"""
+        response = requests.post(
+            f"{self.base_url}/api/v1/applications",
+            headers=self.headers,
+            json={"job_id": job_id}
+        )
+        response.raise_for_status()
         return response.json()
 
-# Usage
-client = JobSwipeClient("https://api.jobswipe.app", "your_api_key")
+# Usage example
+client = JobSwipeClient("https://api.jobswipe.app", token="your_jwt_token")
 jobs = client.get_jobs(page=1)
+matches = client.get_matches(limit=10, min_score=0.7)
 ```
 
-### JavaScript
+### JavaScript/TypeScript
 
-```javascript
+```typescript
 class JobSwipeClient {
-  constructor(baseUrl, apiKey) {
-    this.baseUrl = baseUrl;
+  private baseUrl: string;
+  private headers: Record<string, string>;
+
+  constructor(baseUrl: string, apiKey?: string, token?: string) {
+    this.baseUrl = baseUrl.replace(/\/$/, '');
     this.headers = {
-      'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json'
     };
+    
+    if (token) {
+      this.headers['Authorization'] = `Bearer ${token}`;
+    } else if (apiKey) {
+      this.headers['X-API-Key'] = apiKey;
+    }
   }
 
-  async getJobs(page = 1, perPage = 20) {
+  async getJobs(page = 1, perPage = 20): Promise<any> {
     const response = await fetch(
-      `${this.baseUrl}/v1/jobs?page=${page}&per_page=${perPage}`,
+      `${this.baseUrl}/api/v1/jobs/feed?page_size=${perPage}`,
       { headers: this.headers }
     );
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response.json();
   }
 
-  async submitApplication(jobId, resumeId) {
+  async getMatches(limit = 20, minScore = 0.0): Promise<any> {
     const response = await fetch(
-      `${this.baseUrl}/v1/applications`,
+      `${this.baseUrl}/api/v1/jobs/matches?limit=${limit}&min_score=${minScore}`,
+      { headers: this.headers }
+    );
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async swipeJob(jobId: string, action: 'right' | 'left'): Promise<any> {
+    const response = await fetch(
+      `${this.baseUrl}/api/v1/jobs/${jobId}/swipe`,
       {
         method: 'POST',
         headers: this.headers,
-        body: JSON.stringify({ job_id: jobId, resume_id: resumeId })
+        body: JSON.stringify({ action })
       }
     );
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response.json();
+  }
+
+  async submitApplication(jobId: string): Promise<any> {
+    const response = await fetch(
+      `${this.baseUrl}/api/v1/applications`,
+      {
+        method: 'POST',
+        headers: this.headers,
+        body: JSON.stringify({ job_id: jobId })
+      }
+    );
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  // WebSocket connection
+  connectWebSocket(token: string, connectionTypes: string[] = ['notifications']): WebSocket {
+    const ws = new WebSocket(
+      `${this.baseUrl.replace('http', 'ws')}/api/v1/ws/connect?token=${token}&connection_types=${connectionTypes.join(',')}`
+    );
+    
+    ws.onopen = () => console.log('WebSocket connected');
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log('WebSocket message:', data);
+    };
+    ws.onerror = (error) => console.error('WebSocket error:', error);
+    ws.onclose = () => console.log('WebSocket disconnected');
+    
+    return ws;
   }
 }
 
-// Usage
-const client = new JobSwipeClient('https://api.jobswipe.app', 'your_api_key');
-const jobs = await client.getJobs();
+// Usage example
+const client = new JobSwipeClient('https://api.jobswipe.app', undefined, 'your_jwt_token');
+const jobs = await client.getJobs(1);
+const ws = client.connectWebSocket('your_jwt_token', ['notifications', 'job_updates']);
 ```
+
+## Changelog
+
+### v1.0.0 (2024-01-15)
+- Initial API release
+- Authentication with JWT and API keys
+- Job matching and application automation
+- Real-time notifications via WebSocket
+- Health check endpoints for all services

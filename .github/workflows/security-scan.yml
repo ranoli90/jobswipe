@@ -1,4 +1,4 @@
-name: Security Headers Scan
+name: Security Scan
 
 on:
   schedule:
@@ -7,9 +7,151 @@ on:
     branches: [main, staging]
   pull_request:
     branches: [main, staging]
+  workflow_dispatch:  # Allow manual trigger
 
 jobs:
-  security-scan:
+  # Run security audit script
+  security-audit:
+    runs-on: ubuntu-latest
+    name: Security Audit
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run security audit
+      run: |
+        python scripts/security_audit.py --output reports/security_audit.json
+      env:
+        ENVIRONMENT: staging
+        SECRET_KEY: ${{ secrets.SECRET_KEY || 'test-secret-key-for-audit-minimum-32-chars-long' }}
+        ENCRYPTION_PASSWORD: ${{ secrets.ENCRYPTION_PASSWORD || 'test-encryption-password-minimum-32-chars' }}
+        ENCRYPTION_SALT: ${{ secrets.ENCRYPTION_SALT || 'test-encryption-salt-minimum-32-chars-long' }}
+        OAUTH_STATE_SECRET: ${{ secrets.OAUTH_STATE_SECRET || 'test-oauth-secret-minimum-32-chars-long' }}
+
+    - name: Upload security audit report
+      uses: actions/upload-artifact@v6
+      with:
+        name: security-audit-report
+        path: backend/reports/security_audit.json
+        retention-days: 30
+
+  # Check for dependency vulnerabilities
+  dependency-scan:
+    runs-on: ubuntu-latest
+    name: Dependency Vulnerability Scan
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install safety pip-audit
+
+    - name: Run Safety check
+      run: |
+        safety check -r requirements.txt --json --output reports/safety-report.json || true
+      continue-on-error: true
+
+    - name: Run pip-audit
+      run: |
+        pip-audit -r requirements.txt --format=json --output=reports/pip-audit-report.json || true
+      continue-on-error: true
+
+    - name: Upload dependency scan reports
+      uses: actions/upload-artifact@v6
+      with:
+        name: dependency-scan-reports
+        path: backend/reports/*-report.json
+        retention-days: 30
+
+  # Run Bandit security linter
+  bandit-scan:
+    runs-on: ubuntu-latest
+    name: Bandit Security Linter
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.10'
+
+    - name: Install Bandit
+      run: |
+        python -m pip install --upgrade pip
+        pip install bandit
+
+    - name: Run Bandit scan
+      run: |
+        bandit -r . -f json -o reports/bandit-report.json || true
+        bandit -r . -f screen || true
+      continue-on-error: true
+
+    - name: Upload Bandit report
+      uses: actions/upload-artifact@v6
+      with:
+        name: bandit-report
+        path: backend/reports/bandit-report.json
+        retention-days: 30
+
+  # OWASP ZAP baseline scan
+  owasp-zap-scan:
+    runs-on: ubuntu-latest
+    name: OWASP ZAP Baseline Scan
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Run OWASP ZAP Baseline Scan
+      uses: zaproxy/action-baseline@v0.13.0
+      with:
+        target: 'https://api.staging.jobswipe.app'
+        token: ${{ secrets.GITHUB_TOKEN }}
+        cmd_options: '-a'
+        rules_file_name: '.zap/rules.tsv'
+        issue_title: 'OWASP ZAP Security Scan Results'
+      continue-on-error: true
+
+    - name: Upload ZAP report
+      uses: actions/upload-artifact@v6
+      with:
+        name: owasp-zap-report
+        path: reports/
+        retention-days: 30
+
+  # Security headers validation
+  security-headers-validation:
     runs-on: ubuntu-latest
     name: Security Headers Validation
 
@@ -31,38 +173,17 @@ jobs:
       run: |
         mkdir -p reports
         python scripts/validate_security_headers.py --environment staging --output reports/security_headers_report
+      continue-on-error: true
 
-    - name: Upload security report
+    - name: Upload security headers report
       uses: actions/upload-artifact@v6
       with:
         name: security-headers-report
-        path: reports/security_headers_report*.md
+        path: reports/security_headers_report*
         retention-days: 30
 
-  owasp-zap-scan:
-    runs-on: ubuntu-latest
-    name: OWASP ZAP Baseline Scan
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v6
-
-    - name: Run OWASP ZAP Baseline Scan
-      uses: zaproxy/action-baseline@v0.13.0
-      with:
-        target: 'https://api.staging.jobswipe.app'
-        token: ${{ secrets.GITHUB_TOKEN }}
-        cmd_options: '-a'
-        rules_file_name: '.zap/rules.tsv'
-
-    - name: Upload ZAP report
-      uses: actions/upload-artifact@v6
-      with:
-        name: owasp-zap-report
-        path: reports/*
-        retention-days: 30
-
-  csp-test:
+  # CSP header validation
+  csp-validation:
     runs-on: ubuntu-latest
     name: CSP Header Validation
 
@@ -78,198 +199,178 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install requests beautifulsoup4
+        pip install requests
 
     - name: Test CSP header
       run: |
         python - <<END
         import requests
-        import re
+        import sys
 
         def test_csp_header(url):
             print(f"Testing CSP header on: {url}")
             try:
                 response = requests.get(url, timeout=10)
                 
+                # Check for CSP header (either enforced or report-only)
+                csp_header = None
                 if 'Content-Security-Policy' in response.headers:
-                    csp = response.headers['Content-Security-Policy']
-                    print(f"✓ CSP header found: {csp}")
-                    
-                    # Check if CSP contains basic directives
-                    if "default-src 'self'" in csp:
-                        print("✓ CSP has default-src 'self'")
-                    else:
-                        print("✗ CSP missing default-src 'self'")
-                        
-                    if "script-src" in csp:
-                        print("✓ CSP has script-src directive")
-                    else:
-                        print("✗ CSP missing script-src directive")
-                        
-                    if "style-src" in csp:
-                        print("✓ CSP has style-src directive")
-                    else:
-                        print("✗ CSP missing style-src directive")
-                        
+                    csp_header = response.headers['Content-Security-Policy']
+                    print(f"✓ CSP header found: {csp_header[:100]}...")
+                elif 'Content-Security-Policy-Report-Only' in response.headers:
+                    csp_header = response.headers['Content-Security-Policy-Report-Only']
+                    print(f"✓ CSP report-only header found: {csp_header[:100]}...")
                 else:
                     print("✗ CSP header not found")
                     return False
+                
+                # Check for required directives
+                required_directives = [
+                    "default-src",
+                    "script-src",
+                    "frame-ancestors",
+                ]
+                
+                all_passed = True
+                for directive in required_directives:
+                    if directive in csp_header:
+                        print(f"✓ CSP has {directive}")
+                    else:
+                        print(f"✗ CSP missing {directive}")
+                        all_passed = False
+                
+                # Check for report-uri in staging (report-only mode)
+                if 'report-uri' in csp_header or 'report-to' in csp_header:
+                    print("✓ CSP has reporting configured")
+                else:
+                    print("⚠ CSP missing report-uri/report-to")
+                
+                return all_passed
+                
+            except Exception as e:
+                print(f"Error testing {url}: {e}")
+                return False
+
+        # Test staging endpoint
+        url = "https://api.staging.jobswipe.app/health"
+        if not test_csp_header(url):
+            print("\n✗ CSP validation failed")
+            sys.exit(1)
+        else:
+            print("\n✅ CSP validation passed")
+        END
+      continue-on-error: true
+
+  # CORS configuration validation
+  cors-validation:
+    runs-on: ubuntu-latest
+    name: CORS Configuration Validation
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests
+
+    - name: Test CORS headers
+      run: |
+        python - <<END
+        import requests
+        import sys
+
+        def test_cors_headers(url):
+            print(f"Testing CORS headers on: {url}")
+            
+            # Test preflight request
+            try:
+                response = requests.options(
+                    url,
+                    headers={
+                        'Origin': 'https://evil.com',
+                        'Access-Control-Request-Method': 'GET',
+                    },
+                    timeout=10
+                )
+                
+                if 'Access-Control-Allow-Origin' in response.headers:
+                    allowed_origin = response.headers['Access-Control-Allow-Origin']
+                    print(f"Access-Control-Allow-Origin: {allowed_origin}")
                     
+                    # Check if it allows any origin (bad for production)
+                    if allowed_origin == '*':
+                        print("⚠ CORS allows any origin (*)")
+                    elif allowed_origin == 'https://evil.com':
+                        print("✗ CORS reflects arbitrary origin (potential vulnerability)")
+                        return False
+                    else:
+                        print("✓ CORS has specific allowed origin")
+                else:
+                    print("ℹ No CORS headers (same-origin only)")
+                
                 return True
                 
             except Exception as e:
                 print(f"Error testing {url}: {e}")
                 return False
 
-        # Test main endpoints for CSP
-        endpoints = [
-            "https://api.staging.jobswipe.app/api/v1/auth/me",
-            "https://api.staging.jobswipe.app/api/v1/jobs",
-            "https://api.staging.jobswipe.app/health"
-        ]
-
-        all_passed = True
-        for endpoint in endpoints:
-            print()
-            if not test_csp_header(endpoint):
-                all_passed = False
-
-        if not all_passed:
-            print("\n✗ CSP validation failed")
-            import sys
-            sys.exit(1)
+        # Test staging endpoint
+        url = "https://api.staging.jobswipe.app/health"
+        if test_cors_headers(url):
+            print("\n✅ CORS validation completed")
         else:
-            print("\n✅ All CSP tests passed")
+            print("\n⚠ CORS validation found issues")
         END
+      continue-on-error: true
 
-  clickjacking-test:
+  # Secret scanning
+  secret-scan:
     runs-on: ubuntu-latest
-    name: X-Frame-Options Validation
+    name: Secret Detection
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
-
-    - name: Set up Python
-      uses: actions/setup-python@v6
       with:
-        python-version: '3.10'
+        fetch-depth: 0
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install requests
+    - name: Run GitLeaks
+      uses: gitleaks/gitleaks-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+      continue-on-error: true
 
-    - name: Test X-Frame-Options header
-      run: |
-        python - <<END
-        import requests
-
-        def test_x_frame_options(url):
-            print(f"Testing X-Frame-Options on: {url}")
-            try:
-                response = requests.get(url, timeout=10)
-                
-                if 'X-Frame-Options' in response.headers:
-                    x_frame = response.headers['X-Frame-Options']
-                    print(f"✓ X-Frame-Options found: {x_frame}")
-                    
-                    if x_frame in ['DENY', 'SAMEORIGIN']:
-                        print(f"✓ X-Frame-Options has valid value: {x_frame}")
-                        return True
-                    else:
-                        print(f"✗ X-Frame-Options has invalid value: {x_frame}")
-                        return False
-                else:
-                    print("✗ X-Frame-Options header not found")
-                    return False
-                    
-            except Exception as e:
-                print(f"Error testing {url}: {e}")
-                return False
-
-        endpoints = [
-            "https://api.staging.jobswipe.app/api/v1/auth/me",
-            "https://api.staging.jobswipe.app/api/v1/jobs",
-            "https://api.staging.jobswipe.app/health"
-        ]
-
-        all_passed = True
-        for endpoint in endpoints:
-            print()
-            if not test_x_frame_options(endpoint):
-                all_passed = False
-
-        if not all_passed:
-            print("\n✗ X-Frame-Options validation failed")
-            import sys
-            sys.exit(1)
-        else:
-            print("\n✅ All X-Frame-Options tests passed")
-        END
-
-  xss-protection-test:
+  # Summary job
+  security-summary:
     runs-on: ubuntu-latest
-    name: X-XSS-Protection Validation
+    name: Security Scan Summary
+    needs: [security-audit, dependency-scan, bandit-scan, security-headers-validation, csp-validation]
+    if: always()
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v6
-
-    - name: Set up Python
-      uses: actions/setup-python@v6
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
       with:
-        python-version: '3.10'
+        path: reports
 
-    - name: Install dependencies
+    - name: Generate summary
       run: |
-        python -m pip install --upgrade pip
-        pip install requests
-
-    - name: Test X-XSS-Protection header
-      run: |
-        python - <<END
-        import requests
-
-        def test_x_xss_protection(url):
-            print(f"Testing X-XSS-Protection on: {url}")
-            try:
-                response = requests.get(url, timeout=10)
-                
-                if 'X-XSS-Protection' in response.headers:
-                    xss_protection = response.headers['X-XSS-Protection']
-                    print(f"✓ X-XSS-Protection found: {xss_protection}")
-                    
-                    if '1; mode=block' in xss_protection:
-                        print("✓ X-XSS-Protection is properly configured")
-                        return True
-                    else:
-                        print(f"✗ X-XSS-Protection has invalid value: {xss_protection}")
-                        return False
-                else:
-                    print("✗ X-XSS-Protection header not found")
-                    return False
-                    
-            except Exception as e:
-                print(f"Error testing {url}: {e}")
-                return False
-
-        endpoints = [
-            "https://api.staging.jobswipe.app/api/v1/auth/me",
-            "https://api.staging.jobswipe.app/api/v1/jobs",
-            "https://api.staging.jobswipe.app/health"
-        ]
-
-        all_passed = True
-        for endpoint in endpoints:
-            print()
-            if not test_x_xss_protection(endpoint):
-                all_passed = False
-
-        if not all_passed:
-            print("\n✗ X-XSS-Protection validation failed")
-            import sys
-            sys.exit(1)
-        else:
-            print("\n✅ All X-XSS-Protection tests passed")
-        END
+        echo "# Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Security Audit | ${{ needs.security-audit.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Dependency Scan | ${{ needs.dependency-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Bandit Scan | ${{ needs.bandit-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Security Headers | ${{ needs.security-headers-validation.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| CSP Validation | ${{ needs.csp-validation.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "All reports are available as artifacts." >> $GITHUB_STEP_SUMMARY

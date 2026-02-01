@@ -500,6 +500,136 @@ except KeyError:
     )
 
 # ============================================================
+# Custom Business KPI Metrics
+# ============================================================
+try:
+    jobs_processed_per_day = REGISTRY._names_to_collectors["jobs_processed_per_day"]
+except KeyError:
+    jobs_processed_per_day = Gauge(
+        "jobs_processed_per_day",
+        "Number of jobs processed per day",
+        ["source"],  # greenhouse, lever, rss, manual
+    )
+
+try:
+    applications_sent_per_day = REGISTRY._names_to_collectors["applications_sent_per_day"]
+except KeyError:
+    applications_sent_per_day = Gauge(
+        "applications_sent_per_day",
+        "Number of applications sent per day",
+        ["method", "status"],  # manual, auto; success, failed
+    )
+
+try:
+    application_success_rate = REGISTRY._names_to_collectors["application_success_rate"]
+except KeyError:
+    application_success_rate = Gauge(
+        "application_success_rate",
+        "Success rate of job applications (0-1)",
+    )
+
+try:
+    job_match_quality_score = REGISTRY._names_to_collectors["job_match_quality_score"]
+except KeyError:
+    job_match_quality_score = Gauge(
+        "job_match_quality_score",
+        "Average job match quality score (0-1)",
+        ["category"],  # tech, healthcare, education, etc.
+    )
+
+try:
+    user_engagement_score = REGISTRY._names_to_collectors["user_engagement_score"]
+except KeyError:
+    user_engagement_score = Gauge(
+        "user_engagement_score",
+        "Average user engagement score (0-1)",
+        ["user_segment"],  # new, active, inactive
+    )
+
+try:
+    application_conversion_rate = REGISTRY._names_to_collectors["application_conversion_rate"]
+except KeyError:
+    application_conversion_rate = Gauge(
+        "application_conversion_rate",
+        "Rate of job matches converted to applications (0-1)",
+    )
+
+# ============================================================
+# Application Performance Metrics
+# ============================================================
+try:
+    api_request_latency_p95 = REGISTRY._names_to_collectors["api_request_latency_p95_seconds"]
+except KeyError:
+    api_request_latency_p95 = Gauge(
+        "api_request_latency_p95_seconds",
+        "95th percentile API request latency in seconds",
+        ["endpoint"],
+    )
+
+try:
+    api_request_latency_p99 = REGISTRY._names_to_collectors["api_request_latency_p99_seconds"]
+except KeyError:
+    api_request_latency_p99 = Gauge(
+        "api_request_latency_p99_seconds",
+        "99th percentile API request latency in seconds",
+        ["endpoint"],
+    )
+
+try:
+    database_query_latency_p95 = REGISTRY._names_to_collectors["database_query_latency_p95_seconds"]
+except KeyError:
+    database_query_latency_p95 = Gauge(
+        "database_query_latency_p95_seconds",
+        "95th percentile database query latency in seconds",
+        ["query_type"],  # select, insert, update, delete
+    )
+
+try:
+    database_query_latency_p99 = REGISTRY._names_to_collectors["database_query_latency_p99_seconds"]
+except KeyError:
+    database_query_latency_p99 = Gauge(
+        "database_query_latency_p99_seconds",
+        "99th percentile database query latency in seconds",
+        ["query_type"],  # select, insert, update, delete
+    )
+
+try:
+    redis_operation_latency_p95 = REGISTRY._names_to_collectors["redis_operation_latency_p95_seconds"]
+except KeyError:
+    redis_operation_latency_p95 = Gauge(
+        "redis_operation_latency_p95_seconds",
+        "95th percentile Redis operation latency in seconds",
+        ["operation"],  # get, set, delete
+    )
+
+try:
+    redis_operation_latency_p99 = REGISTRY._names_to_collectors["redis_operation_latency_p99_seconds"]
+except KeyError:
+    redis_operation_latency_p99 = Gauge(
+        "redis_operation_latency_p99_seconds",
+        "99th percentile Redis operation latency in seconds",
+        ["operation"],  # get, set, delete
+    )
+
+try:
+    celery_task_latency_p95 = REGISTRY._names_to_collectors["celery_task_latency_p95_seconds"]
+except KeyError:
+    celery_task_latency_p95 = Gauge(
+        "celery_task_latency_p95_seconds",
+        "95th percentile Celery task latency in seconds",
+        ["task_name"],
+    )
+
+try:
+    celery_task_latency_p99 = REGISTRY._names_to_collectors["celery_task_latency_p99_seconds"]
+except KeyError:
+    celery_task_latency_p99 = Gauge(
+        "celery_task_latency_p99_seconds",
+        "99th percentile Celery task latency in seconds",
+        ["task_name"],
+    )
+
+# ============================================================
 # Request Queue Metrics
 # ============================================================
 try:

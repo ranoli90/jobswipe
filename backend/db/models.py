@@ -408,3 +408,107 @@ class ApiKeyUsageLog(Base):
 
     # Relationships
     api_key = relationship("ApiKey")
+
+
+# ==================== GDPR/CCPA Compliance Models ====================
+
+class UserConsent(Base):
+    """User consent tracking for GDPR and CCPA compliance"""
+
+    __tablename__ = "user_consents"
+    __table_args__ = ({"extend_existing": True},)
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    consent_type = Column(String, nullable=False, index=True)  # e.g., 'marketing', 'analytics', 'third_party_sharing'
+    status = Column(String, nullable=False)  # 'granted', 'revoked', 'pending'
+    granted_at = Column(DateTime, nullable=True)
+    revoked_at = Column(DateTime, nullable=True)
+    ip_address = Column(String, nullable=True)
+    user_agent = Column(String, nullable=True)
+    consent_version = Column(String, default="1.0")  # Version of terms/privacy policy
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    user = relationship("User")
+
+
+class DataExportRequest(Base):
+    """Data export request tracking for GDPR Article 20 (Right to data portability)"""
+
+    __tablename__ = "data_export_requests"
+    __table_args__ = ({"extend_existing": True},)
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    status = Column(String, nullable=False, index=True)  # 'pending', 'processing', 'completed', 'failed', 'expired'
+    format = Column(String, default="json")  # Export format
+    export_data = Column(Text, nullable=True)  # JSON string of exported data
+    requested_at = Column(DateTime, default=datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
+    expires_at = Column(DateTime, nullable=True)  # When the export link expires
+    downloaded_at = Column(DateTime, nullable=True)  # When user downloaded the data
+    ip_address = Column(String, nullable=True)
+    user_agent = Column(String, nullable=True)
+    error_message = Column(Text, nullable=True)
+
+    # Relationships
+    user = relationship("User")
+
+
+class DataDeletionRequest(Base):
+    """Data deletion request tracking for GDPR Article 17 (Right to erasure) and CCPA"""
+
+    __tablename__ = "data_deletion_requests"
+    __table_args__ = ({"extend_existing": True},)
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    status = Column(String, nullable=False, index=True)  # 'pending', 'processing', 'completed', 'failed'
+    reason = Column(Text, nullable=True)  # Optional reason provided by user
+    requested_at = Column(DateTime, default=datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
+    grace_period_end = Column(DateTime, nullable=True)  # When grace period expires
+    ip_address = Column(String, nullable=True)
+    user_agent = Column(String, nullable=True)
+    error_message = Column(Text, nullable=True)
+
+    # Relationships
+    user = relationship("User")
+
+
+class ComplianceAuditLog(Base):
+    """Audit log for compliance-related actions (GDPR/CCPA)"""
+
+    __tablename__ = "compliance_audit_logs"
+    __table_args__ = ({"extend_existing": True},)
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True)  # Nullable for system actions
+    action = Column(String, nullable=False, index=True)  # e.g., 'data_export_requested', 'data_deletion_completed'
+    details = Column(JSON, nullable=True)  # Additional details about the action
+    ip_address = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+    # Relationships
+    user = relationship("User")
+
+
+class CookieConsent(Base):
+    """Cookie consent preferences for GDPR compliance"""
+
+    __tablename__ = "cookie_consents"
+    __table_args__ = ({"extend_existing": True},)
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True, index=True)  # Nullable for anonymous users
+    session_id = Column(String, nullable=True, index=True)  # For non-logged in users
+    essential = Column(Boolean, default=True)  # Always required
+    analytics = Column(Boolean, default=False)
+    marketing = Column(Boolean, default=False)
+    preferences = Column(Boolean, default=False)
+    do_not_track = Column(Boolean, default=False)  # Respect DNT header
+    ip_address = Column(String, nullable=True)
+    user_agent = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

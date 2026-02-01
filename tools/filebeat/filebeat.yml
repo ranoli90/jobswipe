@@ -1,0 +1,80 @@
+filebeat.inputs:
+- type: log
+  enabled: true
+  paths:
+    - /var/log/jobswipe/*.log
+  fields:
+    service: jobswipe
+    environment: ${ENVIRONMENT:development}
+  fields_under_root: true
+  multiline.pattern: '^\d{4}-\d{2}-\d{2}'
+  multiline.negate: true
+  multiline.match: after
+  
+- type: container
+  enabled: true
+  paths:
+    - '/var/lib/docker/containers/*/*.log'
+  processors:
+    - add_docker_metadata:
+        host: "unix:///var/run/docker.sock"
+    - decode_json_fields:
+        fields: ["message"]
+        target: ""
+        overwrite_keys: true
+        when:
+          regexp:
+            message: '^\{'
+
+filebeat.modules:
+- module: system
+  syslog:
+    enabled: true
+  auth:
+    enabled: true
+
+processors:
+  - add_host_metadata:
+      when.not.contains.tags: forwarded
+  - add_cloud_metadata: ~
+  - add_docker_metadata: ~
+  - add_kubernetes_metadata: ~
+
+# Output to Logstash
+output.logstash:
+  hosts: ["${LOGSTASH_HOST:logstash:5044}"]
+  
+  # Optional SSL/TLS settings for production
+  # ssl.enabled: ${LOGSTASH_SSL:false}
+  # ssl.certificate_authorities: ["/etc/filebeat/ca.crt"]
+  # ssl.certificate: "/etc/filebeat/client.crt"
+  # ssl.key: "/etc/filebeat/client.key"
+
+# Output to Elasticsearch directly (alternative to Logstash)
+# output.elasticsearch:
+#   hosts: ["${ELASTICSEARCH_HOSTS:elasticsearch:9200}"]
+#   username: "${ELASTICSEARCH_USERNAME:}"
+#   password: "${ELASTICSEARCH_PASSWORD:}"
+#   index: "filebeat-%{[agent.version]}-%{+yyyy.MM.dd}"
+
+# Logging configuration
+logging.level: ${FILEBEAT_LOG_LEVEL:info}
+logging.to_files: ${FILEBEAT_LOG_TO_FILES:true}
+logging.files:
+  path: /var/log/filebeat
+  name: filebeat
+  keepfiles: 7
+  permissions: 0644
+
+# Monitoring
+monitoring.enabled: ${FILEBEAT_MONITORING_ENABLED:false}
+monitoring.elasticsearch:
+  hosts: ["${ELASTICSEARCH_HOSTS:elasticsearch:9200}"]
+  username: "${ELASTICSEARCH_USERNAME:}"
+  password: "${ELASTICSEARCH_PASSWORD:}"
+
+# Setup
+setup.kibana:
+  host: "${KIBANA_HOST:kibana:5601}"
+
+setup.dashboards.enabled: ${FILEBEAT_SETUP_DASHBOARDS:false}

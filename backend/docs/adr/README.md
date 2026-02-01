@@ -24,6 +24,11 @@ Each ADR follows the format:
 | [ADR-001](ADR-001-choose-fastapi.md) | Choose FastAPI as Web Framework | Accepted | 2024-01 |
 | [ADR-002](ADR-002-choose-postgresql.md) | Choose PostgreSQL as Primary Database | Accepted | 2024-01 |
 | [ADR-003](ADR-003-jwt-authentication.md) | Use JWT for API Authentication | Accepted | 2024-01 |
+| [ADR-004](ADR-004-rate-limiting.md) | Dynamic Rate Limiting Strategy | Accepted | 2024-01 |
+| [ADR-005](ADR-005-message-queue.md) | Use Celery with Redis for Background Task Processing | Accepted | 2024-01 |
+| [ADR-006](ADR-006-logging-strategy.md) | ELK Stack for Structured Logging | Accepted | 2024-01 |
+| [ADR-007](ADR-007-backup-strategy.md) | Backup and Point-in-Time Recovery (PITR) Strategy | Accepted | 2024-01 |
+| [ADR-008](ADR-008-monitoring.md) | Monitoring and Observability Strategy | Accepted | 2024-01 |
 
 ## Creating New ADRs
 
