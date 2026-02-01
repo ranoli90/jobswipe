@@ -5,6 +5,7 @@ Provides access to OpenAI API for job matching and semantic analysis.
 
 import logging
 import os
+import re
 from datetime import datetime
 from typing import Dict, List, Optional
 
@@ -57,6 +58,23 @@ client = get_client()
 
 class OpenAIService:
     """Service for interacting with OpenAI API"""
+
+    @staticmethod
+    def _sanitize_prompt(prompt: str) -> str:
+        """
+        Sanitize user-provided prompts to remove role indicators and prevent prompt injection.
+
+        Args:
+            prompt: The user-provided prompt.
+
+        Returns:
+            The sanitized prompt.
+        """
+        if not isinstance(prompt, str):
+            return ""
+        # Remove role indicators (e.g., "system:", "user:", "assistant:")
+        prompt = re.sub(r"^\s*(system|user|assistant):", "", prompt, flags=re.IGNORECASE | re.MULTILINE)
+        return prompt
 
     @staticmethod
     def is_available() -> bool:
@@ -230,25 +248,27 @@ class OpenAIService:
     @staticmethod
     def _create_match_analysis_prompt(profile: Dict, job_description: str) -> str:
         """Create prompt for job match analysis"""
-        profile_text = OpenAIService._profile_to_text(profile)
+        profile_text = OpenAIService._sanitize_prompt(OpenAIService._profile_to_text(profile))
+        sanitized_job_description = OpenAIService._sanitize_prompt(job_description)
+
 
         prompt = (
-            f"Analyze the job fit between this candidate and the job description below.\n\n"
-            f"## Candidate Profile:\n{profile_text}\n\n"
-            f"## Job Description:\n{job_description}\n\n"
-            f"Please provide:\n"
-            f"1. A numerical match score between 0 and 1\n"
-            f"2. Detailed analysis of the match\n"
-            f"3. List of matched skills\n"
-            f"4. List of missing or underrepresented skills\n"
-            f"5. Recommendations for the candidate\n\n"
-            f"Please format your response in JSON with the following structure:\n"
-            f"{{\n"
-            f'  "score": 0.85,\n'
-            f'  "analysis": "Detailed analysis of the match...",\n'
-            f'  "matched_skills": ["Python", "FastAPI", "PostgreSQL"],\n'
-            f'  "missing_skills": ["React", "Node.js"],\n'
-            f'  "recommendations": ["Learn React basics", "Build a Node.js project"]\n'
+            f"Analyze the job fit between this candidate and the job description below.\\n\\n"
+            f"## Candidate Profile:\\n{profile_text}\\n\\n"
+            f"## Job Description:\\n{sanitized_job_description}\\n\\n"
+            f"Please provide:\\n"
+            f"1. A numerical match score between 0 and 1\\n"
+            f"2. Detailed analysis of the match\\n"
+            f"3. List of matched skills\\n"
+            f"4. List of missing or underrepresented skills\\n"
+            f"5. Recommendations for the candidate\\n\\n"
+            f"Please format your response in JSON with the following structure:\\n"
+            f"{{\\n"
+            f'  "score": 0.85,\\n'
+            f'  "analysis": "Detailed analysis of the match...",\\n'
+            f'  "matched_skills": ["Python", "FastAPI", "PostgreSQL"],\\n'
+            f'  "missing_skills": ["React", "Node.js"],\\n'
+            f'  "recommendations": ["Learn React basics", "Build a Node.js project"]\\n'
             f"}}"
         )
 
@@ -303,15 +323,16 @@ class OpenAIService:
             }
 
         try:
+            sanitized_job_description = OpenAIService._sanitize_prompt(job_description)
             prompt = (
-                f"Extract structured information from this job description:\n\n"
-                f"{job_description}\n\n"
-                f"Please extract:\n"
-                f"1. Required and preferred skills\n"
-                f"2. Technologies and tools mentioned\n"
-                f"3. Key responsibilities\n"
-                f"4. Minimum requirements (education, experience)\n"
-                f"\nFormat your response as JSON."
+                f"Extract structured information from this job description:\\n\\n"
+                f"{sanitized_job_description}\\n\\n"
+                f"Please extract:\\n"
+                f"1. Required and preferred skills\\n"
+                f"2. Technologies and tools mentioned\\n"
+                f"3. Key responsibilities\\n"
+                f"4. Minimum requirements (education, experience)\\n"
+                f"\\nFormat your response as JSON."
             )
 
             response = client.chat.completions.create(
@@ -366,6 +387,8 @@ class OpenAIService:
 
         try:
             _client = get_client()
+            # Sanitize the prompt to prevent injection
+            sanitized_prompt = OpenAIService._sanitize_prompt(prompt)
             # Use Ollama model for cost-free operation, with optional overrides
             effective_model = model if model else OLLAMA_MODEL
             effective_temp = (
@@ -380,7 +403,7 @@ class OpenAIService:
                         "role": "system",
                         "content": "You are a helpful assistant that provides clear, concise, and accurate responses.",
                     },
-                    {"role": "user", "content": prompt},
+                    {"role": "user", "content": sanitized_prompt},
                 ],
                 temperature=effective_temp,
                 max_tokens=effective_max_tokens,
