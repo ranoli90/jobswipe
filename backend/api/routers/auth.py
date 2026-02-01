@@ -41,9 +41,11 @@ ALGORITHM = settings.algorithm
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.access_token_expire_minutes
 
 pwd_context = CryptContext(
-    schemes=["pbkdf2-sha256", "argon2"],
+    schemes=["argon2", "pbkdf2-sha256"],
     deprecated="auto",
-    pbkdf2_sha256__rounds=settings.pbkdf2_rounds,
+    argon2__time_cost=2,
+    argon2__memory_cost=102400,
+    argon2__parallelism=8,
 )
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
@@ -259,6 +261,9 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
                 created_at=new_user.created_at,
             ),
         )
+    except HTTPException as e:
+        # Re-raise HTTP exceptions without modification
+        raise
     except ValueError as e:
         logger.error("Registration validation error: %s", str(e))
         raise HTTPException(
@@ -394,6 +399,9 @@ async def login(
                 id=str(user.id), email=user.email, created_at=user.created_at
             ),
         )
+    except HTTPException as e:
+        # Re-raise HTTP exceptions without modification
+        raise
     except ValueError as e:
         logger.error("Login authentication error: %s", str(e))
         raise HTTPException(

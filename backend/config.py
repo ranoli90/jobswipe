@@ -65,8 +65,7 @@ class Settings(BaseSettings):
     ollama_temperature: float = Field(default=0.1, env="OLLAMA_TEMPERATURE")
     ollama_max_tokens: int = Field(default=2000, env="OLLAMA_MAX_TOKENS")
 
-    # API Keys for internal services - now optional with auto-generated secure defaults
-    # These will generate secure random values if not set, allowing the app to start
+    # API Keys for internal services - must be explicitly set in production
     analytics_api_key: str = Field(default=generate_secure_key(), env="ANALYTICS_API_KEY")
     ingestion_api_key: str = Field(default=generate_secure_key(), env="INGESTION_API_KEY")
     deduplication_api_key: str = Field(default=generate_secure_key(), env="DEDUPLICATION_API_KEY")

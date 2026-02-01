@@ -43,6 +43,25 @@ class AuthRegisterRequested extends AuthEvent {
 
 class AuthLogoutRequested extends AuthEvent {}
 
+class AuthForgotPasswordRequested extends AuthEvent {
+  final String email;
+
+  const AuthForgotPasswordRequested(this.email);
+
+  @override
+  List<Object?> get props => [email];
+}
+
+class AuthResetPasswordRequested extends AuthEvent {
+  final String token;
+  final String newPassword;
+
+  const AuthResetPasswordRequested(this.token, this.newPassword);
+
+  @override
+  List<Object?> get props => [token, newPassword];
+}
+
 class AuthUserUpdated extends AuthEvent {
   final User user;
 
@@ -93,6 +112,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthLoginRequested>(_onAuthLoginRequested);
     on<AuthRegisterRequested>(_onAuthRegisterRequested);
     on<AuthLogoutRequested>(_onAuthLogoutRequested);
+    on<AuthForgotPasswordRequested>(_onAuthForgotPasswordRequested);
+    on<AuthResetPasswordRequested>(_onAuthResetPasswordRequested);
     on<AuthUserUpdated>(_onAuthUserUpdated);
   }
 
@@ -145,6 +166,36 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       );
       final user = User.fromJson(userData);
       emit(AuthAuthenticated(user));
+    } catch (error) {
+      emit(AuthError(error.toString()));
+    }
+  }
+
+  Future<void> _onAuthForgotPasswordRequested(
+    AuthForgotPasswordRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(AuthLoading());
+    try {
+      await _authRepository.forgotPassword(email: event.email);
+      // No state change needed - just show success message
+      emit(AuthInitial());
+    } catch (error) {
+      emit(AuthError(error.toString()));
+    }
+  }
+
+  Future<void> _onAuthResetPasswordRequested(
+    AuthResetPasswordRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(AuthLoading());
+    try {
+      await _authRepository.resetPassword(
+        token: event.token,
+        newPassword: event.newPassword,
+      );
+      emit(AuthInitial());
     } catch (error) {
       emit(AuthError(error.toString()));
     }

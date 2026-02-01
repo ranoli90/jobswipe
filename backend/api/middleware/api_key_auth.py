@@ -97,7 +97,7 @@ class ApiKeyAuthMiddleware(BaseHTTPMiddleware):
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 content={
                     "error": "Missing API key",
-                    "message": "X-API-Key header is required for this endpoint",
+                    "message": "X-API-Key header or Authorization: Bearer <key> header is required for this endpoint",
                 },
             )
 
@@ -182,6 +182,7 @@ class ApiKeyAuthMiddleware(BaseHTTPMiddleware):
             return response
 
         except Exception as e:
+            logger.error("API key authentication error: %s", str(e))
             return JSONResponse(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 content={

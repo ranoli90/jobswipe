@@ -86,11 +86,11 @@ def ingest_jobs_from_source(self, source_name: str):
                 continue
 
         db.commit()
-        logger.info("Ingested %s jobs from %s", ('jobs_ingested', 'source_name'))
+        logger.info("Ingested %s jobs from %s", jobs_ingested, source_name)
         return {"status": "success", "jobs_ingested": jobs_ingested}
 
     except Exception as e:
-        logger.error("Failed to ingest jobs from %s: %s", ('source_name', 'e'))
+        logger.error("Failed to ingest jobs from %s: %s", source_name, e)
         raise self.retry(exc=e)
     finally:
         db.close()

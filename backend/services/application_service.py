@@ -12,7 +12,7 @@ from typing import Optional
 
 from backend.db.database import SessionLocal
 from backend.db.models import (ApplicationAuditLog, ApplicationTask,
-                               CandidateProfile, Job)
+                               CandidateProfile, Job, User)
 from backend.workers.application_agent.agents.greenhouse import (
     ApplicationLogger, GreenhouseAgent, LeverAgent)
 
@@ -148,13 +148,17 @@ async def run_application_task(task_id: str, db=None):
         success = False
         error = None
 
-        logger.debug("DEBUG: job.source = '%s', type = %s", getattr(job, 'source', 'NONE'), type(getattr(job, 'source', 'NONE')))
+
+        # Get user email from user model
+        user = db.query(User).filter(User.id == task.user_id).first()
+        user_email = user.email if user else "test@example.com"
+        
         if job.source == "greenhouse":
             success, error = await GreenhouseAgent.apply(
                 job.apply_url,
                 {
                     "full_name": profile.full_name,
-                    "email": "test@example.com",  # Need to get from user model
+                    "email": user_email,
                     "phone": profile.phone,
                     "location": profile.location,
                 },
@@ -183,7 +187,7 @@ async def run_application_task(task_id: str, db=None):
                 job.apply_url,
                 {
                     "full_name": profile.full_name,
-                    "email": "test@example.com",
+                    "email": user_email,
                     "phone": profile.phone,
                     "location": profile.location,
                 },

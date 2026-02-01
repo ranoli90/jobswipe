@@ -61,7 +61,16 @@ def email_validator():
             raise ValueError("Email must be between 1 and 255 characters")
         # Sanitize first
         v = sanitize_string(v)
-        if not re.match(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", v):
+        # Use improved regex for email validation
+        email_regex = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+        if not re.match(email_regex, v):
+            raise ValueError("Invalid email format")
+        # Additional checks for common invalid patterns
+        if ".." in v:
+            raise ValueError("Invalid email format")
+        if v.startswith("-") or v.endswith("-"):
+            raise ValueError("Invalid email format")
+        if v.startswith(".") or v.endswith("."):
             raise ValueError("Invalid email format")
         return v
 

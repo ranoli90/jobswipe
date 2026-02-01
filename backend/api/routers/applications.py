@@ -55,7 +55,7 @@ class ApplicationAuditLogResponse(BaseModel):
     def from_orm(cls, audit_log):
         obj = super().from_orm(audit_log)
         # Add success field based on step type
-        obj.success = not audit_log.step.lower().contains("error")
+        obj.success = "error" not in audit_log.step.lower()
         return obj
 
 

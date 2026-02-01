@@ -24,9 +24,8 @@ MODEL_NAME = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")  # Fast and free m
 CACHE_DIR = os.getenv("MODEL_CACHE_DIR", "./models")
 
 # Redis for caching embeddings
-redis_client = redis.Redis(
-    host=os.getenv("REDIS_HOST", "redis"), port=6379, decode_responses=True
-)
+from backend.config import settings
+redis_client = redis.from_url(settings.redis_url, decode_responses=True)
 
 
 class EmbeddingService:
@@ -146,37 +145,8 @@ class EmbeddingService:
     @staticmethod
     def _profile_to_text(profile: Dict) -> str:
         """Convert profile dictionary to text for embedding"""
-        parts = []
-
-        if profile.get("full_name"):
-            parts.append(f"Name: {profile['full_name']}")
-
-        if profile.get("headline"):
-            parts.append(f"Headline: {profile['headline']}")
-
-        if profile.get("skills"):
-            skills_text = ", ".join(profile["skills"])
-            parts.append(f"Skills: {skills_text}")
-
-        if profile.get("work_experience"):
-            experience_text = [
-                f"{exp['position']} at {exp['company']}"
-                for exp in profile["work_experience"]
-                if exp.get("position") and exp.get("company")
-            ]
-            if experience_text:
-                parts.append(f"Experience: {', '.join(experience_text)}")
-
-        if profile.get("education"):
-            education_text = [
-                f"{edu['degree']} from {edu['school']}"
-                for edu in profile["education"]
-                if edu.get("degree") and edu.get("school")
-            ]
-            if education_text:
-                parts.append(f"Education: {', '.join(education_text)}")
-
-        return "\n".join(parts)
+        from backend.services.text_processing import profile_to_text
+        return profile_to_text(profile)
 
     @staticmethod
     async def calculate_semantic_similarity(

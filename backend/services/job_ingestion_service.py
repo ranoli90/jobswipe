@@ -237,7 +237,7 @@ class JobIngestionService:
                     continue
 
                 all_jobs.extend(jobs)
-                logger.info("Ingested %s jobs from %s", ('len(jobs)', 'source'))
+                logger.info("Ingested %s jobs from %s", len(jobs), source)
 
             except Exception as e:
                 logger.error("Error ingesting jobs from %s: %s", ('source', 'e'))

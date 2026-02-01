@@ -337,7 +337,7 @@ async def swipe_job(
 
     # Create interaction record
     interaction = UserJobInteraction(
-        user_id=current_user.id, job_id=job_id, action=swipe_data.action
+        user_id=current_user.id, job_id=job_uuid, action=swipe_data.action
     )
 
     db.add(interaction)
