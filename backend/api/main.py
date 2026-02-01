@@ -45,6 +45,7 @@ try:
     from backend.api.middleware.input_sanitization import \
         InputSanitizationMiddleware
     from backend.api.middleware.output_encoding import OutputEncodingMiddleware
+    from backend.api.middleware.security_headers import SecurityHeadersMiddleware
     from metrics import MetricsMiddleware, metrics_endpoint
     from tracing import setup_tracing
     middleware_available = True
@@ -303,6 +304,7 @@ app.add_middleware(CorrelationIdMiddleware)
 
 # Add security middleware (only if available)
 if middleware_available:
+    app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(InputSanitizationMiddleware)
     app.add_middleware(OutputEncodingMiddleware)
     

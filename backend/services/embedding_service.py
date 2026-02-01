@@ -72,7 +72,7 @@ class EmbeddingService:
             return []
 
         # Create cache key
-        cache_key = f"job_embedding:{hashlib.md5(job_description.encode()).hexdigest()}"
+        cache_key = f"job_embedding:{hashlib.md5(job_description.encode(), usedforsecurity=False).hexdigest()}"
         try:
             cached = redis_client.get(cache_key)
             if cached:
@@ -116,7 +116,7 @@ class EmbeddingService:
         profile_text = EmbeddingService._profile_to_text(profile)
         # Create cache key
         cache_key = (
-            f"profile_embedding:{hashlib.md5(profile_text.encode()).hexdigest()}"
+            f"profile_embedding:{hashlib.md5(profile_text.encode(), usedforsecurity=False).hexdigest()}"
         )
         try:
             cached = redis_client.get(cache_key)
