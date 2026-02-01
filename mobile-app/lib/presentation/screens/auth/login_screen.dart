@@ -178,8 +178,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your password';
                       }
-                      if (value.length < 6) {
-                        return 'Password must be at least 6 characters';
+                      if (value.length < 8) {
+                        return 'Password must be at least 8 characters';
                       }
                       return null;
                     },
@@ -234,55 +234,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                     ),
                   ),
-                  const SizedBox(height: AppTokens.spacingLg),
-
-                  // Divider
-                  Row(
-                    children: [
-                      const Expanded(child: Divider()),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppTokens.spacingMd,
-                        ),
-                        child: Text(
-                          'or continue with',
-                          style: AppTypography.bodyMedium.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                      const Expanded(child: Divider()),
-                    ],
-                  ),
-                  const SizedBox(height: AppTokens.spacingLg),
-
-                  // Social login buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildSocialButton(
-                        icon: Icons.g_mobiledata,
-                        label: 'Google',
-                        onTap: () {
-                          // TODO: Implement Google OAuth
-                        },
-                      ),
-                      _buildSocialButton(
-                        icon: Icons.facebook,
-                        label: 'Facebook',
-                        onTap: () {
-                          // TODO: Implement Facebook OAuth
-                        },
-                      ),
-                      _buildSocialButton(
-                        icon: Icons.apple,
-                        label: 'Apple',
-                        onTap: () {
-                          // TODO: Implement Apple OAuth
-                        },
-                      ),
-                    ],
-                  ),
                   const SizedBox(height: AppTokens.spacingXl),
 
                   // Sign up link
@@ -312,39 +263,6 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildSocialButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppTokens.spacingLg,
-          vertical: AppTokens.spacingMd,
-        ),
-        decoration: BoxDecoration(
-          border: Border.all(color: AppColors.divider),
-          borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, size: 24),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

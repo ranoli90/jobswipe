@@ -345,7 +345,7 @@ async def swipe_job(
 
     # If swiping right, create application task
     if swipe_data.action == "right":
-        from services.application_service import create_application_task
+        from backend.services.application_service import create_application_task
 
         await create_application_task(
             user_id=str(current_user.id), job_id=str(job_id), db=db

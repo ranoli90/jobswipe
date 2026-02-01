@@ -240,10 +240,9 @@ class NotificationService:
             if start_time <= end_time:
                 # Same day range
                 return start_time <= now <= end_time
-            
 
-            # Overnight range
-                return now >= start_time or now <= end_time
+            # Overnight range (e.g., 22:00 to 07:00)
+            return now >= start_time or now <= end_time
         except Exception as e:
             logger.error("Error checking quiet hours: %s", e)
             return False

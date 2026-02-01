@@ -16,8 +16,8 @@ def generate_secure_key():
 
 class Settings(BaseSettings):
 
-    # Environment
-    environment: str = Field(default="development", env="ENVIRONMENT")
+    # Environment - CRITICAL: Require explicit production setting
+    environment: str = Field(..., env="ENVIRONMENT", pattern="^(development|staging|production)$")
     debug: bool = Field(default=False, env="DEBUG")
 
     # Database - now optional with SQLite fallback for testing
@@ -32,8 +32,8 @@ class Settings(BaseSettings):
         default=DEFAULT_REDIS_URL, env="CELERY_RESULT_BACKEND"
     )
 
-    # JWT - now optional with auto-generated keys
-    secret_key: str = Field(default=generate_secure_key(), env="SECRET_KEY")
+    # JWT - CRITICAL: Must be explicitly set in production
+    secret_key: str = Field(..., env="SECRET_KEY")
     algorithm: str = Field(default="HS256", env="ALGORITHM")
     access_token_expire_minutes: int = Field(
         default=60, env="ACCESS_TOKEN_EXPIRE_MINUTES"
@@ -43,12 +43,12 @@ class Settings(BaseSettings):
     # Password hashing
     pbkdf2_rounds: int = Field(default=1200000, env="PBKDF2_ROUNDS")
 
-    # OAuth2 State - now optional with auto-generated secret
-    oauth_state_secret: str = Field(default=generate_secure_key(), env="OAUTH_STATE_SECRET")
+    # OAuth2 State - CRITICAL: Must be explicitly set in production
+    oauth_state_secret: str = Field(..., env="OAUTH_STATE_SECRET")
 
-    # Encryption - now optional with auto-generated values
-    encryption_password: str = Field(default=generate_secure_key(), env="ENCRYPTION_PASSWORD")
-    encryption_salt: str = Field(default=generate_secure_key(), env="ENCRYPTION_SALT")
+    # Encryption - CRITICAL: Must be explicitly set in production
+    encryption_password: str = Field(..., env="ENCRYPTION_PASSWORD")
+    encryption_salt: str = Field(..., env="ENCRYPTION_SALT")
 
     # Vault - now optional with default empty value
     vault_url: str = Field(default="http://vault:8200", env="VAULT_URL")
@@ -65,14 +65,20 @@ class Settings(BaseSettings):
     ollama_temperature: float = Field(default=0.1, env="OLLAMA_TEMPERATURE")
     ollama_max_tokens: int = Field(default=2000, env="OLLAMA_MAX_TOKENS")
 
-    # API Keys for internal services - must be explicitly set in production
-    analytics_api_key: str = Field(default=generate_secure_key(), env="ANALYTICS_API_KEY")
-    ingestion_api_key: str = Field(default=generate_secure_key(), env="INGESTION_API_KEY")
-    deduplication_api_key: str = Field(default=generate_secure_key(), env="DEDUPLICATION_API_KEY")
-    categorization_api_key: str = Field(default=generate_secure_key(), env="CATEGORIZATION_API_KEY")
-    automation_api_key: str = Field(default=generate_secure_key(), env="AUTOMATION_API_KEY")
+    # API Keys for internal services - CRITICAL: Must be explicitly set in production
+    analytics_api_key: str = Field(..., env="ANALYTICS_API_KEY")
+    ingestion_api_key: str = Field(..., env="INGESTION_API_KEY")
+    deduplication_api_key: str = Field(..., env="DEDUPLICATION_API_KEY")
+    categorization_api_key: str = Field(..., env="CATEGORIZATION_API_KEY")
+    automation_api_key: str = Field(..., env="AUTOMATION_API_KEY")
 
-    # Logging
+    # Apple Push Notification Service
+    apple_key_id: str = Field(..., env="APPLE_KEY_ID")
+    apple_team_id: str = Field(..., env="APPLE_TEAM_ID")
+    apple_bundle_id: str = Field(..., env="APPLE_BUNDLE_ID")
+    apple_private_key: str = Field(..., env="APPLE_PRIVATE_KEY")
+
+    # Firebase Cloud Messaging
     log_level: str = Field(default="INFO", env="LOG_LEVEL")
     log_file: str = Field(default="logs/app.log", env="LOG_FILE")
     log_max_size: int = Field(default=10485760, env="LOG_MAX_SIZE")
@@ -211,21 +217,30 @@ try:
     logger = logging.getLogger(__name__)
     env = os.getenv("ENVIRONMENT", "development")
     if env == "production":
-        logger.warning("Environment variables check:")
-        for var in ["VAULT_TOKEN", "ANALYTICS_API_KEY", "INGESTION_API_KEY", "DEDUPLICATION_API_KEY", "CATEGORIZATION_API_KEY", "AUTOMATION_API_KEY"]:
-            value = os.getenv(var)
-            if value:
-                logger.warning(f"{var}: set (length {len(value)})")
-            else:
-                logger.warning(f"{var}: not set")
+        # Log generically without exposing which secrets are set
+        logger.warning("Checking required environment variables for production")
+        all_set = True
+        required_vars = ["SECRET_KEY", "ENCRYPTION_PASSWORD", "OAUTH_STATE_SECRET"]
+        for var in required_vars:
+            if not os.getenv(var):
+                all_set = False
+                break
+        if not all_set:
+            logger.error("Some required environment variables are not set")
     settings = Settings()
 except Exception as e:
     import logging
     logging.basicConfig(level=logging.ERROR)
     logger = logging.getLogger(__name__)
     logger.error(f"Failed to load settings: {e}")
-    logger.error("Environment variables check:")
-    for key in ["DATABASE_URL", "SECRET_KEY", "ENCRYPTION_PASSWORD", "ENCRYPTION_SALT", "OAUTH_STATE_SECRET"]:
-        value = os.getenv(key)
-        logger.error(f"  {key}: {'SET' if value else 'NOT SET'}")
+    logger.error("Checking required environment variables...")
+    # Log generically without exposing which specific secrets are set
+    missing_vars = []
+    for key in ["DATABASE_URL", "SECRET_KEY", "ENCRYPTION_PASSWORD", "OAUTH_STATE_SECRET"]:
+        if not os.getenv(key):
+            missing_vars.append(key)
+    if missing_vars:
+        logger.error(f"Missing required variables: {', '.join(missing_vars)}")
+    else:
+        logger.error("All required environment variables are set")
     raise

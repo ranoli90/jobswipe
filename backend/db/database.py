@@ -24,19 +24,25 @@ connect_args = {}
 if DATABASE_URL.startswith("sqlite"):
     connect_args["check_same_thread"] = False  # Required for SQLite
 
-# Debug: Try to parse the URL step by step
+# Create engine - skip pool settings for SQLite
 try:
-    engine = create_engine(
-        DATABASE_URL,
-        connect_args=connect_args,
-        pool_size=20,
-        max_overflow=30,
-        pool_timeout=30,
-        pool_recycle=1800,
-    )
-    print(f"DEBUG: Engine created successfully: {engine}", file=sys.stderr)
+    if DATABASE_URL.startswith("sqlite"):
+        engine = create_engine(
+            DATABASE_URL,
+            connect_args=connect_args,
+        )
+    else:
+        engine = create_engine(
+            DATABASE_URL,
+            connect_args=connect_args,
+            pool_size=20,
+            max_overflow=30,
+            pool_timeout=30,
+            pool_recycle=1800,
+        )
+    logger.info("Database engine created successfully")
 except Exception as e:
-    print(f"DEBUG: Failed to create engine: {type(e).__name__}: {e}", file=sys.stderr)
+    logger.error("Failed to create database engine: %s: %s", type(e).__name__, e)
     import traceback
     traceback.print_exc(file=sys.stderr)
     raise

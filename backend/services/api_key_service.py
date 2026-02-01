@@ -78,7 +78,7 @@ class ApiKeyService:
         # Look up by prefix first (fast index lookup)
         api_key = (
             self.db.query(ApiKey)
-            .filter(ApiKey.key_prefix == prefix, ApiKey.is_active is True)
+            .filter(ApiKey.key_prefix == prefix, ApiKey.is_active == True)
             .first()
         )
 
@@ -254,7 +254,7 @@ class ApiKeyService:
             query = query.filter(ApiKey.service_type == service_type)
 
         if active_only:
-            query = query.filter(ApiKey.is_active is True)
+            query = query.filter(ApiKey.is_active == True)
 
         return query.order_by(ApiKey.created_at.desc()).all()
 

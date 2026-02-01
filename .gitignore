@@ -75,3 +75,23 @@ venv/
 github_credentials/*.txt
 github_credentials/github_ssh_key
 github_credentials/github_ssh_key.pub
+
+# Firebase credentials - NEVER commit these
+**/GoogleService-Info.plist
+**/google-services.json
+
+# Production environment - NEVER commit
+.env.production
+.env.prod
+
+# Keystores and signing credentials
+*.keystore
+*.jks
+key.properties
+upload-keystore.jks
+
+# Debug artifacts that were accidentally committed
+fly_logs.json
+fly_logs_analysis.json
+Untitled*.txt
+resumeconvo.txt

@@ -21,25 +21,34 @@ logger = logging.getLogger(__name__)
 class OAuth2Service:
     """Handles OAuth2 authentication with social providers"""
 
-    # Environment-specific redirect URIs
-    GOOGLE_REDIRECT_URI = os.getenv(
-        "GOOGLE_REDIRECT_URI",
-        (
-            f"{settings.cors_allow_origins[0]}/auth/callback/google"
-            if settings.cors_allow_origins
-            else "http://localhost:8000/auth/callback/google"
-        ),
-    )
-    LINKEDIN_REDIRECT_URI = os.getenv(
-        "LINKEDIN_REDIRECT_URI",
-        (
-            f"{settings.cors_allow_origins[0]}/auth/callback/linkedin"
-            if settings.cors_allow_origins
-            else "http://localhost:8000/auth/callback/linkedin"
-        ),
-    )
+    # Environment-specific redirect URIs - CRITICAL: Require explicit setting in production
+    @staticmethod
+    def _get_redirect_uri(env_key: str, default_path: str) -> str:
+        """Get redirect URI, fail if not set in production"""
+        value = os.getenv(env_key)
+        if value:
+            return value
+        # In production, require explicit redirect URI
+        if os.getenv("ENVIRONMENT") == "production":
+            raise ValueError(
+                f"{env_key} must be explicitly set in production. "
+                f"Do not use localhost redirect URIs in production."
+            )
+        # Development fallback
+        return f"http://localhost:8000{default_path}"
+
+    GOOGLE_REDIRECT_URI = ""
+    LINKEDIN_REDIRECT_URI = ""
 
     def __init__(self):
+        # Initialize redirect URIs with validation
+        OAuth2Service.GOOGLE_REDIRECT_URI = self._get_redirect_uri(
+            "GOOGLE_REDIRECT_URI", "/auth/callback/google"
+        )
+        OAuth2Service.LINKEDIN_REDIRECT_URI = self._get_redirect_uri(
+            "LINKEDIN_REDIRECT_URI", "/auth/callback/linkedin"
+        )
+
         self.google_client_id = get_secret("jobswipe/oauth2/google", "client_id")
         self.google_client_secret = get_secret(
             "jobswipe/oauth2/google", "client_secret"
@@ -229,10 +238,15 @@ class OAuth2Service:
             self.state_secret.encode(), state.encode(), hashlib.sha256
         ).hexdigest()
         stored_state = self.redis.get(f"oauth_state:{hmac_digest}")
-        if stored_state and stored_state.decode() == state:
-            # Valid, delete to prevent reuse
-            self.redis.delete(f"oauth_state:{hmac_digest}")
-            return True
+        if stored_state:
+            # Use constant-time comparison to prevent timing attacks
+            try:
+                if secrets.compare_digest(stored_state.decode(), state):
+                    # Valid, delete to prevent reuse
+                    self.redis.delete(f"oauth_state:{hmac_digest}")
+                    return True
+            except (UnicodeDecodeError, TypeError):
+                pass
         return False
 
 

@@ -13,8 +13,8 @@ import uuid
 from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
 
-import redis
-import redis.asyncio as redis
+import redis as redis_sync
+import redis.asyncio as redis_async
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -23,6 +23,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from pythonjsonlogger import jsonlogger
+from sqlalchemy import text
 
 # Try to import settings with proper error handling
 try:
@@ -194,13 +195,6 @@ app = FastAPI(
 )  # 10MB limit
 
 
-# Health check endpoint
-@app.get("/health")
-async def health_check():
-    """Health check endpoint that verifies the service is running"""
-    return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
-
-
 # Initialize rate limiter with Redis or in-memory fallback
 if settings:
     try:
@@ -290,13 +284,10 @@ if settings:
         allow_headers=settings.cors_allow_headers,
     )
 else:
-    # Default CORS for when settings fail to load
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
-        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
+    # CRITICAL: Fail fast when settings fail to load - do not use permissive defaults
+    raise RuntimeError(
+        "Settings failed to load - cannot start with permissive CORS. "
+        "Ensure all required environment variables are set."
     )
 
 # Add correlation ID middleware
@@ -368,7 +359,7 @@ async def readiness_check():
     if db_available and get_db:
         try:
             db = next(get_db())
-            db.execute("SELECT 1")
+            db.execute(text("SELECT 1"))
             db_status = "connected"
         except Exception as e:
             logger.error(f"Database health check failed: {e}")
@@ -379,7 +370,6 @@ async def readiness_check():
     # Check Redis connectivity
     if settings:
         try:
-            import redis as redis_sync
             r = redis_sync.from_url(settings.redis_url)
             r.ping()
             redis_status = "connected"

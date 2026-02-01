@@ -12,8 +12,10 @@ from collections import Counter, defaultdict
 from functools import lru_cache
 from typing import Dict, List, Optional, Tuple
 
+import uuid
+
 from opentelemetry import trace
-from sqlalchemy import or_
+from sqlalchemy import or_, select
 
 from backend.db.database import get_db
 from backend.db.models import CandidateProfile, Job, UserJobInteraction
@@ -149,93 +151,88 @@ def compute_bm25_score(job: Job, profile: CandidateProfile) -> float:
     return min(1.0, normalized_score)
 
 
-import uuid
-
-
 async def get_personalized_jobs(
     user_id: uuid.UUID, cursor: Optional[str] = None, page_size: int = 20, db=None
 ) -> List[Dict]:
-        """
-        Get personalized job recommendations for a user.
-    
-        Args:
-            user_id: User ID
-            cursor: Optional cursor for pagination
-            page_size: Number of jobs to return per page
-            db: Database session
-    
-        Returns:
-            List of matched jobs with scores
-        """
-        if db is None:
-            db = next(get_db())
-    
-        try:
-            # Get candidate profile
-            profile = (
-                db.query(CandidateProfile)
-                .filter(CandidateProfile.user_id == user_id)
-                .first()
-            )
-    
-            if not profile:
-                # If no profile, return latest jobs
-                query = db.query(Job).order_by(Job.created_at.desc())
-                jobs = query.limit(page_size).all()
-                return [{"id": str(job.id), "score": 0.0} for job in jobs]
-    
-            # Hybrid matching approach
-            query = db.query(Job)
-    
-            # Rule-based filters
-            if profile.skills:
-                # Filter by skills (simple keyword matching for MVP)
-                skill_filters = [
-                    Job.description.ilike("%" + skill + "%") for skill in profile.skills
-                ]
-                if skill_filters:
-                    query = query.filter(or_(*skill_filters))
+    """
+    Get personalized job recommendations for a user.
 
-            if profile.location:
-                # Filter by location proximity (simple string matching for MVP)
-                query = query.filter(Job.location.ilike("%" + profile.location + "%"))
+    Args:
+        user_id: User ID
+        cursor: Optional cursor for pagination
+        page_size: Number of jobs to return per page
+        db: Database session
 
-            query = query.order_by(Job.created_at.desc())
+    Returns:
+        List of matched jobs with scores
+    """
+    if db is None:
+        db = next(get_db())
 
-            # Exclude jobs user has already interacted with
-            interacted_job_ids = [
-                interaction.job_id
-                for interaction in db.query(UserJobInteraction)
-                .filter(UserJobInteraction.user_id == user_id)
-                .all()
-            ]
+    try:
+        # Get candidate profile
+        profile = (
+            db.query(CandidateProfile)
+            .filter(CandidateProfile.user_id == user_id)
+            .first()
+        )
 
-            query = query.filter(Job.id.notin_(interacted_job_ids))
-
-            # Pagination
-            if cursor:
-                query = query.filter(Job.id > cursor)
-
+        if not profile:
+            # If no profile, return latest jobs
+            query = db.query(Job).order_by(Job.created_at.desc())
             jobs = query.limit(page_size).all()
+            return [{"id": str(job.id), "score": 0.0} for job in jobs]
 
-            logger.info("Found %d jobs for user %s", len(jobs), user_id)
+        # Hybrid matching approach
+        query = db.query(Job)
 
-            # Calculate scores for each job
-            scored_jobs = []
-            for job in jobs:
-                score = await calculate_job_score(job, profile)
-                scored_jobs.append({"job": job, "score": score})
+        # Rule-based filters
+        if profile.skills:
+            # Filter by skills (simple keyword matching for MVP)
+            skill_filters = [
+                Job.description.ilike("%" + skill + "%") for skill in profile.skills
+            ]
+            if skill_filters:
+                query = query.filter(or_(*skill_filters))
 
-            # Sort jobs by score descending
-            scored_jobs.sort(key=lambda x: x["score"], reverse=True)
+        if profile.location:
+            # Filter by location proximity (simple string matching for MVP)
+            query = query.filter(Job.location.ilike("%" + profile.location + "%"))
 
-            logger.info("Returning %d jobs sorted by score", len(scored_jobs))
+        query = query.order_by(Job.created_at.desc())
 
-            return scored_jobs
+        # Exclude jobs user has already interacted with using subquery (more efficient)
+        interacted_subquery = (
+            select(UserJobInteraction.job_id)
+            .where(UserJobInteraction.user_id == user_id)
+            .scalar_subquery()
+        )
+        query = query.filter(~Job.id.in_(interacted_subquery))
 
-        except Exception as e:
-            logger.error("Error getting personalized jobs for user %s: %s", user_id, str(e))
-            raise
+        # Pagination
+        if cursor:
+            query = query.filter(Job.id > cursor)
+
+        jobs = query.limit(page_size).all()
+
+        logger.info("Found %d jobs for user %s", len(jobs), user_id)
+
+        # Calculate scores for each job
+        scored_jobs = []
+        for job in jobs:
+            score = await calculate_job_score(job, profile)
+            scored_jobs.append({"job": job, "score": score})
+
+        # Sort jobs by score descending
+        scored_jobs.sort(key=lambda x: x["score"], reverse=True)
+
+        logger.info("Returning %d jobs sorted by score", len(scored_jobs))
+
+        return scored_jobs
+
+    except Exception as e:
+        logger.error("Error getting personalized jobs for user %s: %s", user_id, str(e))
+        raise
 
 
 async def calculate_job_score(job: Job, profile: CandidateProfile) -> float:

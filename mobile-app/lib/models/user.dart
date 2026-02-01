@@ -25,7 +25,9 @@ class User {
       phone: json['phone'] as String?,
       isEmailVerified: json['is_email_verified'] as bool? ?? false,
       createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'] as String)
+          : DateTime.parse(json['created_at'] as String),
     );
   }
 

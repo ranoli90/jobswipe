@@ -53,8 +53,7 @@
 	<string>This app needs location access to find jobs near you.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app needs photo library access to upload images.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>This app needs microphone access for video calls or voice notes.</string>
+
 
 	<!-- Firebase -->
 	<key>FirebaseAppDelegateProxyEnabled</key>
@@ -70,5 +69,13 @@
 		<string>fetch</string>
 		<string>remote-notification</string>
 	</array>
+
+	<!-- Export Compliance -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+
+	<!-- App Category -->
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.business</string>
 </dict>
 </plist>

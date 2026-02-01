@@ -11,6 +11,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
+import redis
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
@@ -48,6 +49,20 @@ pwd_context = CryptContext(
     argon2__parallelism=8,
 )
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+
+
+# Initialize Redis client for token blacklist
+try:
+    redis_client = redis.Redis(
+        host=settings.redis_url.split("://")[1].split("/")[0],
+        port=int(settings.redis_url.split(":")[2].split("/")[0]),
+        decode_responses=True,
+        socket_connect_timeout=5,
+    )
+    redis_client.ping()  # Test connection
+except Exception:
+    redis_client = None
+    logger.warning("Redis unavailable - token blacklist disabled")
 
 
 class UserCreate(BaseModel):
@@ -137,9 +152,8 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
-    
-
-    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire, "type": "access"})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -150,9 +164,8 @@ def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
-
-
-    expire = datetime.now(timezone.utc) + timedelta(days=settings.refresh_token_expire_days)
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(days=settings.refresh_token_expire_days)
     to_encode.update({"exp": expire, "type": "refresh"})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -169,6 +182,19 @@ def get_current_user(
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+
+        # Check if token is in blacklist
+        if redis_client:
+            try:
+                if redis_client.get(f"token_blacklist:{token}"):
+                    raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="Token has been revoked",
+                        headers={"WWW-Authenticate": "Bearer"},
+                    )
+            except Exception as e:
+                logger.error("Redis blacklist check failed: %s", str(e))
+
         email: str = payload.get("sub")
         if email is None:
             raise credentials_exception
@@ -226,8 +252,7 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
         # Check if user already exists
         existing_user = db.query(User).filter(User.email == user.email).first()
         if existing_user:
-            logger.warning("Registration failed - email already registered: %s" % (user.email)
-            )
+            logger.warning("Registration failed - email already registered: %s", user.email)
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Email already registered",
@@ -274,7 +299,7 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
         logger.error("Registration failed: %s", str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Registration failed: {str(e)}",
+            detail="Registration failed. Please try again later.",
         )
 
 
@@ -312,16 +337,14 @@ async def login(
         )
 
         if recent_attempts_from_ip > 10:
-            logger.warning("Suspicious activity: %s failed attempts from IP %s in last hour" % (recent_attempts_from_ip, ip_address)
-            )
+            logger.warning("Suspicious activity: %d failed attempts from IP %s in last hour", recent_attempts_from_ip, ip_address)
             # Could send alert here
 
         user = db.query(User).filter(User.email == email).first()
 
         # Check if account is locked
         if user and user.lockout_until and datetime.now(timezone.utc) < user.lockout_until:
-            logger.warning("Login attempt on locked account: %s from IP: %s" % (email, ip_address)
-            )
+            logger.warning("Login attempt on locked account: %s from IP: %s", email, ip_address)
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail="Account is temporarily locked due to too many failed attempts",
@@ -357,8 +380,7 @@ async def login(
                 lockout_until = datetime.now(timezone.utc) + timedelta(minutes=lockout_minutes)
                 if user:
                     user.lockout_until = lockout_until
-                    logger.warning("Account locked for user %s until %s" % (email, lockout_until)
-                    )
+                    logger.warning("Account locked for user %s until %s", email, lockout_until)
                 db.commit()  # Commit the failed attempt and lockout
 
                 raise HTTPException(
@@ -368,8 +390,7 @@ async def login(
 
             db.commit()  # Commit the failed attempt
 
-            logger.warning("Login failed - invalid credentials for: %s from IP: %s" % (email, ip_address)
-            )
+            logger.warning("Login failed - invalid credentials for: %s from IP: %s", email, ip_address)
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Incorrect email or password",
@@ -413,7 +434,7 @@ async def login(
         logger.error("Login failed: %s", str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Login failed: {str(e)}",
+            detail="Login failed. Please try again later.",
         )
 
 
@@ -437,7 +458,9 @@ async def get_me(current_user: User = Depends(get_current_user)):
         )
 
 
-# Request/Response models for new endpoints
+
+
+
 class RefreshTokenRequest(BaseModel):
     """Request model for token refresh"""
 
@@ -537,6 +560,15 @@ async def refresh_access_token(
         # Generate new refresh token
         refresh_token = create_refresh_token(data={"sub": user.email})
 
+        # Invalidate the old refresh token by adding to blacklist
+        old_refresh_token = request.refresh_token
+        if redis_client and old_refresh_token:
+            try:
+                # Set TTL to max refresh token duration (7 days)
+                redis_client.setex(f"refresh_blacklist:{old_refresh_token}", 7 * 24 * 60 * 60, "revoked")
+            except Exception as e:
+                logger.error("Failed to blacklist old refresh token: %s", str(e))
+
         logger.info("Token refreshed for user: %s", user.email)
 
         return RefreshTokenResponse(
@@ -560,19 +592,32 @@ async def refresh_access_token(
 
 @router.post("/logout", response_model=LogoutResponse)
 async def logout(
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
     Logout user and invalidate tokens
 
-    Note: For full token invalidation, implement a token blacklist
-    in Redis or database (not implemented in this basic version)
+    Adds the access token to a Redis blacklist with TTL based on token expiration.
     """
-    # In a production system, you would:
-    # 1. Add the access token to a blacklist in Redis
-    # 2. Set an appropriate TTL based on token expiration
-    # For now, we just log the logout event
+    # Get the access token from the Authorization header
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ")[1]
+
+        # Add token to blacklist in Redis
+        if redis_client:
+            try:
+                # Calculate TTL based on token expiration (default to 1 hour)
+                ttl = settings.access_token_expire_minutes * 60
+                redis_client.setex(f"token_blacklist:{token}", ttl, "revoked")
+                logger.info("Token added to blacklist for user: %s", current_user.email)
+            except Exception as e:
+                logger.error("Failed to add token to blacklist: %s", str(e))
+        else:
+            logger.warning("Redis unavailable - token blacklist disabled")
+
     logger.info("User logged out: %s", current_user.email)
 
     return {"message": "Successfully logged out"}
@@ -613,10 +658,7 @@ async def send_verification_email(
 
     logger.info("Verification email sent to: %s", user.email)
 
-    return {
-        "message": "Verification email sent",
-        "debug_token": verification_token  # Remove in production
-    }
+    return {"message": "Verification email sent"}
 
 
 @router.post("/verify-email/token")

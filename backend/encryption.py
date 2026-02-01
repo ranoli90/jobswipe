@@ -72,7 +72,7 @@ class PIIEncryptor:
             algorithm=hashes.SHA256(),
             length=32,
             salt=salt,
-            iterations=100000,
+            iterations=600000,  # OWASP 2023 recommended minimum
         )
         key = base64.urlsafe_b64encode(kdf.derive(password))
         return key
@@ -121,7 +121,7 @@ class PIIEncryptor:
             result = decrypted.decode()
             logger.info("AUDIT: PII decryption successful - data length: %s", len(result))
             return result
-        except InvalidToken:
+        except InvalidToken as e:
             # Try old keys if current key fails
             for i, old_fernet in enumerate(self.old_fernets):
                 try:

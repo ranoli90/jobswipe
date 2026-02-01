@@ -6,6 +6,7 @@ Uses free, open-source job sources including RSS feeds and company career pages.
 """
 
 import asyncio
+import hashlib
 import json
 import logging
 import os
@@ -270,8 +271,8 @@ class JobIngestionService:
                                 job = {
                                     "id": (
                                         entry.id
-                                        if hasattr(entry, "id")
-                                        else hash(entry.link)
+                                        if hasattr(entry, "id") and entry.id
+                                        else hashlib.sha256(entry.link.encode()).hexdigest()[:16]
                                     ),
                                     "title": entry.title,
                                     "company": self.extract_company_from_rss(entry),

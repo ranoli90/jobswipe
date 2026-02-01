@@ -7,11 +7,12 @@ Handles push notification delivery for iOS (APNs) and Android (FCM).
 import asyncio
 import logging
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
 import httpx
+from jose import jwt
 
 from backend.config import settings
 from backend.db.database import async_session
@@ -137,10 +138,36 @@ class APNsClient:
             )
 
     async def _get_access_token(self) -> str:
-        """Generate JWT for APNs authentication"""
-        # In production, use proper JWT signing
-        # This is a placeholder for the token generation logic
-        return "placeholder_token"
+        """Generate JWT for APNs authentication per Apple documentation."""
+        try:
+            # Calculate token expiration (max 1 hour)
+            now = datetime.now(timezone.utc)
+            expiry = now + timedelta(hours=1)
+
+            # Create JWT payload for APNs
+            payload = {
+                "iss": self.team_id,
+                "iat": int(now.timestamp()),
+            }
+
+            # Create JWT header for ES256 (ECDSA using P-256 curve)
+            headers = {
+                "alg": "ES256",
+                "kid": self.key_id,
+            }
+
+            # Sign JWT with private key using ES256
+            token = jwt.encode(
+                payload,
+                self.private_key,
+                algorithm="ES256",
+                headers=headers,
+            )
+
+            return token
+        except Exception as e:
+            logger.error("Failed to generate APNs access token: %s", str(e))
+            raise ValueError(f"Failed to generate APNs access token: {str(e)}")
 
 
 class FCMClient:

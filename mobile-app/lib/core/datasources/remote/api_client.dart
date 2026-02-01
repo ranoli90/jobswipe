@@ -1,16 +1,37 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:dio_smart_retry/dio_smart_retry.dart';
 import '../../exceptions.dart';
 import '../local/secure_storage_service.dart';
-import '../../../../config/app_config.dart';
+import '../../../config/app_config.dart';
 
 class ApiClient {
   final Dio _dio;
   final SecureStorageService _secureStorage;
 
+  // Token refresh lock to prevent race conditions
+  static bool _isRefreshing = false;
+  static List<Function(String)> _refreshSubscribers = [];
+
   ApiClient(this._dio, this._secureStorage) {
     _setupInterceptors();
+  }
+
+  void _onRefreshed(String token) {
+    for (var callback in _refreshSubscribers) {
+      callback(token);
+    }
+    _refreshSubscribers.clear();
+  }
+
+  Future<String?> _subscribeTokenRefresh() {
+    final completer = Completer<String?>();
+    _refreshSubscribers.add((token) {
+      completer.complete(token);
+    });
+    return completer.future;
   }
 
   void _setupInterceptors() {
@@ -26,28 +47,15 @@ class ApiClient {
       },
       onError: (error, handler) async {
         if (error.response?.statusCode == 401) {
-          // Token expired, try refresh
-          try {
-            final refreshToken = await _secureStorage.read('refresh_token');
-            if (refreshToken != null) {
-              final refreshResponse = await _dio.post(
-                '/v1/auth/refresh',
-                data: {'refresh_token': refreshToken},
-                options: Options(
-                  headers: {'Authorization': null}, // Don't add token for refresh
-                ),
-              );
-
-              final newAccessToken = refreshResponse.data['access_token'];
-              final newRefreshToken = refreshResponse.data['refresh_token'];
-
-              await _secureStorage.write('access_token', newAccessToken);
-              await _secureStorage.write('refresh_token', newRefreshToken);
-
+          // Token expired, try refresh with lock mechanism
+          if (_isRefreshing) {
+            // Wait for the refresh to complete and retry with new token
+            final newToken = await _subscribeTokenRefresh();
+            if (newToken != null) {
               // Retry original request with new token
               final opts = Options(
                 method: error.requestOptions.method,
-                headers: {...error.requestOptions.headers, 'Authorization': 'Bearer $newAccessToken'},
+                headers: {...error.requestOptions.headers, 'Authorization': 'Bearer $newToken'},
               );
 
               final cloneReq = await _dio.request(
@@ -59,10 +67,51 @@ class ApiClient {
 
               return handler.resolve(cloneReq);
             }
-          } catch (e) {
-            // Refresh failed, logout user
-            await _secureStorage.delete('access_token');
-            await _secureStorage.delete('refresh_token');
+          } else {
+            _isRefreshing = true;
+            try {
+              final refreshToken = await _secureStorage.read('refresh_token');
+              if (refreshToken != null) {
+                final refreshResponse = await _dio.post(
+                  '/v1/auth/refresh',
+                  data: {'refresh_token': refreshToken},
+                  options: Options(
+                    headers: {'Authorization': null}, // Don't add token for refresh
+                  ),
+                );
+
+                final newAccessToken = refreshResponse.data['access_token'];
+                final newRefreshToken = refreshResponse.data['refresh_token'];
+
+                await _secureStorage.write('access_token', newAccessToken);
+                await _secureStorage.write('refresh_token', newRefreshToken);
+
+                // Notify subscribers
+                _onRefreshed(newAccessToken);
+
+                // Retry original request with new token
+                final opts = Options(
+                  method: error.requestOptions.method,
+                  headers: {...error.requestOptions.headers, 'Authorization': 'Bearer $newAccessToken'},
+                );
+
+                final cloneReq = await _dio.request(
+                  error.requestOptions.path,
+                  options: opts,
+                  data: error.requestOptions.data,
+                  queryParameters: error.requestOptions.queryParameters,
+                );
+
+                return handler.resolve(cloneReq);
+              }
+            } catch (e) {
+              // Refresh failed, logout user
+              await _secureStorage.delete('access_token');
+              await _secureStorage.delete('refresh_token');
+              _onRefreshed(''); // Clear subscribers
+            } finally {
+              _isRefreshing = false;
+            }
           }
         }
         return handler.next(error);

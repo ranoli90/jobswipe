@@ -83,22 +83,26 @@ class MFAService:
         """
         return [secrets.token_hex(4).upper() for _ in range(count)]
 
-    def verify_backup_code(self, user: User, backup_code: str) -> bool:
+    def verify_backup_code(self, user: User, backup_code: str, db=None) -> bool:
         """
         Verify a backup code
 
         Args:
             user: User object
             backup_code: User-provided backup code
+            db: Database session (required for persistence)
 
         Returns:
             True if backup code is valid, False otherwise
         """
         backup_code = backup_code.strip().upper()
         if hasattr(user, "mfa_backup_codes") and user.mfa_backup_codes:
-            codes = user.mfa_backup_codes
+            codes = list(user.mfa_backup_codes)  # Create a copy to avoid mutation issues
             if backup_code in codes:
                 codes.remove(backup_code)
+                user.mfa_backup_codes = codes
+                if db:
+                    db.commit()
                 return True
         return False
 
