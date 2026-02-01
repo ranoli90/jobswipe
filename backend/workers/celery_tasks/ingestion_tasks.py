@@ -141,7 +141,7 @@ def process_job_embedding(self, job_id: str):
         return {"status": "skipped", "reason": "Service unavailable"}
 
     except Exception as e:
-        logger.error("Failed to process embedding for job %s: %s", ('job_id', 'e'))
+        logger.error("Failed to process embedding for job %s: %s", job_id, e)
         raise self.retry(exc=e)
     finally:
         db.close()
