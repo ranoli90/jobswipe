@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/app_typography.dart';
-import '../../models/job.dart';
+import '../../../models/job.dart';
 
 class JobCardWidget extends StatelessWidget {
   final Job job;
@@ -48,6 +49,13 @@ class JobCardWidget extends StatelessWidget {
                       width: 80,
                       height: 80,
                       fit: BoxFit.cover,
+                      cacheManager: CacheManager(
+                        Config(
+                          'job_logos_cache',
+                          stalePeriod: const Duration(days: 7),
+                          maxNrOfCacheObjects: 1000,
+                        ),
+                      ),
                       placeholder: (context, url) => Container(
                         width: 80,
                         height: 80,
@@ -123,7 +131,7 @@ class JobCardWidget extends StatelessWidget {
 
                     // Company name
                     Text(
-                      job.company,
+                      job.company ?? 'Unknown Company',
                       style: AppTypography.bodyLarge.copyWith(
                         color: AppColors.textSecondary,
                         fontWeight: FontWeight.w500,
@@ -142,7 +150,7 @@ class JobCardWidget extends StatelessWidget {
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            job.location,
+                            job.location ?? 'Remote',
                             style: AppTypography.bodyMedium.copyWith(
                               color: AppColors.textSecondary,
                             ),
@@ -176,23 +184,24 @@ class JobCardWidget extends StatelessWidget {
                     const SizedBox(height: AppTokens.spacingSm),
 
                     // Job type
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppTokens.spacingSm,
-                        vertical: AppTokens.spacingXs,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-                      ),
-                      child: Text(
-                        job.type,
-                        style: AppTypography.labelSmall.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
+                    if (job.type != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppTokens.spacingSm,
+                          vertical: AppTokens.spacingXs,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                        ),
+                        child: Text(
+                          job.type!,
+                          style: AppTypography.labelSmall.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                    ),
                     const SizedBox(height: AppTokens.spacingMd),
 
                     // Skills

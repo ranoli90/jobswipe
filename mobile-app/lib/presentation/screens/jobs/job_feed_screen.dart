@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import '../../../core/di/service_locator.dart';
@@ -19,6 +20,7 @@ class _JobFeedScreenState extends State<JobFeedScreen> {
   final CardSwiperController _cardController = CardSwiperController();
   final ScrollController _scrollController = ScrollController();
   int _currentIndex = 0;
+  Timer? _loadMoreTimer;
 
   @override
   void initState() {
@@ -29,6 +31,7 @@ class _JobFeedScreenState extends State<JobFeedScreen> {
 
   @override
   void dispose() {
+    _loadMoreTimer?.cancel();
     _cardController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -36,16 +39,18 @@ class _JobFeedScreenState extends State<JobFeedScreen> {
 
   void _onScroll() {
     if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
-      // Load more jobs when near bottom
-      final state = context.read<JobsBloc>().state;
-      if (state is JobsLoaded && state.hasMore) {
-        context.read<JobsBloc>().add(
-          JobsFeedRequested(
-            cursor: state.nextCursor,
-          ),
-        );
-      }
+        _scrollController.position.maxScrollExtent - 100) {
+      _loadMoreTimer?.cancel();
+      _loadMoreTimer = Timer(const Duration(milliseconds: 300), () {
+        final state = context.read<JobsBloc>().state;
+        if (state is JobsLoaded && state.hasMore) {
+          context.read<JobsBloc>().add(
+                JobsFeedRequested(
+                  cursor: state.nextCursor,
+                ),
+              );
+        }
+      });
     }
   }
 

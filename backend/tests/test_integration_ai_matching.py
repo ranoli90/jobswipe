@@ -8,9 +8,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from services.matching import (calculate_job_score,
-                                       get_job_matches_for_profile,
-                                       get_personalized_jobs)
+from backend.services.matching import (calculate_job_score,
+                                        get_job_matches_for_profile,
+                                        get_personalized_jobs)
 
 
 class TestAIMatchingIntegration:

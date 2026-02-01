@@ -1,7 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:rxdart/rxcodemart.dart';
+import 'package:rxdart/rxdart.dart';
 
 /// Service for handling offline data storage and sync
 class OfflineService {

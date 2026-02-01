@@ -60,6 +60,18 @@ class AppColors {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+
+  static const LinearGradient warningGradient = LinearGradient(
+    colors: [warning, warningDark],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const LinearGradient errorGradient = LinearGradient(
+    colors: [errorLight, error],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
   
   // Match Score Colors
   static Color getMatchScoreColor(double score) {

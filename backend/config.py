@@ -65,13 +65,13 @@ class Settings(BaseSettings):
     ollama_temperature: float = Field(default=0.1, env="OLLAMA_TEMPERATURE")
     ollama_max_tokens: int = Field(default=2000, env="OLLAMA_MAX_TOKENS")
 
-    # API Keys for internal services - now optional with auto-generated defaults
+    # API Keys for internal services - now optional with auto-generated secure defaults
     # These will generate secure random values if not set, allowing the app to start
-    analytics_api_key: str = Field(default="dev-analytics-key", env="ANALYTICS_API_KEY")
-    ingestion_api_key: str = Field(default="dev-ingestion-key", env="INGESTION_API_KEY")
-    deduplication_api_key: str = Field(default="dev-deduplication-key", env="DEDUPLICATION_API_KEY")
-    categorization_api_key: str = Field(default="dev-categorization-key", env="CATEGORIZATION_API_KEY")
-    automation_api_key: str = Field(default="dev-automation-key", env="AUTOMATION_API_KEY")
+    analytics_api_key: str = Field(default=generate_secure_key(), env="ANALYTICS_API_KEY")
+    ingestion_api_key: str = Field(default=generate_secure_key(), env="INGESTION_API_KEY")
+    deduplication_api_key: str = Field(default=generate_secure_key(), env="DEDUPLICATION_API_KEY")
+    categorization_api_key: str = Field(default=generate_secure_key(), env="CATEGORIZATION_API_KEY")
+    automation_api_key: str = Field(default=generate_secure_key(), env="AUTOMATION_API_KEY")
 
     # Logging
     log_level: str = Field(default="INFO", env="LOG_LEVEL")
@@ -120,14 +120,7 @@ class Settings(BaseSettings):
         env = os.getenv("ENVIRONMENT", "development")
         field_name = info.field_name
         
-        # Skip validation for API keys - they have safe defaults
-        if field_name in ["analytics_api_key", "ingestion_api_key", "deduplication_api_key", 
-                       "categorization_api_key", "automation_api_key"]:
-            if v is None:
-                return f"dev-{field_name}"
-            return v
-            
-        # For other fields, allow auto-generated values even in production (for testing)
+        # For all fields, use secure auto-generated keys if not provided
         if v is None:
             warnings.warn(f"{field_name} not provided, using auto-generated value", Warning)
             return generate_secure_key()

@@ -17,8 +17,8 @@ from sqlalchemy.orm import Session
 from backend.api.routers.auth import get_current_user
 from backend.db.database import get_db
 from backend.db.models import CandidateProfile, Job, User, UserJobInteraction
-from services.matching import (get_job_matches_for_profile,
-                                       get_personalized_jobs)
+from backend.services.matching import (get_job_matches_for_profile,
+                                        get_personalized_jobs)
 
 router = APIRouter()
 

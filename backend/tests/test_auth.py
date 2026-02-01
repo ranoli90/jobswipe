@@ -74,14 +74,15 @@ def test_login_incorrect_password(client: TestClient, test_data):
     user_data = test_data["users"][0]
 
     # First register
-    client.post(
-        "/v1/auth/register",
+    register_response = client.post(
+        "/api/v1/auth/register",
         json={"email": user_data["email"], "password": user_data["password"]},
     )
+    assert register_response.status_code == 200, f"Register failed: {register_response.text}"
 
     # Login with incorrect password
     response = client.post(
-        "/v1/auth/login",
+        "/api/v1/auth/login",
         data={"username": user_data["email"], "password": "wrongpassword"},
     )
 
@@ -92,21 +93,26 @@ def test_get_me(client: TestClient, test_data):
     """Test getting current user info"""
     user_data = test_data["users"][0]
 
-    # Register and login
-    client.post(
-        "/v1/auth/register",
+    # Register
+    register_response = client.post(
+        "/api/v1/auth/register",
         json={"email": user_data["email"], "password": user_data["password"]},
     )
+    assert register_response.status_code == 200, f"Register failed: {register_response.text}"
 
+    # Login
     login_response = client.post(
-        "/v1/auth/login",
+        "/api/v1/auth/login",
         data={"username": user_data["email"], "password": user_data["password"]},
     )
+    assert login_response.status_code == 200, f"Login failed: {login_response.text}"
 
-    token = login_response.json()["access_token"]
+    data = login_response.json()
+    assert "access_token" in data, "Missing access_token in login response"
+    token = data["access_token"]
 
     # Get current user
-    response = client.get("/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
+    response = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
 
     assert response.status_code == 200
     data = response.json()

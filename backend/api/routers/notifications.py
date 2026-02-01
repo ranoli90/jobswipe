@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from backend.api.routers.auth import get_current_user, get_current_admin_user
 from backend.db.database import get_db
 from backend.db.models import User
-from services.notification_service import notification_service
+from backend.services.notification_service import notification_service
 
 router = APIRouter()
 

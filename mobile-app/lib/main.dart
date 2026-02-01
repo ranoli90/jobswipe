@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'core/theme/app_theme.dart';
 import 'core/di/service_locator.dart';
-import 'screens/login_screen.dart';
-import 'screens/job_swipe_screen.dart';
-import 'screens/profile_screen.dart';
-import 'screens/applications_screen.dart';
+import 'presentation/screens/auth/login_screen.dart';
+import 'presentation/screens/jobs/job_feed_screen.dart';
+import 'presentation/screens/profile/profile_screen.dart';
+import 'presentation/screens/applications/applications_screen.dart';
+import 'presentation/bloc/auth/auth_bloc.dart';
+import 'presentation/bloc/jobs/jobs_bloc.dart';
+import 'presentation/bloc/profile/profile_bloc.dart';
+import 'presentation/bloc/applications/applications_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,12 +18,31 @@ void main() async {
   // Initialize service locator
   await setupLocator();
   
-  // Initialize Firebase
-  await Firebase.initializeApp();
+  // Initialize Firebase with error handling
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint('Firebase initialization error: $e');
+    // Continue without Firebase - app can still work
+  }
   
   runApp(
-    const ProviderScope(
-      child: JobSwipeApp(),
+    MultiBlocProvider(
+      providers: [
+        BlocProvider<AuthBloc>(
+          create: (_) => getIt<AuthBloc>(),
+        ),
+        BlocProvider<JobsBloc>(
+          create: (_) => getIt<JobsBloc>(),
+        ),
+        BlocProvider<ProfileBloc>(
+          create: (_) => getIt<ProfileBloc>(),
+        ),
+        BlocProvider<ApplicationsBloc>(
+          create: (_) => getIt<ApplicationsBloc>(),
+        ),
+      ],
+      child: const JobSwipeApp(),
     ),
   );
 }
@@ -44,7 +67,7 @@ class JobSwipeApp extends StatelessWidget {
             );
           case '/jobs':
             return MaterialPageRoute(
-              builder: (_) => const JobSwipeScreen(),
+              builder: (_) => const JobFeedScreen(),
             );
           case '/profile':
             return MaterialPageRoute(

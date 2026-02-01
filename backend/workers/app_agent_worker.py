@@ -10,7 +10,7 @@ import logging
 import os
 
 from celery import Celery
-from services.application_service import run_application_task
+from backend.services.application_service import run_application_task
 
 # Configure logging
 logging.basicConfig(

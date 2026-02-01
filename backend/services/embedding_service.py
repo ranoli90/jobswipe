@@ -3,6 +3,7 @@ Free Embedding Service using Sentence Transformers
 Provides local embeddings for job matching and semantic analysis.
 """
 
+import asyncio
 import hashlib
 import json
 import logging

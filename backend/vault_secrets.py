@@ -102,8 +102,9 @@ class SecretsManager:
 
     def get_encryption_key(self) -> str:
         """Get encryption key for PII data"""
+        from backend.config import generate_secure_key
         return self.get_secret(
-            ENCRYPTION_VAULT_PATH, "key", "dev-encryption-key-change-in-production"
+            ENCRYPTION_VAULT_PATH, "key", generate_secure_key()
         )
 
     def get_database_credentials(self) -> Dict[str, str]:

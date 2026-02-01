@@ -31,7 +31,7 @@ Future<void> setupLocator() async {
 
   // Services
   final sharedPreferences = await SharedPreferences.getInstance();
-  final secureStorage = FlutterSecureStorage();
+  const secureStorage = FlutterSecureStorage();
 
   getIt.registerLazySingleton<SharedPreferences>(() => sharedPreferences);
   getIt.registerLazySingleton<FlutterSecureStorage>(() => secureStorage);
@@ -87,33 +87,25 @@ Future<void> setupLocator() async {
   );
   
   // Offline Service
-  getIt.registerLazySingleton<Connectivity>(() => Connectivity());
+  getIt.registerLazySingleton<Connectivity>(() => Connectivity.newInstance());
   getIt.registerLazySingleton<OfflineService>(
     () => OfflineService(getIt<SharedPreferences>(), getIt<Connectivity>()),
   );
   
   // BLoCs
   getIt.registerFactory<AuthBloc>(
-    () => AuthBloc(
-      authRepository: getIt<AuthRepository>(),
-    ),
+    () => AuthBloc(getIt<AuthRepository>()),
   );
   
   getIt.registerFactory<JobsBloc>(
-    () => JobsBloc(
-      jobRepository: getIt<JobRepository>(),
-    ),
+    () => JobsBloc(getIt<JobRepository>()),
   );
   
   getIt.registerFactory<ApplicationsBloc>(
-    () => ApplicationsBloc(
-      applicationRepository: getIt<ApplicationRepository>(),
-    ),
+    () => ApplicationsBloc(getIt<ApplicationRepository>()),
   );
   
   getIt.registerFactory<ProfileBloc>(
-    () => ProfileBloc(
-      profileRepository: getIt<ProfileRepository>(),
-    ),
+    () => ProfileBloc(getIt<ProfileRepository>()),
   );
 }

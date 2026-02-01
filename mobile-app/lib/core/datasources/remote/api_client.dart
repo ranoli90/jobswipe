@@ -1,7 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:dio_smart_retry/dio_smart_retry.dart';
+import '../../exceptions.dart';
 import '../local/secure_storage_service.dart';
+import '../../../../config/app_config.dart';
 
 class ApiClient {
   final Dio _dio;
@@ -90,7 +92,7 @@ class ApiClient {
           } else if (statusCode == 404) {
             throw NotFoundException(data['message'] ?? 'Not found');
           } else if (statusCode == 422) {
-            throw ValidationException(data['message'] ?? 'Validation error', data['errors']);
+            throw ValidationException(data['message'] ?? 'Validation error', errors: data['errors']);
           } else if (statusCode == 429) {
             throw RateLimitException(data['message'] ?? 'Too many requests');
           } else if (statusCode! >= 500) {
@@ -102,16 +104,18 @@ class ApiClient {
       },
     ));
 
-    // Logger interceptor
-    _dio.interceptors.add(PrettyDioLogger(
-      requestHeader: true,
-      requestBody: true,
-      responseBody: true,
-      responseHeader: false,
-      error: true,
-      compact: true,
-      maxWidth: 90,
-    ));
+    // Logger interceptor - only active in development
+    if (AppConfig.isDevelopment) {
+      _dio.interceptors.add(PrettyDioLogger(
+        requestHeader: true,
+        requestBody: true,
+        responseBody: true,
+        responseHeader: false,
+        error: true,
+        compact: true,
+        maxWidth: 90,
+      ));
+    }
 
     // Retry interceptor
     _dio.interceptors.add(
@@ -138,19 +142,19 @@ class ApiClient {
     );
   }
 
-  Future<Response> get(String path, {Map<String, dynamic>? queryParameters, Options? options}) {
-    return _dio.get(path, queryParameters: queryParameters, options: options);
+  Future<Response> get(String path, {Map<String, dynamic>? queryParameters, Options? options, CancelToken? cancelToken}) {
+    return _dio.get(path, queryParameters: queryParameters, options: options, cancelToken: cancelToken);
   }
 
-  Future<Response> post(String path, {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) {
-    return _dio.post(path, data: data, queryParameters: queryParameters, options: options);
+  Future<Response> post(String path, {dynamic data, Map<String, dynamic>? queryParameters, Options? options, CancelToken? cancelToken}) {
+    return _dio.post(path, data: data, queryParameters: queryParameters, options: options, cancelToken: cancelToken);
   }
 
-  Future<Response> put(String path, {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) {
-    return _dio.put(path, data: data, queryParameters: queryParameters, options: options);
+  Future<Response> put(String path, {dynamic data, Map<String, dynamic>? queryParameters, Options? options, CancelToken? cancelToken}) {
+    return _dio.put(path, data: data, queryParameters: queryParameters, options: options, cancelToken: cancelToken);
   }
 
-  Future<Response> delete(String path, {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) {
-    return _dio.delete(path, data: data, queryParameters: queryParameters, options: options);
+  Future<Response> delete(String path, {dynamic data, Map<String, dynamic>? queryParameters, Options? options, CancelToken? cancelToken}) {
+    return _dio.delete(path, data: data, queryParameters: queryParameters, options: options, cancelToken: cancelToken);
   }
 }

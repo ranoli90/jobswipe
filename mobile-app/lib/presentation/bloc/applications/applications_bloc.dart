@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
-import '../../../data/application_repository.dart';
+import '../../../core/data/application_repository.dart';
 import '../../../models/application.dart';
 
 // Applications Events
@@ -130,12 +130,12 @@ class ApplicationsBloc extends Bloc<ApplicationsEvent, ApplicationsState> {
     Emitter<ApplicationsState> emit,
   ) async {
     emit(ApplicationsLoading());
-    final result = await _applicationRepository.getApplications();
-
-    result.fold(
-      (error) => emit(ApplicationsError(error)),
-      (applications) => emit(ApplicationsLoaded(applications)),
-    );
+    try {
+      final applications = await _applicationRepository.getApplications();
+      emit(ApplicationsLoaded(applications));
+    } catch (error) {
+      emit(ApplicationsError(error.toString()));
+    }
   }
 
   Future<void> _onApplicationsRefreshRequested(
@@ -143,12 +143,12 @@ class ApplicationsBloc extends Bloc<ApplicationsEvent, ApplicationsState> {
     Emitter<ApplicationsState> emit,
   ) async {
     emit(ApplicationsLoading());
-    final result = await _applicationRepository.getApplications();
-
-    result.fold(
-      (error) => emit(ApplicationsError(error)),
-      (applications) => emit(ApplicationsLoaded(applications)),
-    );
+    try {
+      final applications = await _applicationRepository.getApplications();
+      emit(ApplicationsLoaded(applications));
+    } catch (error) {
+      emit(ApplicationsError(error.toString()));
+    }
   }
 
   Future<void> _onApplicationsDetailRequested(
@@ -156,14 +156,14 @@ class ApplicationsBloc extends Bloc<ApplicationsEvent, ApplicationsState> {
     Emitter<ApplicationsState> emit,
   ) async {
     emit(ApplicationsLoading());
-    final result = await _applicationRepository.getApplicationDetail(
-      event.applicationId,
-    );
-
-    result.fold(
-      (error) => emit(ApplicationsError(error)),
-      (application) => emit(ApplicationsDetailLoaded(application)),
-    );
+    try {
+      final application = await _applicationRepository.getApplicationDetails(
+        event.applicationId,
+      );
+      emit(ApplicationsDetailLoaded(application));
+    } catch (error) {
+      emit(ApplicationsError(error.toString()));
+    }
   }
 
   Future<void> _onApplicationsCancelRequested(
@@ -171,18 +171,16 @@ class ApplicationsBloc extends Bloc<ApplicationsEvent, ApplicationsState> {
     Emitter<ApplicationsState> emit,
   ) async {
     emit(ApplicationsLoading());
-    final result = await _applicationRepository.cancelApplication(
-      event.applicationId,
-    );
-
-    result.fold(
-      (error) => emit(ApplicationsError(error)),
-      (_) {
-        emit(ApplicationsSuccess('Application cancelled successfully'));
-        // Reload applications
-        add(ApplicationsLoadRequested());
-      },
-    );
+    try {
+      await _applicationRepository.cancelApplication(
+        event.applicationId,
+      );
+      emit(ApplicationsSuccess('Application cancelled successfully'));
+      // Reload applications
+      add(ApplicationsLoadRequested());
+    } catch (error) {
+      emit(ApplicationsError(error.toString()));
+    }
   }
 
   Future<void> _onApplicationsAuditLogRequested(
@@ -190,17 +188,17 @@ class ApplicationsBloc extends Bloc<ApplicationsEvent, ApplicationsState> {
     Emitter<ApplicationsState> emit,
   ) async {
     emit(ApplicationsLoading());
-    final result = await _applicationRepository.getApplicationAuditLog(
-      event.applicationId,
-    );
-
-    result.fold(
-      (error) => emit(ApplicationsError(error)),
-      (auditLog) => emit(ApplicationsAuditLogLoaded(
+    try {
+      final auditLog = await _applicationRepository.getApplicationAuditLog(
+        event.applicationId,
+      );
+      emit(ApplicationsAuditLogLoaded(
         applicationId: event.applicationId,
-        auditLog: auditLog,
-      )),
-    );
+        auditLog: auditLog.cast<Map<String, dynamic>>(),
+      ));
+    } catch (error) {
+      emit(ApplicationsError(error.toString()));
+    }
   }
 
   Future<void> _onApplicationsApplyRequested(
@@ -208,15 +206,15 @@ class ApplicationsBloc extends Bloc<ApplicationsEvent, ApplicationsState> {
     Emitter<ApplicationsState> emit,
   ) async {
     emit(ApplicationsLoading());
-    final result = await _applicationRepository.applyToJob(event.jobId);
-
-    result.fold(
-      (error) => emit(ApplicationsError(error)),
-      (_) {
-        emit(ApplicationsSuccess('Application submitted successfully'));
-        // Reload applications
-        add(ApplicationsLoadRequested());
-      },
-    );
+    try {
+      await _applicationRepository.createApplication(
+        event.jobId,
+      );
+      emit(ApplicationsSuccess('Application submitted successfully'));
+      // Reload applications
+      add(ApplicationsLoadRequested());
+    } catch (error) {
+      emit(ApplicationsError(error.toString()));
+    }
   }
 }

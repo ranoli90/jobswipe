@@ -2,19 +2,19 @@ class ApiEndpoints {
   // Base URL is configured in Dio
 
   // Auth endpoints
-  static const String login = '/v1/auth/login';
-  static const String register = '/v1/auth/register';
-  static const String logout = '/v1/auth/logout';
-  static const String getCurrentUser = '/v1/auth/me';
-  static const String refreshToken = '/v1/auth/refresh';
-  static const String verifyEmail = '/v1/auth/verify-email';
-  static const String forgotPassword = '/v1/auth/forgot-password';
-  static const String resetPassword = '/v1/auth/reset-password';
+  static const String login = '/v1/login';
+  static const String register = '/v1/register';
+  static const String logout = '/v1/logout';
+  static const String getCurrentUser = '/v1/me';
+  static const String refreshToken = '/v1/refresh';
+  static const String verifyEmail = '/v1/verify-email';
+  static const String forgotPassword = '/v1/forgot-password';
+  static const String resetPassword = '/v1/reset-password';
 
   // Profile endpoints
   static const String getProfile = '/v1/profile';
   static const String updateProfile = '/v1/profile';
-  static const String uploadResume = '/v1/profile/resume';
+  static const String uploadResume = '/v1/resume';
 
   // Jobs endpoints
   static const String getJobs = '/v1/jobs';
@@ -42,8 +42,8 @@ class ApiEndpoints {
   static const String getUnreadCount = '/v1/notifications/unread-count';
   static const String getNotificationPreferences = '/v1/notifications/preferences';
   static const String updateNotificationPreferences = '/v1/notifications/preferences';
-  static const String registerDeviceToken = '/v1/notifications/device-token';
-  static const String unregisterDeviceToken = '/v1/notifications/device-token/{deviceId}';
+  static const String registerDeviceToken = '/v1/device-token';
+  static const String unregisterDeviceToken = '/v1/device-token/{deviceId}';
 
   // Health check
   static const String health = '/health';

@@ -204,12 +204,15 @@ async def health_check():
 if settings:
     try:
         limiter = Limiter(key_func=get_remote_address, storage_uri=settings.redis_url)
+        app.state.limiter = limiter
         logger.info("Redis rate limiter initialized successfully")
     except Exception as e:
         limiter = Limiter(key_func=get_remote_address, storage_uri="memory://")
+        app.state.limiter = limiter
         logger.warning("Redis rate limiter failed, using in-memory fallback: %s", e)
 else:
     limiter = Limiter(key_func=get_remote_address, storage_uri="memory://")
+    app.state.limiter = limiter
     logger.warning("Settings not loaded, using in-memory rate limiter")
 
 
@@ -325,7 +328,7 @@ from backend.api.routers import (analytics, application_automation,
 # Include routers only if settings loaded successfully
 if settings:
     try:
-        app.include_router(auth.router, prefix="/api/v1", tags=["auth"])
+        app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
         app.include_router(jobs.router, prefix="/api/v1", tags=["jobs"])
         app.include_router(applications.router, prefix="/api/v1", tags=["applications"])
         app.include_router(profile.router, prefix="/api/v1", tags=["profile"])

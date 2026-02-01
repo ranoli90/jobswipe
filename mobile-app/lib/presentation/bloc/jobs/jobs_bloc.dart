@@ -1,9 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:dartz/dartz.dart';
-import '../../../data/job_repository.dart';
+import 'package:dio/dio.dart';
+import '../../../core/data/job_repository.dart';
 import '../../../models/job.dart';
-import '../../../core/exceptions.dart';
 
 // Jobs Events
 abstract class JobsEvent extends Equatable {
@@ -121,6 +120,7 @@ class JobsJobDetailLoaded extends JobsState {
 // Jobs BLoC
 class JobsBloc extends Bloc<JobsEvent, JobsState> {
   final JobRepository _jobRepository;
+  CancelToken? _cancelToken;
 
   JobsBloc(this._jobRepository) : super(JobsInitial()) {
     on<JobsFeedRequested>(_onJobsFeedRequested);
@@ -136,24 +136,31 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
   ) async {
     if (state is JobsLoading) return;
 
-    emit(JobsLoading());
-    final result = await _jobRepository.getJobFeed(
-      cursor: event.cursor,
-      pageSize: event.limit,
-    );
+    // Cancel any ongoing request
+    _cancelToken?.cancel('New request received');
+    _cancelToken = CancelToken();
 
-    result.fold(
-      (error) => emit(JobsError(error.message)),
-      (jobs) {
-        // Extract next cursor from the last job if available
-        final nextCursor = jobs.isNotEmpty ? jobs.last.id : null;
-        emit(JobsLoaded(
-          jobs: jobs,
-          nextCursor: nextCursor,
-          hasMore: jobs.length >= event.limit,
-        ));
-      },
-    );
+    emit(JobsLoading());
+    try {
+      final jobs = await _jobRepository.getJobFeed(
+        cursor: event.cursor,
+        pageSize: event.limit,
+        cancelToken: _cancelToken,
+      );
+
+      // Extract next cursor from the last job if available
+      final nextCursor = jobs.isNotEmpty ? jobs.last.id : null;
+      emit(JobsLoaded(
+        jobs: jobs,
+        nextCursor: nextCursor,
+        hasMore: jobs.length >= event.limit,
+      ));
+    } catch (error) {
+      if (error is DioException && error.type == DioExceptionType.cancel) {
+        return; // Ignore cancellation errors
+      }
+      emit(JobsError(error.toString()));
+    }
   }
 
   Future<void> _onJobsRefreshRequested(
@@ -161,19 +168,18 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
     Emitter<JobsState> emit,
   ) async {
     emit(JobsLoading());
-    final result = await _jobRepository.getJobFeed(pageSize: 20);
+    try {
+      final jobs = await _jobRepository.getJobFeed(pageSize: 20);
 
-    result.fold(
-      (error) => emit(JobsError(error)),
-      (jobs) {
-        final nextCursor = jobs.isNotEmpty ? jobs.last.id : null;
-        emit(JobsLoaded(
-          jobs: jobs,
-          nextCursor: nextCursor,
-          hasMore: jobs.length >= 20,
-        ));
-      },
-    );
+      final nextCursor = jobs.isNotEmpty ? jobs.last.id : null;
+      emit(JobsLoaded(
+        jobs: jobs,
+        nextCursor: nextCursor,
+        hasMore: jobs.length >= 20,
+      ));
+    } catch (error) {
+      emit(JobsError(error.toString()));
+    }
   }
 
   Future<void> _onJobsSwipeRequested(
@@ -183,18 +189,17 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
     if (state is! JobsLoaded) return;
 
     final currentState = state as JobsLoaded;
-    final result = await _jobRepository.swipeJob(event.jobId, event.action);
+    try {
+      await _jobRepository.swipeJob(event.jobId, event.action);
 
-    result.fold(
-      (error) => emit(JobsError(error)),
-      (_) {
-        // Remove the swiped job from the list
-        final updatedJobs = currentState.jobs
-            .where((job) => job.id != event.jobId)
-            .toList();
-        emit(currentState.copyWith(jobs: updatedJobs));
-      },
-    );
+      // Remove the swiped job from the list
+      final updatedJobs = currentState.jobs
+          .where((job) => job.id != event.jobId)
+          .toList();
+      emit(currentState.copyWith(jobs: updatedJobs));
+    } catch (error) {
+      emit(JobsError(error.toString()));
+    }
   }
 
   Future<void> _onJobsMatchesRequested(
@@ -202,12 +207,12 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
     Emitter<JobsState> emit,
   ) async {
     emit(JobsLoading());
-    final result = await _jobRepository.getJobMatches();
-
-    result.fold(
-      (error) => emit(JobsError(error)),
-      (matches) => emit(JobsMatchLoaded(matches)),
-    );
+    try {
+      final matches = await _jobRepository.getJobMatches();
+      emit(JobsMatchLoaded(matches));
+    } catch (error) {
+      emit(JobsError(error.toString()));
+    }
   }
 
   Future<void> _onJobsJobDetailRequested(
@@ -215,11 +220,11 @@ class JobsBloc extends Bloc<JobsEvent, JobsState> {
     Emitter<JobsState> emit,
   ) async {
     emit(JobsLoading());
-    final result = await _jobRepository.getJobDetails(event.jobId);
-
-    result.fold(
-      (error) => emit(JobsError(error.message)),
-      (job) => emit(JobsJobDetailLoaded(job)),
-    );
+    try {
+      final job = await _jobRepository.getJobDetails(event.jobId);
+      emit(JobsJobDetailLoaded(job));
+    } catch (error) {
+      emit(JobsError(error.toString()));
+    }
   }
 }

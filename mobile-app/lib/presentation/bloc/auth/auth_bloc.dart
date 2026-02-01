@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
-import '../../../data/auth_repository.dart';
+import '../../../core/data/auth_repository.dart';
 import '../../../models/user.dart';
 
 // Auth Events
@@ -102,8 +102,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(AuthLoading());
     try {
-      final isLoggedIn = await _authRepository.isLoggedIn();
-      if (isLoggedIn) {
+      final token = await _authRepository.getAccessToken();
+      if (token != null) {
         final userData = await _authRepository.getCurrentUser();
         final user = User.fromJson(userData);
         emit(AuthAuthenticated(user));
@@ -121,7 +121,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(AuthLoading());
     try {
-      final userData = await _authRepository.login(event.email, event.password);
+      final userData = await _authRepository.login(
+        email: event.email,
+        password: event.password,
+      );
       final user = User.fromJson(userData);
       emit(AuthAuthenticated(user));
     } catch (error) {
@@ -136,9 +139,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(AuthLoading());
     try {
       final userData = await _authRepository.register(
-        event.email,
-        event.password,
-        event.fullName,
+        email: event.email,
+        password: event.password,
+        fullName: event.fullName,
       );
       final user = User.fromJson(userData);
       emit(AuthAuthenticated(user));

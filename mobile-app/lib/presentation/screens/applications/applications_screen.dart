@@ -5,7 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../bloc/applications/applications_bloc.dart';
-import '../../models/application.dart';
+import '../../../core/models/application.dart';
 
 class ApplicationsScreen extends StatefulWidget {
   const ApplicationsScreen({super.key});

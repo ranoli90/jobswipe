@@ -10,10 +10,10 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from backend.db.database import get_db
+from backend.db.database import SessionLocal
 from backend.db.models import (ApplicationAuditLog, ApplicationTask,
                                CandidateProfile, Job)
-from workers.application_agent.agents.greenhouse import (
+from backend.workers.application_agent.agents.greenhouse import (
     ApplicationLogger, GreenhouseAgent, LeverAgent)
 
 logger = logging.getLogger(__name__)
@@ -33,8 +33,10 @@ async def create_application_task(
     Returns:
         ApplicationTask object
     """
-    if db is None:
-        db = next(get_db())
+    # Manage session lifecycle if not provided
+    session_provided = db is not None
+    if not session_provided:
+        db = SessionLocal()
 
     try:
         # Check if task already exists
@@ -69,6 +71,9 @@ async def create_application_task(
             db.rollback()
         logger.error("Error creating application task: %s", str(e))
         raise
+    finally:
+        if not session_provided and db:
+            db.close()
 
 
 async def run_application_task(task_id: str, db=None):
@@ -84,8 +89,10 @@ async def run_application_task(task_id: str, db=None):
     """
     resume_path = None
     
-    if db is None:
-        db = next(get_db())
+    # Manage session lifecycle if not provided
+    session_provided = db is not None
+    if not session_provided:
+        db = SessionLocal()
 
     try:
         task = db.query(ApplicationTask).filter(ApplicationTask.id == task_id).first()
@@ -141,7 +148,7 @@ async def run_application_task(task_id: str, db=None):
         success = False
         error = None
 
-        print(f"DEBUG: job.source = '{getattr(job, 'source', 'NONE')}', type = {type(getattr(job, 'source', 'NONE'))}")
+        logger.debug("DEBUG: job.source = '%s', type = %s", getattr(job, 'source', 'NONE'), type(getattr(job, 'source', 'NONE')))
         if job.source == "greenhouse":
             success, error = await GreenhouseAgent.apply(
                 job.apply_url,
@@ -218,6 +225,8 @@ async def run_application_task(task_id: str, db=None):
                 os.unlink(resume_path)
             except OSError:
                 pass
+        if not session_provided and db:
+            db.close()
 
 
 def get_application_status(
@@ -234,8 +243,10 @@ def get_application_status(
     Returns:
         ApplicationTask object or None
     """
-    if db is None:
-        db = next(get_db())
+    # Manage session lifecycle if not provided
+    session_provided = db is not None
+    if not session_provided:
+        db = SessionLocal()
 
     try:
         return (
@@ -250,7 +261,7 @@ def get_application_status(
         logger.error("Error getting application status: %s", str(e))
         raise
     finally:
-        if db:
+        if not session_provided and db:
             db.close()
 
 
@@ -266,8 +277,10 @@ def cancel_application(user_id: str, job_id: str, db=None) -> bool:
     Returns:
         Boolean indicating success
     """
-    if db is None:
-        db = next(get_db())
+    # Manage session lifecycle if not provided
+    session_provided = db is not None
+    if not session_provided:
+        db = SessionLocal()
 
     try:
         task = (
@@ -293,7 +306,7 @@ def cancel_application(user_id: str, job_id: str, db=None) -> bool:
         logger.error("Error cancelling application: %s", str(e))
         raise
     finally:
-        if db:
+        if not session_provided and db:
             db.close()
 
 
@@ -308,8 +321,10 @@ def get_user_applications(user_id: str, db=None) -> list:
     Returns:
         List of ApplicationTask objects
     """
-    if db is None:
-        db = next(get_db())
+    # Manage session lifecycle if not provided
+    session_provided = db is not None
+    if not session_provided:
+        db = SessionLocal()
 
     try:
         return (
@@ -323,5 +338,5 @@ def get_user_applications(user_id: str, db=None) -> list:
         logger.error("Error getting user applications: %s", str(e))
         raise
     finally:
-        if db:
+        if not session_provided and db:
             db.close()

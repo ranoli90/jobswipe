@@ -42,7 +42,7 @@ def test_security_headers_on_error(client: TestClient):
     """Test that security headers are present on error responses"""
     
     # Make a request to a non-existent endpoint to trigger 404
-    response = client.get("/v1/non-existent-endpoint")
+    response = client.get("/api/v1/non-existent-endpoint")
     
     assert response.status_code == 404
     

@@ -50,7 +50,7 @@ class TestJobApplicationWorkflow:
         """Test user registration workflow"""
         # Test user registration endpoint
         response = client.post(
-            "/v1/auth/register",
+            "/api/v1/auth/register",
             json={
                 "email": "newuser@example.com",
                 "password": "SecurePassword123!",
@@ -59,32 +59,33 @@ class TestJobApplicationWorkflow:
         )
 
         # Assert registration succeeds or returns appropriate error for existing user
-        assert response.status_code in [201, 400, 409]
+        assert response.status_code in [200, 201, 400, 409]
 
-        if response.status_code == 201:
+        if response.status_code in [200, 201]:
             data = response.json()
-            assert "id" in data
-            assert "access_token" in data
+            assert "user" in data
+            assert "id" in data["user"]
 
     def test_user_login_flow(self, client):
         """Test user login workflow"""
         # First register a user
-        client.post(
-            "/v1/auth/register",
+        register_response = client.post(
+            "/api/v1/auth/register",
             json={
                 "email": "logintest@example.com",
                 "password": "SecurePassword123!",
                 "name": "Login Test",
             },
         )
+        assert register_response.status_code in [200, 201], f"Register failed: {register_response.text}"
 
-        # Then login
+        # Then login - OAuth2 expects form data, not JSON
         response = client.post(
-            "/v1/auth/login",
-            json={"email": "logintest@example.com", "password": "SecurePassword123!"},
+            "/api/v1/auth/login",
+            data={"username": "logintest@example.com", "password": "SecurePassword123!"},
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 200, f"Login failed: {response.text}"
         data = response.json()
         assert "access_token" in data
         assert "token_type" in data
@@ -92,7 +93,7 @@ class TestJobApplicationWorkflow:
     def test_job_search_flow(self, client):
         """Test job search workflow"""
         response = client.get(
-            "/v1/jobs/",
+            "/api/v1/jobs/",
             params={"page": 1, "page_size": 10, "query": "software engineer"},
         )
 
@@ -105,7 +106,7 @@ class TestJobApplicationWorkflow:
 
     def test_job_detail_flow(self, client, mock_job):
         """Test getting job details"""
-        response = client.get(f"/v1/jobs/{mock_job['id']}")
+        response = client.get(f"/api/v1/jobs/{mock_job['id']}")
 
         # Should return 200 if job exists, 404 if not
         assert response.status_code in [200, 404]
@@ -117,7 +118,7 @@ class TestJobApplicationWorkflow:
         with patch("backend.api.routers.jobs.get_current_user") as mock_get_user:
             mock_get_user.return_value = Mock(id=mock_user["id"])
 
-            response = client.post(f"/v1/jobs/{mock_job['id']}/like")
+            response = client.post(f"/api/v1/jobs/{mock_job['id']}/like")
 
             # Assert response
             assert response.status_code in [200, 201, 404, 401]
@@ -134,7 +135,7 @@ class TestJobApplicationWorkflow:
             mock_get_user.return_value = Mock(id=mock_user["id"])
 
             response = client.post(
-                f"/v1/applications/",
+                "/api/v1/applications/",
                 json={
                     "job_id": mock_job["id"],
                     "resume_id": "resume-123",
@@ -156,7 +157,7 @@ class TestJobApplicationWorkflow:
         ) as mock_get_user:
             mock_get_user.return_value = Mock(id=mock_user["id"])
 
-            response = client.get("/v1/applications/")
+            response = client.get("/api/v1/applications/")
 
             assert response.status_code == 200
             data = response.json()
@@ -168,7 +169,7 @@ class TestJobApplicationWorkflow:
             mock_get_user.return_value = Mock(id=mock_user["id"])
 
             response = client.put(
-                "/v1/profile/",
+                "/api/v1/profile/",
                 json={
                     "name": "Updated Name",
                     "bio": "New bio",
@@ -188,7 +189,7 @@ class TestJobApplicationWorkflow:
             mock_get_user.return_value = Mock(id=mock_user["id"])
 
             response = client.put(
-                "/v1/notifications/preferences",
+                "/api/v1/notifications/preferences",
                 json={
                     "push_enabled": True,
                     "email_enabled": True,
@@ -207,8 +208,8 @@ class TestAuthenticationFlow:
     def test_invalid_login(self, client):
         """Test login with invalid credentials"""
         response = client.post(
-            "/v1/auth/login",
-            json={"email": "nonexistent@example.com", "password": "wrongpassword"},
+            "/api/v1/auth/login",
+            data={"username": "nonexistent@example.com", "password": "wrongpassword"},
         )
 
         assert response.status_code == 401
@@ -216,7 +217,7 @@ class TestAuthenticationFlow:
     def test_weak_password_rejection(self, client):
         """Test that weak passwords are rejected"""
         response = client.post(
-            "/v1/auth/register",
+            "/api/v1/auth/register",
             json={
                 "email": "test@example.com",
                 "password": "123",  # Weak password
@@ -229,18 +230,19 @@ class TestAuthenticationFlow:
     def test_token_refresh(self, client):
         """Test token refresh workflow"""
         # First register and login
-        client.post(
-            "/v1/auth/register",
+        register_response = client.post(
+            "/api/v1/auth/register",
             json={
                 "email": "refreshtest@example.com",
                 "password": "SecurePassword123!",
                 "name": "Refresh Test",
             },
         )
+        assert register_response.status_code in [200, 201], f"Register failed: {register_response.text}"
 
         login_response = client.post(
-            "/v1/auth/login",
-            json={"email": "refreshtest@example.com", "password": "SecurePassword123!"},
+            "/api/v1/auth/login",
+            data={"username": "refreshtest@example.com", "password": "SecurePassword123!"},
         )
 
         if login_response.status_code == 200:
@@ -248,7 +250,7 @@ class TestAuthenticationFlow:
 
             # Try to refresh
             response = client.post(
-                "/v1/auth/refresh", json={"refresh_token": refresh_token}
+                "/api/v1/auth/refresh", json={"refresh_token": refresh_token}
             )
 
             assert response.status_code == 200
@@ -264,7 +266,7 @@ class TestJobIngestionFlow:
         ) as mock_get_user:
             mock_get_user.return_value = Mock(id="admin-user", is_admin=True)
 
-            response = client.get("/v1/ingestion/status")
+            response = client.get("/api/v1/ingestion/status")
 
             assert response.status_code == 200
             data = response.json()
@@ -279,7 +281,7 @@ class TestJobIngestionFlow:
             mock_get_user.return_value = Mock(id="admin-user", is_admin=True)
 
             response = client.post(
-                "/v1/ingestion/trigger", json={"source": "greenhouse", "limit": 100}
+                "/api/v1/ingestion/trigger", json={"source": "greenhouse", "limit": 100}
             )
 
             assert response.status_code in [200, 202, 400, 401, 403]
@@ -293,7 +295,7 @@ class TestAnalyticsFlow:
         with patch("backend.api.routers.analytics.get_current_user") as mock_get_user:
             mock_get_user.return_value = Mock(id="admin-user", is_admin=True)
 
-            response = client.get("/v1/analytics/dashboard")
+            response = client.get("/api/v1/analytics/dashboard")
 
             assert response.status_code == 200
             data = response.json()
@@ -304,7 +306,7 @@ class TestAnalyticsFlow:
         with patch("backend.api.routers.analytics.get_current_user") as mock_get_user:
             mock_get_user.return_value = Mock(id=mock_user["id"])
 
-            response = client.get(f"/v1/analytics/users/{mock_user['id']}")
+            response = client.get(f"/api/v1/analytics/users/{mock_user['id']}")
 
             assert response.status_code in [200, 403, 404]
 

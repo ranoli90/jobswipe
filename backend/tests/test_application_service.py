@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from services.application_service import (create_application_task,
+from backend.services.application_service import (create_application_task,
                                                   run_application_task)
 
 

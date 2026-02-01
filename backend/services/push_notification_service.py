@@ -16,7 +16,7 @@ import httpx
 from backend.config import settings
 from backend.db.database import async_session
 from backend.db.models import DeviceToken, Notification, User
-from services.notification_service import NotificationService
+from backend.services.notification_service import NotificationService
 
 logger = logging.getLogger(__name__)
 

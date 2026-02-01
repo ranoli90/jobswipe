@@ -6,22 +6,51 @@ class SecureStorageService {
   SecureStorageService(this._storage);
 
   Future<void> write(String key, String value) async {
-    await _storage.write(key: key, value: value);
+    await _storage.write(
+      key: key,
+      value: value,
+      aOptions: _getAndroidOptions(),
+      iOptions: _getIOSOptions(),
+    );
   }
 
   Future<String?> read(String key) async {
-    return await _storage.read(key: key);
+    return await _storage.read(
+      key: key,
+      aOptions: _getAndroidOptions(),
+      iOptions: _getIOSOptions(),
+    );
   }
 
   Future<void> delete(String key) async {
-    await _storage.delete(key: key);
+    await _storage.delete(
+      key: key,
+      aOptions: _getAndroidOptions(),
+      iOptions: _getIOSOptions(),
+    );
   }
 
   Future<void> deleteAll() async {
-    await _storage.deleteAll();
+    await _storage.deleteAll(
+      aOptions: _getAndroidOptions(),
+      iOptions: _getIOSOptions(),
+    );
   }
 
   Future<Map<String, String>> readAll() async {
-    return await _storage.readAll();
+    return await _storage.readAll(
+      aOptions: _getAndroidOptions(),
+      iOptions: _getIOSOptions(),
+    );
   }
+
+  // Android security options
+  AndroidOptions _getAndroidOptions() => const AndroidOptions(
+        encryptedSharedPreferences: true,
+      );
+
+  // iOS security options
+  IOSOptions _getIOSOptions() => const IOSOptions(
+        accessibility: KeychainAccessibility.first_unlock,
+      );
 }

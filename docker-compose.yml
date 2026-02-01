@@ -87,7 +87,7 @@ services:
         python /app/tools/init_vault.py
 
         # Initialize database
-        python -c 'from db.database import init_db; init_db()'
+        python -c 'from backend.db.database import init_db; init_db()'
 
         # Start API
         uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
@@ -98,19 +98,15 @@ services:
     build: ./backend
     container_name: jobswipe-celery-worker
     environment:
-      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres/jobswipe
-      CELERY_BROKER_URL: amqp://guest:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672//
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres/jobswipe
+      CELERY_BROKER_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672//
       CELERY_RESULT_BACKEND: redis://redis:6379/0
       SECRET_KEY: "dev-secret-key-change-in-production"
       ENCRYPTION_PASSWORD: "dev-encryption-password-change-in-production"
       ENCRYPTION_SALT: "dev-salt-change-in-production"
       VAULT_URL: "http://vault:8200"
       VAULT_TOKEN: "dev-token-change-in-production"
-      VAULT_URL: "http://vault:8200"
-      VAULT_TOKEN: "dev-token-change-in-production"
       OAUTH2_REDIRECT_URI: "http://localhost:8000/v1/auth/oauth2/callback"
-      ENCRYPTION_PASSWORD: "dev-encryption-password-change-in-production"
-      ENCRYPTION_SALT: "dev-salt-change-in-production"
     depends_on:
       postgres:
         condition: service_healthy

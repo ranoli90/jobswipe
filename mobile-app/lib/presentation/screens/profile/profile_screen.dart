@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../bloc/auth/auth_bloc.dart';
 import '../../bloc/profile/profile_bloc.dart';
-import '../../models/user.dart';
+import '../../../models/profile.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -62,11 +63,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _addSkill(String skill) {
     final currentState = context.read<ProfileBloc>().state;
     if (currentState is ProfileLoaded) {
-      final updatedSkills = List<String>.from(currentState.user.skills)..add(skill);
+      final updatedSkills = List<String>.from(currentState.user.skills ?? [])..add(skill);
       context.read<ProfileBloc>().add(ProfileSkillsUpdateRequested(updatedSkills));
       _skillsController.clear();
     } else if (currentState is ProfileUpdated) {
-      final updatedSkills = List<String>.from(currentState.user.skills)..add(skill);
+      final updatedSkills = List<String>.from(currentState.user.skills ?? [])..add(skill);
       context.read<ProfileBloc>().add(ProfileSkillsUpdateRequested(updatedSkills));
       _skillsController.clear();
     }
@@ -75,26 +76,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _removeSkill(String skill) {
     final currentState = context.read<ProfileBloc>().state;
     if (currentState is ProfileLoaded) {
-      final updatedSkills = List<String>.from(currentState.user.skills)..remove(skill);
+      final updatedSkills = List<String>.from(currentState.user.skills ?? [])..remove(skill);
       context.read<ProfileBloc>().add(ProfileSkillsUpdateRequested(updatedSkills));
     } else if (currentState is ProfileUpdated) {
-      final updatedSkills = List<String>.from(currentState.user.skills)..remove(skill);
+      final updatedSkills = List<String>.from(currentState.user.skills ?? [])..remove(skill);
       context.read<ProfileBloc>().add(ProfileSkillsUpdateRequested(updatedSkills));
     }
   }
 
   Future<void> _handleUploadResume() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf', 'doc', 'docx'],
-      allowMultiple: false,
-    );
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx'],
+        allowMultiple: false,
+      );
 
-    if (result != null && result.files.isNotEmpty && mounted) {
-      final file = result.files.first;
-      if (file.path != null) {
-        context.read<ProfileBloc>().add(
-          ProfileResumeUploadRequested(file.path!),
+      if (result != null && result.files.isNotEmpty && mounted) {
+        final file = result.files.first;
+        if (file.path != null) {
+          // Create a properly typed XFile for the repository
+          final xFile = XFile(file.path!);
+          context.read<ProfileBloc>().add(
+            ProfileResumeUploadRequested(xFile),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error picking file: $e'),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     }
@@ -216,8 +230,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               radius: 50,
                               backgroundColor: AppColors.primary.withOpacity(0.1),
                               child: Text(
-                                (user.fullName ?? user.email)
+                                (user.fullName?.isNotEmpty == true ? user.fullName! : user.email ?? 'U')
                                     .split(' ')
+                                    .where((name) => name.isNotEmpty)
                                     .map((name) => name[0].toUpperCase())
                                     .take(2)
                                     .join(),
@@ -253,7 +268,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       // Email (read-only)
                       _buildReadOnlyField(
                         label: 'Email',
-                        value: user.email,
+                        value: user.email ?? 'No email',
                         icon: Icons.email_outlined,
                       ),
                       const SizedBox(height: AppTokens.spacingMd),
@@ -355,7 +370,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Wrap(
                             spacing: AppTokens.spacingXs,
                             runSpacing: AppTokens.spacingXs,
-                            children: user.skills.map(
+                            children: (user.skills ?? []).map(
                               (skill) => Chip(
                                 label: Text(skill),
                                 backgroundColor: AppColors.primary.withOpacity(0.1),
@@ -372,7 +387,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SizedBox(height: AppTokens.spacingLg),
 
                       // Work experience
-                      if (user.workExperience.isNotEmpty)
+                      if (user.workExperience?.isNotEmpty == true)
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -419,7 +434,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       OutlinedButton.icon(
                         onPressed: _handleLogout,
                         icon: const Icon(Icons.logout_outlined),
-                        label: 'Logout',
+                        label: const Text('Logout'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.error,
                           side: BorderSide(color: AppColors.error),

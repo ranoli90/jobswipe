@@ -25,8 +25,8 @@ BACKEND_DIR = str(Path(__file__).parent.parent)
 sys.path.insert(0, BACKEND_DIR)
 
 # Import our models
-from db.models import Base
-from config import Settings
+from backend.db.models import Base
+from backend.config import Settings
 
 # Load settings
 settings = Settings()

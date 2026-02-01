@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "com.jobswipe.jobswipe_mobile"
+    namespace = "com.jobswipe.jobswipe"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -22,7 +22,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.jobswipe.jobswipe_mobile"
+        applicationId = "com.jobswipe.jobswipe"
         minSdk = 21
         targetSdk = 34
         versionCode = flutter.versionCode

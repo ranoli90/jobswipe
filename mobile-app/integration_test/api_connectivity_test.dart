@@ -4,7 +4,7 @@ import 'package:jobswipe/main.dart' as app;
 import 'package:jobswipe/core/di/service_locator.dart' as di;
 import 'package:jobswipe/core/datasources/remote/api_client.dart';
 import 'package:jobswipe/core/datasources/remote/api_endpoints.dart';
-import 'package:jobswipe/repositories/auth_repository.dart';
+import 'package:jobswipe/core/data/auth_repository.dart';
 import 'package:get_it/get_it.dart';
 
 void main() {
@@ -40,7 +40,10 @@ void main() {
 
       // This should fail with invalid credentials, but test that API is reachable
       expect(
-        () async => await authRepository.login('invalid@email.com', 'wrongpassword'),
+        () async => await authRepository.login(
+          email: 'invalid@email.com',
+          password: 'wrongpassword',
+        ),
         throwsA(isA<Exception>()),
       );
     });

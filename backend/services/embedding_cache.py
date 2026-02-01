@@ -50,7 +50,8 @@ class EmbeddingCache:
             socket_timeout: Socket timeout in seconds
             socket_connect_timeout: Connection timeout in seconds
         """
-        self.redis_url = redis_url or os.getenv("REDIS_URL", "redis://localhost:6379/0")
+        from backend.config import settings
+        self.redis_url = redis_url or settings.redis_url
         self.max_connections = max_connections
         self.socket_timeout = socket_timeout
         self.socket_connect_timeout = socket_connect_timeout

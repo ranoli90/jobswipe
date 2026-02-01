@@ -98,10 +98,59 @@ Use the GitHub Actions workflow in `.github/workflows/build_ios.yml` for buildin
 
 - [`PRODUCTION_DEPLOYMENT_GUIDE.md`](PRODUCTION_DEPLOYMENT_GUIDE.md) - Comprehensive deployment guide
 - [`PRODUCTION_READINESS_SUMMARY.md`](PRODUCTION_READINESS_SUMMARY.md) - Production readiness checklist
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) - System architecture and design patterns
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) - Contribution guidelines
+- [`CHANGELOG.md`](CHANGELOG.md) - Version history and changes
 - [`backend/README.md`](backend/README.md) - Backend API documentation
 - [`backend_audit_report.md`](backend_audit_report.md) - Backend architecture audit
 - [`infrastructure_audit_report.md`](infrastructure_audit_report.md) - Infrastructure audit
 - [`mobile_app_audit_report.md`](mobile_app_audit_report.md) - Mobile app audit with build strategies
+
+### Architecture Highlights
+
+#### BLoC Pattern with Try/Catch
+
+The mobile app uses the BLoC (Business Logic Component) pattern for state management. We migrated from using the `Either` type (from the `dartz` package) to a simpler try/catch approach:
+
+**Repository Layer:**
+```dart
+Future<List<Job>> getJobFeed({int pageSize = 20, String? cursor}) async {
+  try {
+    final response = await _apiClient.get(
+      ApiEndpoints.getJobFeed,
+      queryParameters: {'page_size': pageSize, if (cursor != null) 'cursor': cursor},
+    );
+    return List<Job>.from(response.data.map((jobJson) => Job.fromJson(jobJson)));
+  } catch (e) {
+    rethrow;
+  }
+}
+```
+
+**BLoC Layer:**
+```dart
+Future<void> _onJobsFeedRequested(
+  JobsFeedRequested event,
+  Emitter<JobsState> emit,
+) async {
+  emit(JobsLoading());
+  try {
+    final jobs = await _jobRepository.getJobFeed(
+      cursor: event.cursor,
+      pageSize: event.limit,
+    );
+    emit(JobsLoaded(jobs: jobs, hasMore: jobs.length >= event.limit));
+  } catch (error) {
+    emit(JobsError(error.toString()));
+  }
+}
+```
+
+This approach:
+- Removes the dependency on the `dartz` package
+- Simplifies error handling with standard Dart exceptions
+- Makes the code more readable and maintainable
+- Aligns with Flutter/Dart best practices
 
 ## Status
 

@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from backend.api.routers.auth import get_current_user
 from backend.db.database import get_db
 from backend.db.models import ApplicationAuditLog, ApplicationTask, User
-from services.application_service import (cancel_application,
+from backend.services.application_service import (cancel_application,
                                                   create_application_task,
                                                   get_application_status)
 
@@ -90,7 +90,7 @@ async def create_application(
         return ApplicationTaskResponse.from_orm(task)
 
     except Exception as e:
-        logger.error("Error creating application for user %s: %s", ('current_user.id', 'str(e)'))
+        logger.error("Error creating application for user %s: %s", current_user.id, str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to create application: {str(e)}",

@@ -13,7 +13,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
 from backend.db.database import get_db
-from services.api_key_service import ApiKeyService
+from backend.services.api_key_service import ApiKeyService
 
 
 class ApiKeyAuthMiddleware(BaseHTTPMiddleware):
@@ -72,6 +72,8 @@ class ApiKeyAuthMiddleware(BaseHTTPMiddleware):
         Returns:
             The API key or None
         """
+        if auth_header and auth_header.startswith("Bearer "):
+            return auth_header[len("Bearer "):]
         return None
 
     async def dispatch(self, request: Request, call_next: Callable):
@@ -84,8 +86,11 @@ class ApiKeyAuthMiddleware(BaseHTTPMiddleware):
         if not self._should_authenticate(path):
             return await call_next(request)
 
-        # Get API key from header
+        # Get API key from header - support both X-API-Key and Bearer token
         api_key = request.headers.get("X-API-Key")
+        if not api_key:
+            auth_header = request.headers.get("Authorization")
+            api_key = self._extract_bearer_token(auth_header)
 
         if not api_key:
             return JSONResponse(

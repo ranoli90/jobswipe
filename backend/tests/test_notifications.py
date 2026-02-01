@@ -29,7 +29,7 @@ from backend.db.models import (
     User,
     UserNotificationPreferences,
 )
-from services.notification_service import NotificationService
+from backend.services.notification_service import NotificationService
 
 # Import test fixtures
 from tests.conftest import *

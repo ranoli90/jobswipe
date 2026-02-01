@@ -8,7 +8,7 @@ import logging
 import os
 import re
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -18,13 +18,13 @@ from passlib.context import CryptContext
 from pydantic import BaseModel, validator
 from sqlalchemy.orm import Session
 
-from api.validators import email_validator, string_validator
+from backend.api.validators import email_validator, string_validator
 from backend.config import settings
 from backend.db.database import get_db
 from backend.db.models import FailedLoginAttempt, User
-from services.mfa_service import mfa_service
-from services.oauth2_service import oauth2_service
-from services.notification_service import NotificationService
+from backend.services.mfa_service import mfa_service
+from backend.services.oauth2_service import oauth2_service
+from backend.services.notification_service import NotificationService
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -293,7 +293,7 @@ async def login(
         ip_address = request.client.host if request.client else "unknown"
         user_agent = request.headers.get("user-agent", "")
 
-        logger.info("Login attempt for email: %s from IP: %s", ('email', 'ip_address'))
+        logger.info("Login attempt for email: %s from IP: %s", email, ip_address)
 
         # Check for suspicious activity
         one_hour_ago = datetime.now(timezone.utc) - timedelta(hours=1)

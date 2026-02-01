@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../data/profile_repository.dart';
+import '../../../core/data/profile_repository.dart';
 import '../../../models/profile.dart';
 
 // Profile Events
@@ -137,12 +137,12 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     Emitter<ProfileState> emit,
   ) async {
     emit(ProfileLoading());
-    final result = await _profileRepository.getProfile();
-
-    result.fold(
-      (error) => emit(ProfileError(error)),
-      (user) => emit(ProfileLoaded(user)),
-    );
+    try {
+      final user = await _profileRepository.getProfile();
+      emit(ProfileLoaded(user));
+    } catch (error) {
+      emit(ProfileError(error.toString()));
+    }
   }
 
   Future<void> _onProfileUpdateRequested(
@@ -150,15 +150,15 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     Emitter<ProfileState> emit,
   ) async {
     emit(ProfileLoading());
-    final result = await _profileRepository.updateProfile(event.data);
-
-    result.fold(
-      (error) => emit(ProfileError(error)),
-      (user) => emit(ProfileUpdated(
+    try {
+      final user = await _profileRepository.updateProfile(event.data);
+      emit(ProfileUpdated(
         user: user,
         message: 'Profile updated successfully',
-      )),
-    );
+      ));
+    } catch (error) {
+      emit(ProfileError(error.toString()));
+    }
   }
 
   Future<void> _onProfileResumeUploadRequested(
@@ -166,12 +166,12 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     Emitter<ProfileState> emit,
   ) async {
     emit(ProfileLoading());
-    final result = await _profileRepository.uploadResume(event.file);
-
-    result.fold(
-      (error) => emit(ProfileError(error)),
-      (resumeUrl) => emit(ProfileResumeUploaded(resumeUrl)),
-    );
+    try {
+      final resumeUrl = await _profileRepository.uploadResume(event.file);
+      emit(ProfileResumeUploaded(resumeUrl));
+    } catch (error) {
+      emit(ProfileError(error.toString()));
+    }
   }
 
   Future<void> _onProfileSkillsUpdateRequested(
@@ -179,15 +179,13 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     Emitter<ProfileState> emit,
   ) async {
     emit(ProfileLoading());
-    final result = await _profileRepository.updateSkills(event.skills);
-
-    result.fold(
-      (error) => emit(ProfileError(error)),
-      (_) {
-        // Reload profile to get updated data
-        add(ProfileLoadRequested());
-      },
-    );
+    try {
+      await _profileRepository.updateSkills(event.skills);
+      // Reload profile to get updated data
+      add(ProfileLoadRequested());
+    } catch (error) {
+      emit(ProfileError(error.toString()));
+    }
   }
 
   Future<void> _onProfileWorkExperienceUpdateRequested(
@@ -195,17 +193,13 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     Emitter<ProfileState> emit,
   ) async {
     emit(ProfileLoading());
-    final result = await _profileRepository.updateWorkExperience(
-      event.experience,
-    );
-
-    result.fold(
-      (error) => emit(ProfileError(error)),
-      (_) {
-        // Reload profile to get updated data
-        add(ProfileLoadRequested());
-      },
-    );
+    try {
+      await _profileRepository.updateWorkExperience(event.experience);
+      // Reload profile to get updated data
+      add(ProfileLoadRequested());
+    } catch (error) {
+      emit(ProfileError(error.toString()));
+    }
   }
 
   Future<void> _onProfileEducationUpdateRequested(
@@ -213,15 +207,13 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     Emitter<ProfileState> emit,
   ) async {
     emit(ProfileLoading());
-    final result = await _profileRepository.updateEducation(event.education);
-
-    result.fold(
-      (error) => emit(ProfileError(error)),
-      (_) {
-        // Reload profile to get updated data
-        add(ProfileLoadRequested());
-      },
-    );
+    try {
+      await _profileRepository.updateEducation(event.education);
+      // Reload profile to get updated data
+      add(ProfileLoadRequested());
+    } catch (error) {
+      emit(ProfileError(error.toString()));
+    }
   }
 
   Future<void> _onProfileEditModeToggled(

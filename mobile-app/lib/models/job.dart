@@ -4,8 +4,12 @@ class Job {
   final String? company;
   final String? location;
   final String? snippet;
-  final double score;
+  final double matchScore;
   final String? applyUrl;
+  final String? logoUrl;
+  final String? salaryRange;
+  final String? type;
+  final List<String> skills;
 
   Job({
     required this.id,
@@ -13,8 +17,12 @@ class Job {
     this.company,
     this.location,
     this.snippet,
-    required this.score,
+    required this.matchScore,
     this.applyUrl,
+    this.logoUrl,
+    this.salaryRange,
+    this.type,
+    this.skills = const [],
   });
 
   factory Job.fromJson(Map<String, dynamic> json) {
@@ -24,8 +32,12 @@ class Job {
       company: json['company'] as String?,
       location: json['location'] as String?,
       snippet: json['snippet'] as String?,
-      score: (json['score'] as num).toDouble(),
+      matchScore: (json['score'] as num).toDouble(),
       applyUrl: json['apply_url'] as String?,
+      logoUrl: json['logo_url'] as String?,
+      salaryRange: json['salary_range'] as String?,
+      type: json['type'] as String?,
+      skills: (json['skills'] as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],
     );
   }
 
@@ -36,8 +48,12 @@ class Job {
       'company': company,
       'location': location,
       'snippet': snippet,
-      'score': score,
+      'score': matchScore,
       'apply_url': applyUrl,
+      'logo_url': logoUrl,
+      'salary_range': salaryRange,
+      'type': type,
+      'skills': skills,
     };
   }
 }
@@ -51,8 +67,12 @@ class JobMatch extends Job {
     String? company,
     String? location,
     String? snippet,
-    required double score,
+    required double matchScore,
     String? applyUrl,
+    String? logoUrl,
+    String? salaryRange,
+    String? type,
+    List<String> skills = const [],
     required this.metadata,
   }) : super(
           id: id,
@@ -60,8 +80,12 @@ class JobMatch extends Job {
           company: company,
           location: location,
           snippet: snippet,
-          score: score,
+          matchScore: matchScore,
           applyUrl: applyUrl,
+          logoUrl: logoUrl,
+          salaryRange: salaryRange,
+          type: type,
+          skills: skills,
         );
 
   factory JobMatch.fromJson(Map<String, dynamic> json) {
@@ -71,8 +95,12 @@ class JobMatch extends Job {
       company: json['company'] as String?,
       location: json['location'] as String?,
       snippet: json['snippet'] as String?,
-      score: (json['score'] as num).toDouble(),
+      matchScore: (json['score'] as num).toDouble(),
       applyUrl: json['apply_url'] as String?,
+      logoUrl: json['logo_url'] as String?,
+      salaryRange: json['salary_range'] as String?,
+      type: json['type'] as String?,
+      skills: (json['skills'] as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],
       metadata: MatchMetadata.fromJson(json['metadata'] as Map<String, dynamic>),
     );
   }

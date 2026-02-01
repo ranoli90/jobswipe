@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from services.openai_service import OpenAIService
+from backend.services.openai_service import OpenAIService
 
 
 class TestOpenAIService:

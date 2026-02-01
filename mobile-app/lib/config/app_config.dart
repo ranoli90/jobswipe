@@ -18,9 +18,9 @@ class AppConfig {
       case 'production':
         return 'https://jobswipe-9obhra.fly.dev/api';
       case 'staging':
-        return 'https://jobswipe-9obhra.fly.dev/api';
+        return 'https://jobswipe-backend-staging.fly.dev/api';
       default:
-        return 'https://jobswipe-9obhra.fly.dev/api'; // Use live backend by default for testing
+        return 'http://localhost:8000/api'; // Local development endpoint
     }
   }
   
