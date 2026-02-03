@@ -71,6 +71,85 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 }
 
+/// Debug overlay widget that displays errors at bottom of screen
+class DebugOverlay extends StatefulWidget {
+  const DebugOverlay({super.key});
+
+  @override
+  State<DebugOverlay> createState() => _DebugOverlayState();
+}
+
+class _DebugOverlayState extends State<DebugOverlay> {
+  static final List<String> _errors = [];
+  static final ValueNotifier<bool> _visibleNotifier = ValueNotifier(false);
+
+  static void addError(String error, String stack) {
+    _errors.add('$error\n\n$stack');
+    _visibleNotifier.value = true;
+  }
+
+  static void clearErrors() {
+    _errors.clear();
+    _visibleNotifier.value = false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: _visibleNotifier,
+      builder: (context, visible, child) {
+        if (!visible || _errors.isEmpty) return const SizedBox.shrink();
+
+        return Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            color: Colors.red.withOpacity(0.9),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Debug Errors',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: clearErrors,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 200),
+                  child: SingleChildScrollView(
+                    child: Text(
+                      _errors.join('\n\n---\n\n'),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -95,6 +174,7 @@ void main() {
       debugPrint('FlutterError: ${details.exceptionAsString()}');
       debugPrint('Stack trace: ${details.stack}');
       if (kIsWeb) debugPrint('Web environment detected');
+      DebugOverlay.addError(details.exceptionAsString(), details.stack.toString());
     };
 
     Widget appContent;
@@ -105,6 +185,9 @@ void main() {
       } else {
         debugPrint('Skipping .env load in web environment');
       }
+      // Log resolved environment and API base for diagnostics
+      debugPrint('Env: ' + AppConfig.env);
+      debugPrint('API Base URL: ' + AppConfig.baseUrl);
     } catch (e) {
       // .env file not bundled in APK - use default config values
       // This is expected behavior for production builds
@@ -147,21 +230,10 @@ void main() {
     }
 
     // Run the app
-    runApp(
-      MaterialApp(
-        title: 'JobSwipe',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.system,
-        home: appContent,
-        navigatorObservers: [
-          LoggingNavigatorObserver(),
-        ],
-      ),
-    );
+    runApp(appContent);
   }, (error, stack) {
     debugPrint('Uncaught zone error: $error');
+    DebugOverlay.addError(error.toString(), stack.toString());
   });
 }
 
@@ -178,6 +250,12 @@ class JobSwipeAppContent extends StatelessWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
       initialRoute: '/',
+      builder: (context, child) => Stack(
+        children: [
+          child!,
+          const DebugOverlay(),
+        ],
+      ),
       onGenerateRoute: (settings) {
         switch (settings.name) {
           case '/':

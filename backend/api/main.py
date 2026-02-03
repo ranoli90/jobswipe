@@ -12,6 +12,8 @@ import sys
 import uuid
 from datetime import datetime
 from contextlib import closing
+from contextvars import ContextVar
+from urllib.parse import urlparse
 
 import redis
 from fastapi import FastAPI, Request
@@ -29,13 +31,15 @@ try:
     settings = Settings()
 except Exception as e:
     environment = os.getenv("ENVIRONMENT", "development").lower()
+    logging.getLogger(__name__).critical(
+        f"Failed to load settings (ENVIRONMENT={environment}): {e}"
+    )
     if environment == "production":
-        print(f"CRITICAL ERROR: Failed to load settings in production: {e}", file=sys.stderr)
-        print("Exiting...", file=sys.stderr)
         sys.exit(1)
     else:
-        print(f"Warning: Failed to load settings: {e}", file=sys.stderr)
-        print("Running in limited mode. Some features may not work.", file=sys.stderr)
+        logging.getLogger(__name__).warning(
+            "Running in limited mode. Some features may not work."
+        )
         settings = None
 
 # Initialize Sentry error tracking (Fly.io deployment)
@@ -44,9 +48,9 @@ try:
     sentry_initialized = init_sentry() is not None
     if sentry_initialized:
         configure_for_fly_io()
-        print("Sentry error tracking initialized successfully", file=sys.stderr)
+        logging.getLogger(__name__).info("Sentry error tracking initialized successfully")
 except Exception as e:
-    print(f"Warning: Sentry initialization failed: {e}", file=sys.stderr)
+    logging.getLogger(__name__).warning(f"Sentry initialization failed: {e}")
     sentry_initialized = False
 
  # Import middleware modules with error handling
@@ -61,11 +65,11 @@ try:
     from backend.api.middleware.security_headers import SecurityHeadersMiddleware
     from backend.api.middleware.cookie_consent import CookieConsentMiddleware
     from backend.api.middleware.dynamic_rate_limit import add_dynamic_rate_limit_middleware
-    from metrics import MetricsMiddleware, metrics_endpoint
-    from tracing import setup_tracing
+    from backend.metrics import MetricsMiddleware, metrics_endpoint
+    from backend.tracing import setup_tracing
     middleware_available = True
 except Exception as e:
-    print(f"Warning: Some middleware not available: {e}", file=sys.stderr)
+    logging.getLogger(__name__).warning(f"Some middleware not available: {e}")
     middleware_available = False
 
 # Import database and services with error handling
@@ -84,59 +88,89 @@ log_file = os.getenv("LOG_FILE", "logs/app.log")
 log_max_size = int(os.getenv("LOG_MAX_SIZE", 10485760))  # 10MB
 log_backup_count = int(os.getenv("LOG_BACKUP_COUNT", 5))
 
-# Ensure log directory exists
+# Detect availability of JSON logger
 try:
-    os.makedirs(os.path.dirname(log_file), exist_ok=True)
+    from pythonjsonlogger import jsonlogger  # noqa: F401
+    have_json = True
+except Exception:
+    have_json = False
+
+# Ensure log directories exist
+try:
+    if log_file:
+        log_dir = os.path.dirname(log_file)
+        if log_dir:
+            os.makedirs(log_dir, exist_ok=True)
+    os.makedirs("logs", exist_ok=True)  # for security.log
 except OSError as e:
-    print(f"Warning: Could not create log directory: {e}", file=sys.stderr)
-    # Fallback to stdout only logging
-    log_file = "/dev/null"
+    # Fallback to console-only logging
+    log_file = None
+    logging.getLogger(__name__).warning(f"Could not create log directory: {e}")
+
+# Build logging config dynamically
+formatters = {}
+if have_json:
+    formatters["default"] = {
+        "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
+        "format": "%(asctime)s %(name)s %(levelname)s %(message)s %(request_id)s %(service)s",
+    }
+    formatters["security"] = {
+        "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
+        "format": "%(asctime)s SECURITY %(levelname)s %(message)s %(ip)s %(user)s %(path)s %(request_id)s %(service)s",
+    }
+else:
+    formatters["default"] = {
+        "class": "logging.Formatter",
+        "format": "%(asctime)s %(name)s %(levelname)s %(message)s [request_id=%(request_id)s] [service=%(service)s]",
+    }
+    formatters["security"] = {
+        "class": "logging.Formatter",
+        "format": "%(asctime)s SECURITY %(levelname)s %(message)s [ip=%(ip)s user=%(user)s path=%(path)s request_id=%(request_id)s service=%(service)s]",
+    }
+
+handlers = {
+    "console": {
+        "level": log_level,
+        "class": "logging.StreamHandler",
+        "formatter": "default",
+        "stream": "ext://sys.stdout",
+    }
+}
+
+if log_file:
+    handlers["file"] = {
+        "level": log_level,
+        "class": "logging.handlers.RotatingFileHandler",
+        "formatter": "default",
+        "filename": log_file,
+        "maxBytes": log_max_size,
+        "backupCount": log_backup_count,
+    }
+    handlers["security_file"] = {
+        "level": "INFO",
+        "class": "logging.handlers.RotatingFileHandler",
+        "formatter": "security",
+        "filename": "logs/security.log",
+        "maxBytes": log_max_size,
+        "backupCount": log_backup_count,
+    }
+
+root_handlers = ["console"] + (["file"] if "file" in handlers else [])
+security_handlers = (["security_file"] if "security_file" in handlers else []) + ["console"]
 
 logging_config = {
     "version": 1,
     "disable_existing_loggers": False,
-    "formatters": {
-        "json": {
-            "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
-            "format": "%(asctime)s %(name)s %(levelname)s %(message)s %(request_id)s %(service)s",
-        },
-        "json_security": {
-            "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
-            "format": "%(asctime)s SECURITY %(levelname)s %(message)s %(ip)s %(user)s %(path)s %(request_id)s %(service)s",
-        },
-    },
-    "handlers": {
-        "console": {
-            "level": log_level,
-            "class": "logging.StreamHandler",
-            "formatter": "json",
-            "stream": "ext://sys.stdout",
-        },
-        "file": {
-            "level": log_level,
-            "class": "logging.handlers.RotatingFileHandler",
-            "formatter": "json",
-            "filename": log_file,
-            "maxBytes": log_max_size,
-            "backupCount": log_backup_count,
-        },
-        "security_file": {
-            "level": "INFO",
-            "class": "logging.handlers.RotatingFileHandler",
-            "formatter": "json_security",
-            "filename": "logs/security.log",
-            "maxBytes": log_max_size,
-            "backupCount": log_backup_count,
-        },
-    },
+    "formatters": formatters,
+    "handlers": handlers,
     "loggers": {
         "": {  # root logger
-            "handlers": ["console", "file"] if log_file != "/dev/null" else ["console"],
+            "handlers": root_handlers,
             "level": log_level,
             "propagate": True,
         },
         "security": {
-            "handlers": ["security_file", "console"],
+            "handlers": security_handlers,
             "level": "INFO",
             "propagate": False,
         },
@@ -144,13 +178,16 @@ logging_config = {
 }
 
 
+# Context-local request id for logging
+request_id_var = ContextVar("request_id", default="unknown")
+
+
 class StructuredLoggingFilter(logging.Filter):
     """Add structured fields to log records"""
 
     def filter(self, record):
         record.service = "jobswipe-api"
-        # Get request_id from thread local or context
-        record.request_id = getattr(record, "request_id", "unknown")
+        record.request_id = request_id_var.get()
         return True
 
 
@@ -176,9 +213,13 @@ class CorrelationIdMiddleware:
 
         headers = dict((k, v) for k, v in scope.get("headers", []))
         correlation_id = headers.get(b"x-correlation-id", uuid.uuid4().hex.encode())
+        corr_value = correlation_id.decode()
 
         # Store in scope for use in spans
-        scope["correlation_id"] = correlation_id.decode()
+        scope["correlation_id"] = corr_value
+
+        # Set request_id in context var
+        token = request_id_var.set(corr_value)
 
         async def wrapped_send(message):
             if message["type"] == "http.response.start":
@@ -187,20 +228,11 @@ class CorrelationIdMiddleware:
                 ]
             await send(message)
 
-        # Set request_id in logging context
-        old_factory = logging.getLogRecordFactory()
-
-        def record_factory(*args, **kwargs):
-            record = old_factory(*args, **kwargs)
-            record.request_id = correlation_id.decode()
-            return record
-
-        logging.setLogRecordFactory(record_factory)
-
         try:
             await self.app(scope, receive, wrapped_send)
         finally:
-            logging.setLogRecordFactory(old_factory)
+            # Reset context var to previous state
+            request_id_var.reset(token)
 
 
 app = FastAPI(
@@ -208,15 +240,24 @@ app = FastAPI(
 )  # 10MB limit
 
 
+# Helper to determine environment consistently
+
+def get_environment():
+    try:
+        return getattr(settings, 'environment', os.getenv('ENVIRONMENT', 'development')).lower()
+    except Exception:
+        return os.getenv('ENVIRONMENT', 'development').lower()
+
+ENV = get_environment()
+
 # Initialize rate limiter with Redis or fail fast in production
 if settings:
-    environment = getattr(settings, 'environment', 'development')
     try:
         limiter = Limiter(key_func=get_remote_address, storage_uri=settings.redis_url)
         app.state.limiter = limiter
         logger.info("Redis rate limiter initialized successfully")
     except Exception as e:
-        if environment == "production":
+        if ENV == "production":
             logger.critical(f"Redis rate limiter failed in production: {e}")
             sys.exit(1)
         else:
@@ -224,7 +265,7 @@ if settings:
             app.state.limiter = limiter
             logger.warning(f"Redis rate limiter failed, using in-memory fallback: {e}")
 else:
-    if environment == "production":
+    if ENV == "production":
         logger.critical("Settings not loaded in production - cannot initialize rate limiter")
         sys.exit(1)
     else:
@@ -260,9 +301,12 @@ async def startup():
 
 @app.on_event("shutdown")
 async def shutdown():
-    if settings:
-        engine.dispose()
-        logger.info("Database engine disposed gracefully")
+    try:
+        if engine is not None:
+            engine.dispose()
+            logger.info("Database engine disposed gracefully")
+    except Exception as e:
+        logger.warning(f"Database engine dispose failed: {e}")
     logger.info("Application shutdown complete")
 
 
@@ -324,14 +368,16 @@ def get_cors_origins():
 
     # Production: Strict validation
     if environment == 'production':
-        # Block localhost origins in production
-        blocked_patterns = ['localhost', '127.0.0.1', '::1', '0.0.0.0']
+        blocked_hosts = {'localhost', '127.0.0.1', '::1', '0.0.0.0'}
         filtered_origins = []
 
         for origin in origins:
-            origin_lower = origin.lower()
-            is_blocked = any(pattern in origin_lower for pattern in blocked_patterns)
-            if is_blocked:
+            try:
+                host = urlparse(origin).hostname or ""
+            except Exception:
+                host = ""
+            host_lower = host.lower()
+            if host_lower in blocked_hosts:
                 logger.warning(
                     f"SECURITY: Blocking localhost origin '{origin}' in production environment"
                 )
@@ -343,7 +389,6 @@ def get_cors_origins():
                 "SECURITY CRITICAL: No valid CORS origins configured for production. "
                 "Please set CORS_ALLOW_ORIGINS environment variable with allowed origins."
             )
-            # Return empty list - CORS middleware will reject all cross-origin requests
             return []
 
         return filtered_origins
@@ -394,37 +439,83 @@ if settings:
     if cors_origins:
         logger.debug(f"Allowed CORS origins: {cors_origins}")
 else:
-    # CRITICAL: Fail fast when settings fail to load - do not use permissive defaults
-    raise RuntimeError(
-        "Settings failed to load - cannot start with permissive CORS. "
-        "Ensure all required environment variables are set."
+    # In non-production, allow safe localhost defaults; fail fast only in production
+    if ENV == 'production':
+        raise RuntimeError(
+            "Settings failed to load - cannot start with permissive CORS in production. "
+            "Ensure all required environment variables are set."
+        )
+    default_origins = [
+        "http://localhost",
+        "http://localhost:3000",
+        "http://127.0.0.1",
+        "http://127.0.0.1:3000",
+        "http://0.0.0.0:3000",
+    ]
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=default_origins,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=["*"]
     )
+    logger.warning("Settings not available - configured default localhost CORS for development")
 
 # Add correlation ID middleware
 app.add_middleware(CorrelationIdMiddleware)
 
 # Add security middleware (only if available)
 if middleware_available:
-    app.add_middleware(SecurityHeadersMiddleware)
-    app.add_middleware(InputSanitizationMiddleware)
-    app.add_middleware(OutputEncodingMiddleware)
-    app.add_middleware(CookieConsentMiddleware)
+    try:
+        app.add_middleware(SecurityHeadersMiddleware)
+    except Exception as e:
+        logger.warning(f"Failed to add SecurityHeadersMiddleware: {e}")
+    try:
+        app.add_middleware(InputSanitizationMiddleware)
+    except Exception as e:
+        logger.warning(f"Failed to add InputSanitizationMiddleware: {e}")
+    try:
+        app.add_middleware(OutputEncodingMiddleware)
+    except Exception as e:
+        logger.warning(f"Failed to add OutputEncodingMiddleware: {e}")
+    try:
+        app.add_middleware(CookieConsentMiddleware)
+    except Exception as e:
+        logger.warning(f"Failed to add CookieConsentMiddleware: {e}")
 
     # Add compression middleware
-    add_compression_middleware(app)
+    try:
+        add_compression_middleware(app)
+    except Exception as e:
+        logger.warning(f"Failed to add compression middleware: {e}")
 
     # Add file validation middleware
-    add_file_validation_middleware(app)
+    try:
+        add_file_validation_middleware(app)
+    except Exception as e:
+        logger.warning(f"Failed to add file validation middleware: {e}")
 
     # Add error handling middleware
-    add_error_handling_middleware(app)
+    try:
+        add_error_handling_middleware(app)
+    except Exception as e:
+        logger.warning(f"Failed to add error handling middleware: {e}")
 
     # Add dynamic rate limit middleware
-    add_dynamic_rate_limit_middleware(app)
+    try:
+        add_dynamic_rate_limit_middleware(app)
+    except Exception as e:
+        logger.warning(f"Failed to add dynamic rate limit middleware: {e}")
 
     # Add metrics middleware
-    app.add_middleware(MetricsMiddleware)
-    app.add_middleware(SlowAPIMiddleware)
+    try:
+        app.add_middleware(MetricsMiddleware)
+    except Exception as e:
+        logger.warning(f"Failed to add metrics middleware: {e}")
+    try:
+        app.add_middleware(SlowAPIMiddleware)
+    except Exception as e:
+        logger.warning(f"Failed to add SlowAPI middleware: {e}")
 
 # Import routers after app is created to avoid circular dependency
 from backend.api.routers import (analytics, application_automation,
@@ -487,7 +578,7 @@ async def readiness_check():
     # Check Redis connectivity with connection error handling
     if settings:
         try:
-            r = redis.from_url(settings.redis_url)
+            r = redis.from_url(settings.redis_url, socket_connect_timeout=1, socket_timeout=1)
             r.ping()
             redis_status = "connected"
         except redis.ConnectionError as e:
@@ -496,16 +587,32 @@ async def readiness_check():
         except Exception as e:
             logger.warning(f"Redis health check failed: {e}")
             redis_status = "disconnected"
+        finally:
+            try:
+                r.close()
+            except Exception:
+                pass
     else:
         redis_status = "not_configured"
 
-    # Only return 503 if database is disconnected
-    status_code = 200 if db_status == "connected" else 503
+    # Determine readiness requirement based on environment/override
+    require_db_ready_env = os.getenv("REQUIRE_DB_READY")
+    if require_db_ready_env is None:
+        require_db_ready = (ENV == 'production')
+    else:
+        require_db_ready = require_db_ready_env.lower() in ("1", "true", "yes")
+
+    if require_db_ready:
+        status_code = 200 if db_status == "connected" else 503
+        overall = "ready" if db_status == "connected" else "not_ready"
+    else:
+        status_code = 200
+        overall = "ready" if db_status == "connected" else "degraded"
 
     return JSONResponse(
         status_code=status_code,
         content={
-            "status": "ready" if db_status == "connected" else "not_ready",
+            "status": overall,
             "database": db_status,
             "redis": redis_status,
             "timestamp": datetime.utcnow().isoformat(),
@@ -843,4 +950,4 @@ async def csp_report(request: Request):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", "8080")))

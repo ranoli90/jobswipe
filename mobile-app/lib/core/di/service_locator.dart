@@ -31,6 +31,8 @@ Future<void> setupLocator() async {
 
   // Services
   final sharedPreferences = await SharedPreferences.getInstance();
+  // Register SharedPreferences so it can be injected elsewhere
+  getIt.registerSingleton<SharedPreferences>(sharedPreferences);
   
   // Web vs Native secure storage
   if (kIsWeb) {

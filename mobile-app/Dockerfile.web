@@ -1,0 +1,60 @@
+# syntax=docker/dockerfile:1.4
+# Multi-stage build for Flutter web app with BuildKit cache mounts
+FROM cirrusci/flutter:3.10.0 AS build
+
+WORKDIR /app
+
+# Configure backend API URL via build-arg (compile-time)
+ARG API_BASE_URL=http://localhost:8081
+ENV API_BASE_URL=$API_BASE_URL
+
+# Pre-cache pub dependencies to speed up builds
+COPY pubspec.* ./
+RUN --mount=type=cache,target=/root/.pub-cache \
+    flutter pub get
+
+# Copy the rest of the source and build web release
+COPY . .
+RUN --mount=type=cache,target=/root/.pub-cache \
+    flutter build web --release --dart-define=API_BASE_URL=$API_BASE_URL
+
+# Minimal Nginx runtime image to serve the built web app
+FROM nginx:alpine AS runner
+
+# Install curl for health checks
+RUN apk add --no-cache curl
+
+# Copy compiled Flutter web assets
+COPY --from=build /app/build/web/ /usr/share/nginx/html/
+
+# Configure Nginx for SPA routing and static caching
+RUN printf 'server {\n\
+    listen 80;\n\
+    server_name _;\n\
+    root /usr/share/nginx/html;\n\
+    index index.html;\n\
+\n\
+    # Serve static assets with long cache; index.html without cache to allow updates\n\
+    location ~* \.(?:css|js|map|png|jpg|jpeg|gif|ico|svg|ttf|woff|woff2)$ {\n\
+        add_header Cache-Control "public, max-age=31536000, immutable";\n\
+        try_files $uri =404;\n\
+    }\n\
+\n\
+    # Flutter web uses client-side routing; fallback to index.html\n\
+    location / {\n\
+        try_files $uri $uri/ /index.html;\n\
+    }\n\
+}\n' > /etc/nginx/conf.d/default.conf
+
+# Security hardening for file permissions
+RUN chown -R nginx:nginx /usr/share/nginx/html /etc/nginx/conf.d && \
+    chmod -R 755 /usr/share/nginx/html && \
+    chmod 644 /etc/nginx/conf.d/default.conf
+
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD curl -fsS http://localhost/ || exit 1
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Environment variables class
@@ -40,19 +41,37 @@ class AppConfig {
   // API Configuration
   // Uses Env.apiBaseUrl as the source of truth, with /api suffix appended
   static String get baseUrl {
+    // Prefer a WEB_API_BASE_URL when running on web if provided
+    if (kIsWeb) {
+      // Allow using same-origin backend by default
+      final webDefined = const String.fromEnvironment('WEB_API_BASE_URL');
+      if (webDefined.isNotEmpty) {
+        final clean = webDefined.endsWith('/') ? webDefined.substring(0, webDefined.length - 1) : webDefined;
+        return '$clean/api';
+      }
+      final envWeb = dotenv.env['WEB_API_BASE_URL'];
+      if (envWeb != null && envWeb.isNotEmpty) {
+        final clean = envWeb.endsWith('/') ? envWeb.substring(0, envWeb.length - 1) : envWeb;
+        return '$clean/api';
+      }
+      // Fallback to same-origin /api which works behind reverse proxies
+      return '/api';
+    }
+
     // Get the base URL from Env (which checks dart-define first, then default)
     final baseUrlWithoutApi = Env.apiBaseUrl;
-    
+
     // Check if .env has a custom API_BASE_URL that differs from the default
     final envBaseUrl = dotenv.env['API_BASE_URL'];
     if (envBaseUrl != null && envBaseUrl.isNotEmpty && envBaseUrl != 'http://10.0.2.2:8000') {
       // Use .env value if it's a custom value (not the default)
-      return '$envBaseUrl/api';
+      final clean = envBaseUrl.endsWith('/') ? envBaseUrl.substring(0, envBaseUrl.length - 1) : envBaseUrl;
+      return '$clean/api';
     }
-    
+
     // For default or dart-define values, append /api suffix
     // Remove trailing slash if present to avoid double slashes
-    final cleanUrl = baseUrlWithoutApi.endsWith('/') 
+    final cleanUrl = baseUrlWithoutApi.endsWith('/')
         ? baseUrlWithoutApi.substring(0, baseUrlWithoutApi.length - 1)
         : baseUrlWithoutApi;
     return '$cleanUrl/api';
