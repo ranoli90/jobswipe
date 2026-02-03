@@ -33,7 +33,7 @@ dependencies:
   # File Handling
   cached_network_image: ^3.3.1
   flutter_cache_manager: ^3.3.1
-  file_picker: ^8.0.0+1
+  file_picker: ^10.3.10
   image_picker: ^1.0.7
   
   # UI Components
