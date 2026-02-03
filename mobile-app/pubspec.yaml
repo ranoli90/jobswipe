@@ -55,7 +55,7 @@ dependencies:
   rxdart: ^0.28.0
   
   # Biometrics
-  local_auth: ^2.1.8
+  local_auth: ^3.0.0
   
   # Permissions
   permission_handler: ^12.0.1
