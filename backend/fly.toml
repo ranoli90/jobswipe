@@ -8,10 +8,9 @@ primary_region = 'iad'
 
 [build]
   dockerfile = "Dockerfile"
-  
-  # [deploy]
-    # Migrations temporarily disabled to allow deployment
-    # release_command = "python /app/backend/migrate_db.py"
+
+[deploy]
+  release_command = "python /app/backend/migrate_simple.py"
 
 [env]
   ENVIRONMENT = 'production'
