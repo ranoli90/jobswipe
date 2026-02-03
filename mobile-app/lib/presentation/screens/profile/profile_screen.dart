@@ -78,14 +78,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
 
       if (result != null && result.files.isNotEmpty && mounted) {
-        final file = result.files.first;
-        if (file.path != null) {
-          // Create a properly typed XFile for the repository
-          final xFile = XFile(file.path!);
-          context.read<ProfileBloc>().add(
-            ProfileResumeUploadRequested(xFile),
-          );
-        }
+        final xFile = result.xFiles.first;
+        context.read<ProfileBloc>().add(
+          ProfileResumeUploadRequested(xFile),
+        );
       }
     } catch (e) {
       if (mounted) {
