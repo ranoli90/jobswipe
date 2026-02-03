@@ -5,7 +5,6 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../bloc/auth/auth_bloc.dart';
-import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -46,9 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _navigateToRegister() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const RegisterScreen()),
-    );
+    Navigator.of(context).pushNamed('/register');
   }
 
   @override

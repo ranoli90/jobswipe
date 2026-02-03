@@ -246,7 +246,7 @@ class AppTheme {
         borderRadius: BorderRadius.circular(AppTokens.radiusLg),
       ),
       color: AppColors.surface,
-      shadowColor: Colors.black.withValues(alpha: 0.05),
+      shadowColor: Colors.black.withOpacity(0.05),
     );
   }
   
@@ -257,7 +257,7 @@ class AppTheme {
         borderRadius: BorderRadius.circular(AppTokens.radiusLg),
       ),
       color: AppColors.surfaceDark,
-      shadowColor: Colors.black.withValues(alpha: 0.3),
+      shadowColor: Colors.black.withOpacity(0.3),
     );
   }
   
@@ -420,13 +420,13 @@ class AppTheme {
     return NavigationBarThemeData(
       elevation: AppTokens.elevationLg,
       backgroundColor: AppColors.surface,
-      indicatorColor: AppColors.primary.withValues(alpha: 0.1),
-      labelTextStyle: WidgetStatePropertyAll(
+      indicatorColor: AppColors.primary.withOpacity(0.1),
+      labelTextStyle: MaterialStatePropertyAll(
         AppTypography.labelSmall.copyWith(
           color: AppColors.textSecondary,
         ),
       ),
-      iconTheme: WidgetStatePropertyAll(
+      iconTheme: MaterialStatePropertyAll(
         IconThemeData(
           color: AppColors.textSecondary,
           size: AppTokens.iconMd,
@@ -439,13 +439,13 @@ class AppTheme {
     return NavigationBarThemeData(
       elevation: AppTokens.elevationLg,
       backgroundColor: AppColors.surfaceDark,
-      indicatorColor: AppColors.primary.withValues(alpha: 0.1),
-      labelTextStyle: WidgetStatePropertyAll(
+      indicatorColor: AppColors.primary.withOpacity(0.1),
+      labelTextStyle: MaterialStatePropertyAll(
         AppTypography.labelSmall.copyWith(
           color: AppColors.textSecondaryDark,
         ),
       ),
-      iconTheme: WidgetStatePropertyAll(
+      iconTheme: MaterialStatePropertyAll(
         IconThemeData(
           color: AppColors.textSecondaryDark,
           size: AppTokens.iconMd,

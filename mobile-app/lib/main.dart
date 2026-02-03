@@ -5,6 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'core/theme/app_theme.dart';
 import 'core/di/service_locator.dart';
 import 'presentation/screens/auth/login_screen.dart';
+import 'presentation/screens/auth/register_screen.dart';
 import 'presentation/screens/jobs/job_feed_screen.dart';
 import 'presentation/screens/profile/profile_screen.dart';
 import 'presentation/screens/applications/applications_screen.dart';
@@ -81,8 +82,6 @@ class _SplashScreenState extends State<SplashScreen> {
 }
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-
   ErrorWidget.builder = (FlutterErrorDetails details) {
     return Material(
       color: Colors.white,
@@ -96,6 +95,7 @@ void main() {
   };
 
   runZonedGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
     FlutterError.onError = (details) {
       FlutterError.presentError(details);
       debugPrint('FlutterError: ${details.exceptionAsString()}');
@@ -103,12 +103,14 @@ void main() {
 
     Widget appContent;
     try {
-      // Load environment variables (gracefully handle missing .env in APK)
+      // Load environment variables (gracefully handle missing .env)
       try {
+        // Try to load .env from the current directory (for web/dev builds)
         await dotenv.load(fileName: '.env');
+        debugPrint('Loaded .env file successfully');
       } catch (e) {
-        // .env file not bundled in APK - use default config values
-        // This is expected behavior for production builds
+        // .env file not found - use default config values
+        // This is expected behavior for production builds without bundled .env
         debugPrint('Note: .env file not found, using default configuration');
       }
 
@@ -146,18 +148,58 @@ void main() {
       );
     }
 
-    // Run with splash screen wrapper for timeout protection
+    // Run the app with proper widget tree structure
     runApp(
-      SplashScreen(
-        child: MaterialApp(
-          title: 'JobSwipe',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
-          themeMode: ThemeMode.system,
-          home: appContent,
+      MaterialApp(
+        title: 'JobSwipe',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: ThemeMode.system,
+        home: SplashScreen(
+          child: appContent,
+          timeout: const Duration(seconds: 10),
         ),
-        timeout: const Duration(seconds: 10),
+        onGenerateRoute: (settings) {
+          switch (settings.name) {
+            case '/login':
+              return MaterialPageRoute(
+                builder: (_) => const LoginScreen(),
+              );
+            case '/register':
+              return MaterialPageRoute(
+                builder: (_) => BlocProvider.value(
+                  value: getIt<AuthBloc>(),
+                  child: const RegisterScreen(),
+                ),
+              );
+            case '/jobs':
+              return MaterialPageRoute(
+                builder: (_) => BlocProvider.value(
+                  value: getIt<AuthBloc>(),
+                  child: const JobFeedScreen(),
+                ),
+              );
+            case '/profile':
+              return MaterialPageRoute(
+                builder: (_) => BlocProvider.value(
+                  value: getIt<AuthBloc>(),
+                  child: const ProfileScreen(),
+                ),
+              );
+            case '/applications':
+              return MaterialPageRoute(
+                builder: (_) => BlocProvider.value(
+                  value: getIt<AuthBloc>(),
+                  child: const ApplicationsScreen(),
+                ),
+              );
+            default:
+              return MaterialPageRoute(
+                builder: (_) => const LoginScreen(),
+              );
+          }
+        },
       ),
     );
   }, (error, stack) {
@@ -171,37 +213,7 @@ class JobSwipeAppContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'JobSwipe',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
-      initialRoute: '/login',
-      onGenerateRoute: (settings) {
-        switch (settings.name) {
-          case '/login':
-            return MaterialPageRoute(
-              builder: (_) => const LoginScreen(),
-            );
-          case '/jobs':
-            return MaterialPageRoute(
-              builder: (_) => const JobFeedScreen(),
-            );
-          case '/profile':
-            return MaterialPageRoute(
-              builder: (_) => const ProfileScreen(),
-            );
-          case '/applications':
-            return MaterialPageRoute(
-              builder: (_) => const ApplicationsScreen(),
-            );
-          default:
-            return MaterialPageRoute(
-              builder: (_) => const LoginScreen(),
-            );
-        }
-      },
-    );
+    // No longer create a new MaterialApp here - use the root one
+    return const LoginScreen();
   }
 }

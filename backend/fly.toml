@@ -17,6 +17,7 @@ primary_region = 'iad'
   ENVIRONMENT = 'production'
   LOG_LEVEL = 'INFO'
   PORT = '8080'
+  CORS_ALLOW_ORIGINS = 'http://localhost:3000,https://localhost:3000,http://localhost:8080,https://localhost:8080,http://localhost:*,https://jobswipe-web.fly.dev'
   PYTHONPATH = '/app'
   # DATABASE_URL is required in production; set via fly secrets set.
   # SECRET_KEY, ENCRYPTION_PASSWORD, ENCRYPTION_SALT, OAUTH_STATE_SECRET must be set via secrets.

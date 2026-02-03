@@ -80,5 +80,5 @@ flutter:
     - assets/images/
     - assets/animations/
     - assets/icons/
-    # - .env  # REMOVED: .env should not be bundled in APK
+    - .env  # Required for web development
 

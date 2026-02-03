@@ -31,43 +31,57 @@ class AppConfig {
     const dartEnv = String.fromEnvironment('ENV');
     if (dartEnv.isNotEmpty) return dartEnv;
     
-    final envValue = dotenv.env['ENVIRONMENT'];
-    if (envValue != null && envValue.isNotEmpty) return envValue;
+    try {
+      final envValue = dotenv.env['ENVIRONMENT'];
+      if (envValue != null && envValue.isNotEmpty) return envValue;
+    } catch (_) {
+      // dotenv not initialized, continue with default
+    }
     
     return 'development';
+  }
+  
+  static String get apiVersion {
+    const dartVersion = String.fromEnvironment('API_VERSION');
+    if (dartVersion.isNotEmpty) return dartVersion;
+    
+    try {
+      final envVersion = dotenv.env['API_VERSION'];
+      if (envVersion != null && envVersion.isNotEmpty) return envVersion;
+    } catch (_) {
+      // dotenv not initialized, continue with default
+    }
+    
+    return 'v1';
   }
   
   // API Configuration
   // Uses Env.apiBaseUrl as the source of truth, with /api suffix appended
   static String get baseUrl {
-    // Get the base URL from Env (which checks dart-define first, then default)
-    final baseUrlWithoutApi = Env.apiBaseUrl;
-    
-    // Check if .env has a custom API_BASE_URL that differs from the default
-    final envBaseUrl = dotenv.env['API_BASE_URL'];
-    if (envBaseUrl != null && envBaseUrl.isNotEmpty && envBaseUrl != 'http://10.0.2.2:8000') {
-      // Use .env value if it's a custom value (not the default)
-      return '$envBaseUrl/api';
+    // First try to get from .env file (highest priority for web/dev builds)
+    try {
+      final envBaseUrl = dotenv.env['API_BASE_URL'];
+      if (envBaseUrl != null && envBaseUrl.isNotEmpty) {
+        // If URL already has /api, use as-is
+        if (envBaseUrl.endsWith('/api') || envBaseUrl.endsWith('/api/')) {
+          return envBaseUrl.replaceAll(RegExp(r'/$'), '');
+        }
+        // Otherwise append /api
+        return envBaseUrl.replaceAll(RegExp(r'/$'), '') + '/api';
+      }
+    } catch (_) {
+      // dotenv not initialized, continue with default
     }
     
-    // For default or dart-define values, append /api suffix
-    // Remove trailing slash if present to avoid double slashes
+    // Fall back to dart-define or default
+    final baseUrlWithoutApi = Env.apiBaseUrl;
     final cleanUrl = baseUrlWithoutApi.endsWith('/') 
         ? baseUrlWithoutApi.substring(0, baseUrlWithoutApi.length - 1)
         : baseUrlWithoutApi;
     return '$cleanUrl/api';
   }
 
-  /// Get API version from environment or default
-  static String get apiVersion {
-    const dartVersion = String.fromEnvironment('API_VERSION');
-    if (dartVersion.isNotEmpty) return dartVersion;
-    
-    final envVersion = dotenv.env['API_VERSION'];
-    if (envVersion != null && envVersion.isNotEmpty) return envVersion;
-    
-    return 'v1';
-  }
+
   
   // Feature Flags
   static bool get isProduction => env == 'production';

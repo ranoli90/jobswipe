@@ -1,5 +1,7 @@
 class Profile {
   final String id;
+  final String? email;
+  final String? firstName;
   final String? fullName;
   final String? phone;
   final String? location;
@@ -13,6 +15,8 @@ class Profile {
 
   Profile({
     required this.id,
+    this.email,
+    this.firstName,
     this.fullName,
     this.phone,
     this.location,
@@ -28,6 +32,8 @@ class Profile {
   factory Profile.fromJson(Map<String, dynamic> json) {
     return Profile(
       id: json['id'] as String,
+      email: json['email'] as String?,
+      firstName: json['first_name'] as String?,
       fullName: json['full_name'] as String?,
       phone: json['phone'] as String?,
       location: json['location'] as String?,
@@ -44,6 +50,8 @@ class Profile {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'email': email,
+      'first_name': firstName,
       'full_name': fullName,
       'phone': phone,
       'location': location,
