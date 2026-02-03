@@ -1,0 +1,4 @@
+# file: C:\Users\Administrator\Documents\jobswipe\backend\encryption.py
+# hypothesis_version: 6.151.4
+
+[600000, 'DecryptionError', 'ENCRYPTION_KEY', 'decrypt_pii', 'encrypt_pii']

@@ -28,7 +28,7 @@ dependencies:
   path: ^1.8.3
   hive: ^2.2.3
   hive_flutter: ^1.1.0
-  dio_smart_retry: ^7.0.1
+  dio_smart_retry: ^6.0.0
   
   # File Handling
   cached_network_image: ^3.3.1
@@ -54,17 +54,14 @@ dependencies:
   connectivity_plus: ^5.0.2
   rxdart: ^0.27.7
   
-  # Firebase
-  firebase_core: ^2.24.2
-  firebase_messaging: ^14.7.10
-  firebase_analytics: ^10.7.4
-  firebase_crashlytics: ^3.4.9
-  
   # Biometrics
   local_auth: ^2.1.8
   
   # Permissions
   permission_handler: ^11.1.0
+  flutter_dotenv: ^6.0.0
+  fluttertoast: ^8.2.4
+  freezed_annotation: ^2.4.1
 
 dev_dependencies:
   flutter_test:
@@ -75,6 +72,7 @@ dev_dependencies:
   mockito: ^5.4.4
   integration_test:
     sdk: flutter
+  freezed: ^2.4.2
 
 flutter:
   uses-material-design: true
@@ -82,4 +80,5 @@ flutter:
     - assets/images/
     - assets/animations/
     - assets/icons/
+    # - .env  # REMOVED: .env should not be bundled in APK
 

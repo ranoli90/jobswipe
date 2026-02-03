@@ -1,0 +1,4 @@
+# file: C:\Users\Administrator\Documents\jobswipe\backend\api\routers\application_automation.py
+# hypothesis_version: 6.151.4
+
+[100, '/auto-apply', '/auto-apply-all', '/domains/status', '/notifications', '/notifications/send', '/stats', '/tasks/history', '/tasks/pending', '2026-01-25T00:00:00Z', 'Cancelling task: %s', 'HEADLESS', 'Job not found', 'ats_type', 'cancelled', 'circuit_breaker', 'cover_letter', 'created_at', 'domain', 'domains', 'e', 'education', 'error', 'failed', 'full_name', 'headline', 'host', 'id', 'in_progress', 'job_id', 'last_error', 'last_status', 'message', 'metadata', 'notification', 'notifications', 'pending', 'processed', 'queued', 'rate_limit', 'rate_limiting', 'results', 'skills', 'stats', 'status', 'submitted', 'success', 'success_rate', 'task.id', 'task_id', 'tasks', 'timestamp', 'total', 'type', 'updated_at', 'user_id', 'word_count', 'work_experience']

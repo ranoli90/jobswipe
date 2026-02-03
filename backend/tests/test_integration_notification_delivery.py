@@ -151,10 +151,14 @@ class TestNotificationDeliveryIntegration:
 
     @pytest.mark.asyncio
     async def test_push_notification_delivery_fcm_success(self, notification_service):
-        """Test successful FCM push notification delivery"""
+        """Test Android push notification - FCM removed, use in-app notifications
+        
+        Since FCM is removed for Fly.io deployment, Android devices rely on
+        in-app notifications. This test verifies the behavior.
+        """
         user_id = str(uuid.uuid4())
 
-        # Mock device tokens
+        # Mock Android device token
         mock_token = MagicMock()
         mock_token.platform = "android"
         mock_token.token = "valid_android_token"
@@ -162,37 +166,26 @@ class TestNotificationDeliveryIntegration:
 
         device_tokens = [mock_token]
 
-        # Mock FCM
-        with patch("backend.services.notification_service.messaging") as mock_messaging:
-            mock_send_multicast = MagicMock()
-            mock_send_multicast.return_value = MagicMock(
-                success_count=1, failure_count=0
+        # FCM removed - notification service should skip push for Android
+        # and rely on in-app notifications
+        with patch.object(
+            notification_service, "_get_user_device_tokens", new_callable=AsyncMock
+        ) as mock_get_tokens, patch.object(
+            notification_service, "_store_notification", new_callable=AsyncMock
+        ) as mock_store:
+            mock_get_tokens.return_value = device_tokens
+            mock_store.return_value = None
+
+            # Android push disabled - should not call any push service
+            # but should still store in-app notification
+            await notification_service._send_push_notifications(
+                user_id=user_id,
+                notification_type="application_completed",
+                message="Application completed successfully",
             )
-            mock_messaging.send_multicast = mock_send_multicast
-            mock_messaging.Message = MagicMock()
-            mock_messaging.Notification = MagicMock()
-            mock_messaging.AndroidConfig = MagicMock()
-            mock_messaging.AndroidNotification = MagicMock()
-            mock_messaging.APNSConfig = MagicMock()
-            mock_messaging.APNSPayload = MagicMock()
-            mock_messaging.Aps = MagicMock()
 
-            notification_service.fcm_app = MagicMock()
-
-            with patch.object(
-                notification_service, "_get_user_device_tokens", new_callable=AsyncMock
-            ) as mock_get_tokens:
-                mock_get_tokens.return_value = device_tokens
-
-                await notification_service._send_push_notifications(
-                    user_id=user_id,
-                    notification_type="application_completed",
-                    message="Application completed successfully",
-                )
-
-                # Verify FCM was called
-                mock_messaging.Message.assert_called_once()
-                mock_send_multicast.assert_called_once()
+            # Notification stored for in-app delivery (FCM removed)
+            mock_store.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_email_notification_delivery_success(self, notification_service):
@@ -342,7 +335,10 @@ class TestNotificationDeliveryIntegration:
     async def test_notification_delivery_multiple_device_types(
         self, notification_service
     ):
-        """Test notification delivery to multiple device types"""
+        """Test notification delivery to multiple device types (FCM removed)
+        
+        iOS devices use APNs, Android devices rely on in-app notifications.
+        """
         user_id = str(uuid.uuid4())
 
         # Mock multiple device tokens
@@ -354,27 +350,22 @@ class TestNotificationDeliveryIntegration:
         mock_android_token.platform = "android"
         mock_android_token.token = "android_token_456"
 
-        mock_web_token = MagicMock()
-        mock_web_token.platform = "web"
-        mock_web_token.token = "web_token_789"
+        device_tokens = [mock_ios_token, mock_android_token]
 
-        device_tokens = [mock_ios_token, mock_android_token, mock_web_token]
-
-        # Enable both APNs and FCM
+        # Only APNs enabled now (FCM removed)
         notification_service.apns_client = MagicMock()
-        notification_service.fcm_app = MagicMock()
 
         with patch.object(
             notification_service, "_get_user_device_tokens", new_callable=AsyncMock
         ) as mock_get_tokens, patch.object(
             notification_service, "_send_apns_notifications", new_callable=AsyncMock
         ) as mock_apns, patch.object(
-            notification_service, "_send_fcm_notifications", new_callable=AsyncMock
-        ) as mock_fcm:
+            notification_service, "_store_notification", new_callable=AsyncMock
+        ) as mock_store:
 
             mock_get_tokens.return_value = device_tokens
             mock_apns.return_value = None
-            mock_fcm.return_value = None
+            mock_store.return_value = None
 
             await notification_service._send_push_notifications(
                 user_id=user_id,
@@ -382,16 +373,14 @@ class TestNotificationDeliveryIntegration:
                 message="New job match found",
             )
 
-            # Verify APNs called for iOS, FCM for Android, web ignored
+            # Verify APNs called for iOS
             mock_apns.assert_called_once()
             apns_call_args = mock_apns.call_args
             assert len(apns_call_args[0][0]) == 1  # One iOS token
             assert apns_call_args[0][0][0].platform == "ios"
 
-            mock_fcm.assert_called_once()
-            fcm_call_args = mock_fcm.call_args
-            assert len(fcm_call_args[0][0]) == 1  # One Android token
-            assert fcm_call_args[0][0][0].platform == "android"
+            # Verify in-app notification stored for Android
+            mock_store.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_notification_delivery_error_handling(self, notification_service):

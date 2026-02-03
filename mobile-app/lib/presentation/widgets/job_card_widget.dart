@@ -5,38 +5,48 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../models/job.dart';
+import 'swipe_overlay.dart';
 
 class JobCardWidget extends StatelessWidget {
   final Job job;
   final VoidCallback onLike;
   final VoidCallback onDislike;
+  final VoidCallback? onSuperLike;
   final VoidCallback onTap;
+  final double swipeProgressX;
+  final double swipeProgressY;
 
   const JobCardWidget({
     super.key,
     required this.job,
     required this.onLike,
     required this.onDislike,
+    this.onSuperLike,
     required this.onTap,
+    this.swipeProgressX = 0.0,
+    this.swipeProgressY = 0.0,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.symmetric(
-          horizontal: AppTokens.spacingLg,
-          vertical: AppTokens.spacingMd,
-        ),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppTokens.radiusLg),
-          boxShadow: AppTokens.shadowMd,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+      child: SwipeableCard(
+        swipeProgressX: swipeProgressX,
+        swipeProgressY: swipeProgressY,
+        child: Container(
+          margin: const EdgeInsets.symmetric(
+            horizontal: AppTokens.spacingLg,
+            vertical: AppTokens.spacingMd,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+            boxShadow: AppTokens.shadowMd,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
             // Company logo
             if (job.logoUrl != null)
               Padding(
@@ -239,29 +249,14 @@ class JobCardWidget extends StatelessWidget {
             // Action buttons
             Padding(
               padding: const EdgeInsets.all(AppTokens.spacingMd),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _buildActionButton(
-                      icon: Icons.close_outlined,
-                      label: 'Pass',
-                      color: AppColors.error,
-                      onTap: onDislike,
-                    ),
-                  ),
-                  const SizedBox(width: AppTokens.spacingMd),
-                  Expanded(
-                    child: _buildActionButton(
-                      icon: Icons.favorite_border,
-                      label: 'Like',
-                      color: AppColors.success,
-                      onTap: onLike,
-                    ),
-                  ),
-                ],
+              child: SwipeActionButtons(
+                onDislike: onDislike,
+                onLike: onLike,
+                onSuperLike: onSuperLike,
               ),
             ),
           ],
+          ),
         ),
       ),
     );
@@ -279,35 +274,4 @@ class JobCardWidget extends StatelessWidget {
     }
   }
 
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: AppTokens.spacingMd),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: AppTypography.labelSmall.copyWith(
-                color: color,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

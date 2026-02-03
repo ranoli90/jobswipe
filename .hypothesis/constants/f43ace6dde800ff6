@@ -1,0 +1,4 @@
+# file: C:\Users\Administrator\Documents\jobswipe\backend\api\routers\auth.py
+# hypothesis_version: 6.151.4
+
+[128, 102400, '/', '/api/v1/auth/login', '/forgot-password', '/login', '/logout', '/me', '/mfa/disable', '/mfa/enable', '/mfa/setup', '/mfa/verify', '/mfa/verify-backup', '/oauth2/{provider}', '/refresh', '/register', '/reset-password', '/verify-email', '/verify-email/token', ':', '://', 'Authorization', 'Bearer', 'Bearer ', 'Invalid backup code', 'Invalid reset token', 'Invalid token type', 'Login failed: %s', 'MFA is not enabled', 'User logged out: %s', 'User not found', 'User-Agent', 'WWW-Authenticate', '[0-9]', '[A-Z]', '[a-z]', 'access', 'admin', 'argon2', 'authorization_url', 'auto', 'backup_codes', 'bearer', 'debug_token', 'email', 'email_verification', 'exp', 'google', 'linkedin', 'message', 'password', 'password_reset', 'pbkdf2-sha256', 'purpose', 'qr_code', 'refresh', 'revoked', 'secret', 'state', 'sub', 'type', 'unknown', 'user-agent']

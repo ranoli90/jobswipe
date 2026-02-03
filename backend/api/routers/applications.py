@@ -225,3 +225,132 @@ async def cancel_application_endpoint(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to cancel application: {str(e)}",
         )
+
+
+@router.delete("/{job_id}")
+async def delete_application(
+    job_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Delete application for a job.
+
+    Args:
+        job_id: Job identifier
+        current_user: Current authenticated user
+        db: Database session
+
+    Returns:
+        Success message
+    """
+    try:
+        # Find the application task
+        task = (
+            db.query(ApplicationTask)
+            .filter(
+                ApplicationTask.user_id == current_user.id,
+                ApplicationTask.job_id == job_id,
+            )
+            .first()
+        )
+
+        if not task:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Application not found"
+            )
+
+        # Delete associated audit logs first
+        db.query(ApplicationAuditLog).filter(
+            ApplicationAuditLog.task_id == task.id
+        ).delete()
+
+        # Delete the application task
+        db.delete(task)
+        db.commit()
+
+        logger.info("Application deleted for user %s, job %s", current_user.id, job_id)
+
+        return {"success": True, "message": "Application deleted successfully"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Error deleting application for user %s: %s", current_user.id, str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete application: {str(e)}",
+        )
+
+
+class UpdateApplicationRequest(BaseModel):
+    """Request model for updating application"""
+
+    status: str
+
+
+@router.put("/{job_id}", response_model=ApplicationTaskResponse)
+async def update_application(
+    job_id: str,
+    request: UpdateApplicationRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Update application status for a job.
+
+    Args:
+        job_id: Job identifier
+        request: Update request with new status
+        current_user: Current authenticated user
+        db: Database session
+
+    Returns:
+        Updated application task
+    """
+    try:
+        # Find the application task
+        task = (
+            db.query(ApplicationTask)
+            .filter(
+                ApplicationTask.user_id == current_user.id,
+                ApplicationTask.job_id == job_id,
+            )
+            .first()
+        )
+
+        if not task:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Application not found"
+            )
+
+        # Validate status
+        valid_statuses = ["queued", "running", "completed", "failed", "cancelled"]
+        if request.status not in valid_statuses:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}",
+            )
+
+        # Update the task status
+        task.status = request.status
+        db.commit()
+        db.refresh(task)
+
+        logger.info(
+            "Application updated for user %s, job %s, new status: %s",
+            current_user.id,
+            job_id,
+            request.status,
+        )
+
+        return ApplicationTaskResponse.from_orm(task)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Error updating application for user %s: %s", current_user.id, str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update application: {str(e)}",
+        )

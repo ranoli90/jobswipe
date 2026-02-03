@@ -1,0 +1,4 @@
+# file: C:\Users\Administrator\Documents\jobswipe\backend\services\captcha_detector.py
+# hypothesis_version: 6.151.4
+
+[200, 'CAPTCHA_API_KEY', 'ENABLE_HUMAN_CAPTCHA', 'HITL_QUEUE_URL', 'automated', 'base64', 'body', 'error', 'false', 'human', 'json', 'key', 'method', 'pending', 'request', 'request_id', 'site_url', 'solution', 'solved', 'status', 'task_id', 'true', 'type', 'utf-8']

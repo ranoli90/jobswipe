@@ -86,8 +86,6 @@ class AppTheme {
       onError: Colors.white,
       surface: AppColors.surface,
       onSurface: AppColors.textPrimary,
-      background: AppColors.background,
-      onBackground: AppColors.textPrimary,
     );
   }
   
@@ -102,8 +100,6 @@ class AppTheme {
       onError: Colors.white,
       surface: AppColors.surfaceDark,
       onSurface: AppColors.textPrimaryDark,
-      background: AppColors.backgroundDark,
-      onBackground: AppColors.textPrimaryDark,
     );
   }
   
@@ -243,63 +239,63 @@ class AppTheme {
   }
   
   // Card Theme
-  static CardTheme get _cardTheme {
-    return CardTheme(
+  static CardThemeData get _cardTheme {
+    return CardThemeData(
       elevation: AppTokens.elevationSm,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppTokens.radiusLg),
       ),
       color: AppColors.surface,
-      shadowColor: Colors.black.withOpacity(0.05),
+      shadowColor: Colors.black.withValues(alpha: 0.05),
     );
   }
   
-  static CardTheme get _darkCardTheme {
-    return CardTheme(
+  static CardThemeData get _darkCardTheme {
+    return CardThemeData(
       elevation: AppTokens.elevationSm,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppTokens.radiusLg),
       ),
       color: AppColors.surfaceDark,
-      shadowColor: Colors.black.withOpacity(0.3),
+      shadowColor: Colors.black.withValues(alpha: 0.3),
     );
   }
   
   // Elevated Button Theme
   static ElevatedButtonThemeData get _elevatedButtonTheme {
     return ElevatedButtonThemeData(
-      elevation: AppTokens.elevationSm,
-      padding: EdgeInsets.symmetric(
-        horizontal: AppTokens.spacingLg,
-        vertical: AppTokens.spacingMd,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-      ),
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         textStyle: AppTypography.labelLarge,
         minimumSize: Size(AppTokens.buttonHeightMd, AppTokens.buttonHeightMd),
+        padding: EdgeInsets.symmetric(
+          horizontal: AppTokens.spacingLg,
+          vertical: AppTokens.spacingMd,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+        ),
+        elevation: AppTokens.elevationSm,
       ),
     );
   }
   
   static ElevatedButtonThemeData get _darkElevatedButtonTheme {
     return ElevatedButtonThemeData(
-      elevation: AppTokens.elevationSm,
-      padding: EdgeInsets.symmetric(
-        horizontal: AppTokens.spacingLg,
-        vertical: AppTokens.spacingMd,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-      ),
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         textStyle: AppTypography.labelLarge,
         minimumSize: Size(AppTokens.buttonHeightMd, AppTokens.buttonHeightMd),
+        padding: EdgeInsets.symmetric(
+          horizontal: AppTokens.spacingLg,
+          vertical: AppTokens.spacingMd,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+        ),
+        elevation: AppTokens.elevationSm,
       ),
     );
   }
@@ -307,32 +303,32 @@ class AppTheme {
   // Text Button Theme
   static TextButtonThemeData get _textButtonTheme {
     return TextButtonThemeData(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppTokens.spacingMd,
-        vertical: AppTokens.spacingSm,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-      ),
       style: TextButton.styleFrom(
         foregroundColor: AppColors.primary,
         textStyle: AppTypography.labelMedium,
+        padding: EdgeInsets.symmetric(
+          horizontal: AppTokens.spacingMd,
+          vertical: AppTokens.spacingSm,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+        ),
       ),
     );
   }
   
   static TextButtonThemeData get _darkTextButtonTheme {
     return TextButtonThemeData(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppTokens.spacingMd,
-        vertical: AppTokens.spacingSm,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-      ),
       style: TextButton.styleFrom(
         foregroundColor: AppColors.primary,
         textStyle: AppTypography.labelMedium,
+        padding: EdgeInsets.symmetric(
+          horizontal: AppTokens.spacingMd,
+          vertical: AppTokens.spacingSm,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+        ),
       ),
     );
   }
@@ -420,13 +416,15 @@ class AppTheme {
   }
   
   // Navigation Bar Theme
-  static NavigationBarTheme get _navigationBarTheme {
-    return NavigationBarTheme(
+  static NavigationBarThemeData get _navigationBarTheme {
+    return NavigationBarThemeData(
       elevation: AppTokens.elevationLg,
       backgroundColor: AppColors.surface,
-      indicatorColor: AppColors.primary.withOpacity(0.1),
-      labelTextStyle: AppTypography.labelSmall.copyWith(
-        color: AppColors.textSecondary,
+      indicatorColor: AppColors.primary.withValues(alpha: 0.1),
+      labelTextStyle: WidgetStatePropertyAll(
+        AppTypography.labelSmall.copyWith(
+          color: AppColors.textSecondary,
+        ),
       ),
       iconTheme: WidgetStatePropertyAll(
         IconThemeData(
@@ -437,13 +435,15 @@ class AppTheme {
     );
   }
   
-  static NavigationBarTheme get _darkNavigationBarTheme {
-    return NavigationBarTheme(
+  static NavigationBarThemeData get _darkNavigationBarTheme {
+    return NavigationBarThemeData(
       elevation: AppTokens.elevationLg,
       backgroundColor: AppColors.surfaceDark,
-      indicatorColor: AppColors.primary.withOpacity(0.1),
-      labelTextStyle: AppTypography.labelSmall.copyWith(
-        color: AppColors.textSecondaryDark,
+      indicatorColor: AppColors.primary.withValues(alpha: 0.1),
+      labelTextStyle: WidgetStatePropertyAll(
+        AppTypography.labelSmall.copyWith(
+          color: AppColors.textSecondaryDark,
+        ),
       ),
       iconTheme: WidgetStatePropertyAll(
         IconThemeData(

@@ -1,0 +1,4 @@
+# file: C:\Users\Administrator\Documents\jobswipe\backend\services\storage.py
+# hypothesis_version: 6.151.4
+
+[604800, 'Bucket exists: %s', 'CLOUDFLARE_R2_BUCKET', 'Created bucket: %s', 'File not found: %s', 'NoSuchKey', 'jobswipe-storage']

@@ -115,7 +115,7 @@ class JobDetailScreen extends StatelessWidget {
         ),
         const SizedBox(height: AppTokens.spacingSm),
         Text(
-          job.company,
+          job.company ?? 'Unknown Company',
           style: AppTypography.bodyLarge.copyWith(
             color: AppColors.textSecondary,
           ),
@@ -130,7 +130,7 @@ class JobDetailScreen extends StatelessWidget {
             ),
             const SizedBox(width: 4),
             Text(
-              job.location,
+              job.location ?? 'Location not specified',
               style: AppTypography.bodyMedium.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -147,7 +147,7 @@ class JobDetailScreen extends StatelessWidget {
             ),
             const SizedBox(width: 4),
             Text(
-              job.salary,
+              job.salary ?? 'Salary not specified',
               style: AppTypography.bodyMedium.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -176,13 +176,13 @@ class JobDetailScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppTokens.spacingMd),
-          _buildDetailRow('Employment Type', job.employmentType),
+          _buildDetailRow('Employment Type', job.employmentType ?? 'Not specified'),
           const SizedBox(height: AppTokens.spacingSm),
-          _buildDetailRow('Experience Level', job.experienceLevel),
+          _buildDetailRow('Experience Level', job.experienceLevel ?? 'Not specified'),
           const SizedBox(height: AppTokens.spacingSm),
-          _buildDetailRow('Industry', job.industry),
+          _buildDetailRow('Industry', job.industry ?? 'Not specified'),
           const SizedBox(height: AppTokens.spacingSm),
-          _buildDetailRow('Posted Date', job.postedDate),
+          _buildDetailRow('Posted Date', job.postedDate ?? 'Unknown'),
         ],
       ),
     );
@@ -234,7 +234,7 @@ class JobDetailScreen extends StatelessWidget {
           ),
           const SizedBox(height: AppTokens.spacingMd),
           Text(
-            job.description,
+            job.description ?? 'No description available',
             style: AppTypography.bodyMedium.copyWith(
               color: AppColors.textPrimary,
               height: 1.5,

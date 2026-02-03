@@ -3,11 +3,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:dio/dio.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 
 import '../../config/app_config.dart';
 import '../datasources/remote/api_client.dart';
-import '../datasources/remote/api_endpoints.dart';
 import '../datasources/local/cache_service.dart';
 import '../datasources/local/secure_storage_service.dart';
 import '../datasources/local/offline_service.dart';
@@ -22,6 +20,7 @@ import '../../presentation/bloc/auth/auth_bloc.dart';
 import '../../presentation/bloc/jobs/jobs_bloc.dart';
 import '../../presentation/bloc/applications/applications_bloc.dart';
 import '../../presentation/bloc/profile/profile_bloc.dart';
+import '../../presentation/bloc/notifications/notifications_bloc.dart';
 
 final getIt = GetIt.instance;
 
@@ -87,7 +86,7 @@ Future<void> setupLocator() async {
   );
   
   // Offline Service
-  getIt.registerLazySingleton<Connectivity>(() => Connectivity.newInstance());
+  getIt.registerLazySingleton<Connectivity>(() => Connectivity());
   getIt.registerLazySingleton<OfflineService>(
     () => OfflineService(getIt<SharedPreferences>(), getIt<Connectivity>()),
   );
@@ -107,5 +106,9 @@ Future<void> setupLocator() async {
   
   getIt.registerFactory<ProfileBloc>(
     () => ProfileBloc(getIt<ProfileRepository>()),
+  );
+
+  getIt.registerFactory<NotificationsBloc>(
+    () => NotificationsBloc(getIt<NotificationRepository>()),
   );
 }

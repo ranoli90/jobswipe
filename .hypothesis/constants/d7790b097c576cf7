@@ -1,0 +1,4 @@
+# file: C:\Users\Administrator\Documents\jobswipe\backend\api\routers\job_categorization.py
+# hypothesis_version: 6.151.4
+
+['/all', '/distribution', '/run', 'category', 'category_counts', 'distribution', 'jobs_categorized', 'message', 'success']

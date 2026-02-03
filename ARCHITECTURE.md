@@ -371,14 +371,27 @@ async def security_headers(request, call_next):
 - `PUT /api/profile` - Update profile
 - `POST /api/profile/resume` - Upload resume
 
-## Future Enhancements
+## Codebase Analysis Insights
 
-- [ ] GraphQL API layer
-- [ ] Real-time updates with WebSockets
-- [ ] Machine learning model training pipeline
-- [ ] Multi-region deployment
-- [ ] Mobile app offline-first architecture
-- [ ] Advanced analytics dashboard
+Based on the [CODEBASE_ANALYSIS_REPORT.md](CODEBASE_ANALYSIS_REPORT.md), the codebase has several areas for improvement:
+
+### Backend Improvements
+- **Unused Code**: Remove unused imports, variables, and functions
+- **Complex Code**: Refactor matching service and resume parser
+- **Syntax Issues**: Fix syntax issues in several files
+- **Testing**: Improve test structure to reduce redundancy
+
+### Frontend Improvements
+- **Unused Dependencies**: Remove unused packages from pubspec.yaml
+- **Errors**: Fix API mismatch with flutter_card_swiper package
+- **Performance**: Add const constructors and optimize widget rebuilds
+- **Architecture**: Simplify complex widget trees
+
+### Overall Recommendations
+- Regular code audits and refactoring
+- Dependency management and update practices
+- Increase test coverage for complex logic
+- Improve documentation for API endpoints and business logic
 
 ## Contributing
 

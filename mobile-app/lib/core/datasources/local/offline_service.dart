@@ -23,12 +23,12 @@ class OfflineService {
   }
   
   void _initConnectivity() {
-    _connectivity.checkConnectivity().then((status) {
-      _connectionStatusController.add(_mapConnectivityStatus(status));
+    _connectivity.checkConnectivity().then((result) {
+      _connectionStatusController.add(_mapConnectivityStatus(result));
     });
     
-    _connectivity.onConnectivityChanged.listen((status) {
-      final connectionStatus = _mapConnectivityStatus(status);
+    _connectivity.onConnectivityChanged.listen((result) {
+      final connectionStatus = _mapConnectivityStatus(result);
       _connectionStatusController.add(connectionStatus);
       
       // Auto-sync when coming back online
@@ -38,10 +38,10 @@ class OfflineService {
     });
   }
   
-  ConnectionStatus _mapConnectivityStatus(List<ConnectivityResult> results) {
-    if (results.contains(ConnectivityResult.mobile) || 
-        results.contains(ConnectivityResult.wifi) ||
-        results.contains(ConnectivityResult.ethernet)) {
+  ConnectionStatus _mapConnectivityStatus(ConnectivityResult result) {
+    if (result == ConnectivityResult.mobile || 
+        result == ConnectivityResult.wifi ||
+        result == ConnectivityResult.ethernet) {
       return ConnectionStatus.online;
     }
     return ConnectionStatus.offline;
@@ -49,8 +49,27 @@ class OfflineService {
   
   /// Check if device is online
   Future<bool> isOnline() async {
-    final results = await _connectivity.checkConnectivity();
-    return _mapConnectivityStatus(results) == ConnectionStatus.online;
+    final result = await _connectivity.checkConnectivity();
+    return _mapConnectivityStatus(result) == ConnectionStatus.online;
+  }
+  
+  /// Check if device is offline
+  Future<bool> isOffline() async {
+    return !(await isOnline());
+  }
+  
+  /// Queue a swipe action for offline sync
+  Future<void> queueSwipe(String jobId, String action) async {
+    final swipeAction = OfflineAction(
+      id: '${DateTime.now().millisecondsSinceEpoch}_$jobId',
+      type: 'swipe',
+      payload: {
+        'jobId': jobId,
+        'action': action,
+      },
+      createdAt: DateTime.now(),
+    );
+    await queueAction(swipeAction);
   }
   
   /// Save data for offline access
@@ -74,8 +93,8 @@ class OfflineService {
   
   /// Queue an action for offline sync
   Future<void> queueAction(OfflineAction action) async {
-    final queue = getActionQueue();
-    queue.add(action.toJson());
+    final queue = _prefs.getStringList(_keyOfflineQueue) ?? [];
+    queue.add(json.encode(action.toJson()));
     await _prefs.setStringList(_keyOfflineQueue, queue);
   }
   
@@ -137,17 +156,19 @@ class OfflineService {
 class OfflineAction {
   final String id;
   final String type;
-  final String endpoint;
-  final String method;
-  final Map<String, dynamic> data;
+  final String? endpoint;
+  final String? method;
+  final Map<String, dynamic>? payload;
+  final Map<String, dynamic>? data;
   final DateTime createdAt;
   
   OfflineAction({
     required this.id,
     required this.type,
-    required this.endpoint,
-    required this.method,
-    required this.data,
+    this.endpoint,
+    this.method,
+    this.payload,
+    this.data,
     required this.createdAt,
   });
   
@@ -156,6 +177,7 @@ class OfflineAction {
     'type': type,
     'endpoint': endpoint,
     'method': method,
+    'payload': payload,
     'data': data,
     'createdAt': createdAt.toIso8601String(),
   };
@@ -165,7 +187,8 @@ class OfflineAction {
     type: json['type'],
     endpoint: json['endpoint'],
     method: json['method'],
-    data: Map<String, dynamic>.from(json['data']),
+    payload: json['payload'] != null ? Map<String, dynamic>.from(json['payload']) : null,
+    data: json['data'] != null ? Map<String, dynamic>.from(json['data']) : null,
     createdAt: DateTime.parse(json['createdAt']),
   );
 }

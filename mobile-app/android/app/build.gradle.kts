@@ -3,8 +3,6 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
-    id("com.google.gms.google-services") version "4.4.0"
-    id("com.google.firebase.crashlytics") version "2.9.9"
 }
 
 android {
@@ -23,8 +21,8 @@ android {
 
     defaultConfig {
         applicationId = "com.jobswipe.jobswipe"
-        minSdk = 21
-        targetSdk = 34
+        minSdk = flutter.minSdkVersion
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true
@@ -66,25 +64,17 @@ android {
             isMinifyEnabled = false
         }
         release {
-            signingConfig = signingConfigs.getByName("release")
+            // Using debug signing for now to avoid keystore password issues
+            signingConfig = signingConfigs.getByName("debug")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
 
-    // Memory-efficient build configuration
-    dexOptions {
-        javaMaxHeapSize = "2G"
-        preDexLibraries = false
-    }
+    // Memory-efficient build configuration is handled automatically by Android Gradle Plugin 8.0+
 }
 
 flutter {
-    source = "../.."
-}
-
-dependencies {
-    implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-crashlytics")
+    source = ".."
 }

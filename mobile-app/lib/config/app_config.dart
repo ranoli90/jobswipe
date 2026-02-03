@@ -1,27 +1,60 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 /// App Configuration
 /// 
 /// This file contains configuration settings for different environments.
-/// The environment is determined at build time using --dart-define flags.
+/// The environment can be configured either via:
+/// 1. .env file (for development)
+/// 2. --dart-define flags (for production builds)
 /// 
 /// Usage:
-/// - Development: flutter run --dart-define=ENV=development
-/// - Production: flutter run --dart-define=ENV=production
-/// - Build for production: flutter build apk --dart-define=ENV=production
+/// - Development: Uses .env file automatically
+/// - Production: flutter build apk --dart-define=ENV=production
 
 class AppConfig {
-  // Environment
-  static const String env = String.fromEnvironment('ENV', defaultValue: 'development');
+  // Environment - check dart-define first, then .env, then default
+  static String get env {
+    const dartEnv = String.fromEnvironment('ENV');
+    if (dartEnv.isNotEmpty) return dartEnv;
+    
+    final envValue = dotenv.env['ENVIRONMENT'];
+    if (envValue != null && envValue.isNotEmpty) return envValue;
+    
+    return 'development';
+  }
   
   // API Configuration
   static String get baseUrl {
+    // Check dart-define first (for production builds)
+    const dartBaseUrl = String.fromEnvironment('API_BASE_URL');
+    if (dartBaseUrl.isNotEmpty) return dartBaseUrl;
+    
+    // Check .env file
+    final envBaseUrl = dotenv.env['API_BASE_URL'];
+    if (envBaseUrl != null && envBaseUrl.isNotEmpty) {
+      return '$envBaseUrl/api';
+    }
+    
+    // Fallback to environment-based defaults
     switch (env) {
       case 'production':
         return 'https://jobswipe-9obhra.fly.dev/api';
       case 'staging':
         return 'https://jobswipe-backend-staging.fly.dev/api';
       default:
-        return 'http://localhost:8000/api'; // Local development endpoint
+        return 'http://localhost:8000/api';
     }
+  }
+
+  /// Get API version from environment or default
+  static String get apiVersion {
+    const dartVersion = String.fromEnvironment('API_VERSION');
+    if (dartVersion.isNotEmpty) return dartVersion;
+    
+    final envVersion = dotenv.env['API_VERSION'];
+    if (envVersion != null && envVersion.isNotEmpty) return envVersion;
+    
+    return 'v1';
   }
   
   // Feature Flags
@@ -48,11 +81,4 @@ class AppConfig {
   
   // Support
   static const String supportEmail = 'support@jobswipe.com';
-  static const String privacyPolicyUrl = 'https://jobswipe.com/privacy';
-  static const String termsOfServiceUrl = 'https://jobswipe.com/terms';
-  
-  // Social Links
-  static const String twitterUrl = 'https://twitter.com/jobswipe';
-  static const String linkedInUrl = 'https://linkedin.com/company/jobswipe';
-  static const String instagramUrl = 'https://instagram.com/jobswipe';
 }

@@ -1,0 +1,4 @@
+# file: C:\Users\Administrator\Documents\jobswipe\backend\api\routers\jobs.py
+# hypothesis_version: 6.151.4
+
+[0.0, 0.5, 0.85, 1.0, 100, 200, 300, 6379, '...', '/feed', '/matches', '/saved', '/search', '/{job_id}', '/{job_id}/save', '/{job_id}/swipe', 'Filter by company', 'Filter by job type', 'Filter by location', 'Job not found', 'REDIS_HOST', 'Search query string', 'bm25_score', 'current_user.id', 'has_location_match', 'has_skill_match', 'job', 'job_id', 'left', 'message', 'metadata', 'redis', 'right', 'save', 'saved', 'saved_at', 'score', 'str(e)', 'success']

@@ -7,6 +7,16 @@ class Application {
   final String? assignedWorker;
   final DateTime createdAt;
   final DateTime updatedAt;
+  
+  // Extended fields for UI
+  final String? jobTitle;
+  final String? companyName;
+  final String? jobLocation;
+  final String? coverLetter;
+  final String? resumeUrl;
+  final bool autoApply;
+  final String? source;
+  final DateTime? appliedAt;
 
   Application({
     required this.id,
@@ -17,6 +27,14 @@ class Application {
     this.assignedWorker,
     required this.createdAt,
     required this.updatedAt,
+    this.jobTitle,
+    this.companyName,
+    this.jobLocation,
+    this.coverLetter,
+    this.resumeUrl,
+    this.autoApply = false,
+    this.source,
+    this.appliedAt,
   });
 
   factory Application.fromJson(Map<String, dynamic> json) {
@@ -24,11 +42,21 @@ class Application {
       id: json['id'] as String,
       jobId: json['job_id'] as String,
       status: json['status'] as String,
-      attemptCount: json['attempt_count'] as int,
+      attemptCount: json['attempt_count'] as int? ?? 0,
       lastError: json['last_error'] as String?,
       assignedWorker: json['assigned_worker'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
+      jobTitle: json['job_title'] as String? ?? json['job']?['title'] as String?,
+      companyName: json['company_name'] as String? ?? json['job']?['company'] as String?,
+      jobLocation: json['job_location'] as String? ?? json['job']?['location'] as String?,
+      coverLetter: json['cover_letter'] as String?,
+      resumeUrl: json['resume_url'] as String?,
+      autoApply: json['auto_apply'] as bool? ?? false,
+      source: json['source'] as String?,
+      appliedAt: json['applied_at'] != null 
+          ? DateTime.parse(json['applied_at'] as String) 
+          : null,
     );
   }
 
@@ -42,7 +70,53 @@ class Application {
       'assigned_worker': assignedWorker,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
+      'job_title': jobTitle,
+      'company_name': companyName,
+      'job_location': jobLocation,
+      'cover_letter': coverLetter,
+      'resume_url': resumeUrl,
+      'auto_apply': autoApply,
+      'source': source,
+      'applied_at': appliedAt?.toIso8601String(),
     };
+  }
+
+  Application copyWith({
+    String? id,
+    String? jobId,
+    String? status,
+    int? attemptCount,
+    String? lastError,
+    String? assignedWorker,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? jobTitle,
+    String? companyName,
+    String? jobLocation,
+    String? coverLetter,
+    String? resumeUrl,
+    bool? autoApply,
+    String? source,
+    DateTime? appliedAt,
+  }) {
+    return Application(
+      id: id ?? this.id,
+      jobId: jobId ?? this.jobId,
+      status: status ?? this.status,
+      attemptCount: attemptCount ?? this.attemptCount,
+      lastError: lastError ?? this.lastError,
+      assignedWorker: assignedWorker ?? this.assignedWorker,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      jobTitle: jobTitle ?? this.jobTitle,
+      companyName: companyName ?? this.companyName,
+      jobLocation: jobLocation ?? this.jobLocation,
+      coverLetter: coverLetter ?? this.coverLetter,
+      resumeUrl: resumeUrl ?? this.resumeUrl,
+      autoApply: autoApply ?? this.autoApply,
+      source: source ?? this.source,
+      appliedAt: appliedAt ?? this.appliedAt,
+    );
   }
 }
 

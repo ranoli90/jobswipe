@@ -208,7 +208,7 @@ class DatabaseService {
       'company': match.company,
       'location': match.location,
       'snippet': match.snippet,
-      'score': match.score,
+      'score': match.matchScore,
       'apply_url': match.applyUrl,
       'bm25_score': match.metadata.bm25Score,
       'has_skill_match': match.metadata.hasSkillMatch ? 1 : 0,
@@ -243,9 +243,9 @@ class DatabaseService {
 
     return maps.map((map) {
       final metadata = MatchMetadata(
-        bm25Score: map['bm25_score'] as double,
-        hasSkillMatch: (map['has_skill_match'] as int) == 1,
-        hasLocationMatch: (map['has_location_match'] as int) == 1,
+        bm25Score: (map['bm25_score'] as num?)?.toDouble() ?? 0.0,
+        hasSkillMatch: (map['has_skill_match'] as int?) == 1,
+        hasLocationMatch: (map['has_location_match'] as int?) == 1,
       );
       return JobMatch(
         id: map['id'] as String,
@@ -253,11 +253,40 @@ class DatabaseService {
         company: map['company'] as String?,
         location: map['location'] as String?,
         snippet: map['snippet'] as String?,
-        score: map['score'] as double,
+        matchScore: (map['score'] as num?)?.toDouble() ?? 0.0,
         applyUrl: map['apply_url'] as String?,
         metadata: metadata,
       );
     }).toList();
+  }
+
+  // Cache operations for offline access
+  Future<void> cacheJobs(List<Job> jobs) async {
+    final db = await database;
+    final batch = db.batch();
+    
+    for (final job in jobs) {
+      batch.insert(
+        'jobs',
+        job.toJson(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+    
+    await batch.commit(noResult: true);
+  }
+
+  Future<List<Job>> getCachedJobs() async {
+    final db = await database;
+    final maps = await db.query(
+      'jobs',
+      where: 'is_active = ?',
+      whereArgs: [1],
+      orderBy: 'created_at DESC',
+      limit: 100,
+    );
+    
+    return maps.map((map) => Job.fromJson(map)).toList();
   }
 
   Future<void> markMatchAsViewed(String id) async {

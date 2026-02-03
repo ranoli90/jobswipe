@@ -615,7 +615,7 @@ Content-Type: application/json
 ### Get Job Feed
 
 ```http
-GET /api/v1/jobs/feed?cursor=optional_cursor&page_size=20
+GET /api/v1/feed?cursor=optional_cursor&page_size=20
 Authorization: Bearer <access_token>
 ```
 
@@ -644,7 +644,7 @@ Authorization: Bearer <access_token>
 ### Get Job Matches
 
 ```http
-GET /api/v1/jobs/matches?limit=20&offset=0&min_score=0.0
+GET /api/v1/matches?limit=20&offset=0&min_score=0.0
 Authorization: Bearer <access_token>
 ```
 
@@ -764,6 +764,111 @@ Content-Type: application/json
 {
   "detail": "You have already interacted with this job"
 }
+```
+
+### Search Jobs
+
+```http
+GET /api/v1/jobs/search?query=software&location=remote&company=tech&job_type=full_time&limit=20&offset=0
+Authorization: Bearer <access_token>
+```
+
+**Rate Limit:** 100/minute
+
+**Query Parameters:**
+- `query` (string, required): Search query string
+- `location` (string, optional): Filter by location
+- `company` (string, optional): Filter by company name
+- `job_type` (string, optional): Filter by job type (full_time, part_time, contract)
+- `limit` (integer, optional): Number of results to return (default: 20, max: 100)
+- `offset` (integer, optional): Offset for pagination (default: 0)
+
+**Response (200 OK):**
+
+```json
+[
+  {
+    "id": "job-uuid",
+    "title": "Senior Software Engineer",
+    "company": "Tech Corp",
+    "location": "Remote",
+    "snippet": "We are looking for a senior engineer...",
+    "score": 0.5,
+    "apply_url": "https://example.com/apply"
+  }
+]
+```
+
+### Save Job
+
+```http
+POST /api/v1/jobs/{job_id}/save
+Authorization: Bearer <access_token>
+```
+
+**Rate Limit:** 60/minute
+
+**Response (200 OK) - Job Saved:**
+
+```json
+{
+  "success": true,
+  "message": "Job saved successfully",
+  "job_id": "job-uuid",
+  "saved": true
+}
+```
+
+**Response (200 OK) - Job Unsaved (toggle behavior):**
+
+```json
+{
+  "success": true,
+  "message": "Job removed from saved list",
+  "job_id": "job-uuid",
+  "saved": false
+}
+```
+
+**Response (400 Bad Request):**
+
+```json
+{
+  "detail": "Invalid job ID format"
+}
+```
+
+**Response (404 Not Found):**
+
+```json
+{
+  "detail": "Job not found"
+}
+```
+
+### Get Saved Jobs
+
+```http
+GET /api/v1/jobs/saved
+Authorization: Bearer <access_token>
+```
+
+**Rate Limit:** 60/minute
+
+**Response (200 OK):**
+
+```json
+[
+  {
+    "id": "job-uuid",
+    "title": "Senior Software Engineer",
+    "company": "Tech Corp",
+    "location": "Remote",
+    "snippet": "We are looking for a senior engineer...",
+    "score": 0.5,
+    "apply_url": "https://example.com/apply"
+  }
+]
 ```
 
 ## Profile Endpoints
@@ -1049,6 +1154,79 @@ Authorization: Bearer <access_token>
 ```json
 {
   "detail": "Only pending or in-progress tasks can be cancelled"
+}
+```
+
+### Update Application Status
+
+```http
+PUT /api/v1/applications/{job_id}
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "status": "cancelled"
+}
+```
+
+**Rate Limit:** 30/minute
+
+**Valid Statuses:** `queued`, `running`, `completed`, `failed`, `cancelled`
+
+**Response (200 OK):**
+
+```json
+{
+  "id": "app-uuid",
+  "job_id": "job-uuid",
+  "status": "cancelled",
+  "attempt_count": 0,
+  "last_error": null,
+  "assigned_worker": null,
+  "created_at": "2024-01-15T10:30:00Z",
+  "updated_at": "2024-01-15T10:35:00Z"
+}
+```
+
+**Response (400 Bad Request):**
+
+```json
+{
+  "detail": "Invalid status. Must be one of: queued, running, completed, failed, cancelled"
+}
+```
+
+**Response (404 Not Found):**
+
+```json
+{
+  "detail": "Application not found"
+}
+```
+
+### Delete Application
+
+```http
+DELETE /api/v1/applications/{job_id}
+Authorization: Bearer <access_token>
+```
+
+**Rate Limit:** 30/minute
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "message": "Application deleted successfully"
+}
+```
+
+**Response (404 Not Found):**
+
+```json
+{
+  "detail": "Application not found"
 }
 ```
 

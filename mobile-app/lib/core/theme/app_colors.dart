@@ -42,6 +42,9 @@ class AppColors {
   static const Color divider = Color(0xFFDFE6E9);
   static const Color dividerDark = Color(0xFF636E72);
   
+  static const Color surfaceVariant = Color(0xFFE5E7EB);
+  static const Color onPrimary = Color(0xFFFFFFFF);
+  
   // Gradients
   static const LinearGradient primaryGradient = LinearGradient(
     colors: [primaryLight, primary],

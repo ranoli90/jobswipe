@@ -51,7 +51,6 @@ et_xmlfile==2.0.0
 fastapi==0.128.0
 fastapi-limiter==0.1.6
 feedparser==6.0.12
-firebase_admin==7.1.0
 flake8==7.3.0
 Flask==3.1.2
 flask-cors==6.0.2

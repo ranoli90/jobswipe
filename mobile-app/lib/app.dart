@@ -6,12 +6,9 @@ import 'presentation/bloc/auth/auth_bloc.dart';
 import 'presentation/bloc/jobs/jobs_bloc.dart';
 import 'presentation/bloc/applications/applications_bloc.dart';
 import 'presentation/bloc/profile/profile_bloc.dart';
+import 'presentation/bloc/notifications/notifications_bloc.dart';
 import 'presentation/router/app_router.dart';
-import 'presentation/screens/auth/onboarding_screen.dart';
-import 'presentation/screens/auth/login_screen.dart';
-import 'presentation/screens/jobs/job_feed_screen.dart';
-import 'presentation/screens/applications/applications_screen.dart';
-import 'presentation/screens/profile/profile_screen.dart';
+import 'presentation/screens/splash_screen.dart';
 
 class JobSwipeApp extends StatelessWidget {
   const JobSwipeApp({super.key});
@@ -24,6 +21,7 @@ class JobSwipeApp extends StatelessWidget {
         BlocProvider(create: (_) => getIt<JobsBloc>()),
         BlocProvider(create: (_) => getIt<ApplicationsBloc>()),
         BlocProvider(create: (_) => getIt<ProfileBloc>()),
+        BlocProvider(create: (_) => getIt<NotificationsBloc>()),
       ],
       child: MaterialApp(
         title: 'JobSwipe',
@@ -31,7 +29,7 @@ class JobSwipeApp extends StatelessWidget {
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.system,
-        home: const OnboardingScreen(),
+        home: const SplashScreen(),
         onGenerateRoute: AppRouter.onGenerateRoute,
       ),
     );

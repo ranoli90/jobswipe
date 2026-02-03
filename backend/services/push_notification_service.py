@@ -1,7 +1,8 @@
 """
 Push Notification Service
 
-Handles push notification delivery for iOS (APNs) and Android (FCM).
+Handles push notification delivery for iOS (APNs) only.
+NOTE: Android push notifications via direct HTTP to device - FCM removed for Fly.io deployment.
 """
 
 import asyncio
@@ -170,94 +171,11 @@ class APNsClient:
             raise ValueError(f"Failed to generate APNs access token: {str(e)}")
 
 
-class FCMClient:
-    """Firebase Cloud Messaging client"""
-
-    def __init__(self, project_id: str, credentials: Dict[str, Any]):
-        self.project_id = project_id
-        self.credentials = credentials
-        self.base_url = "https://fcm.googleapis.com/v1/projects"
-
-    async def send(
-        self,
-        device_token: str,
-        payload: PushPayload,
-    ) -> PushResult:
-        """Send push notification via FCM"""
-        url = f"{self.base_url}/{self.project_id}/messages:send"
-
-        message = {
-            "token": device_token,
-            "notification": {
-                "title": payload.title,
-                "body": payload.body,
-            },
-            "android": {
-                "priority": payload.priority,
-                "notification": {
-                    "sound": payload.sound or "default",
-                },
-                "ttl": f"{payload.ttl}s",
-            },
-        }
-
-        if payload.data:
-            message["data"] = payload.data
-
-        if payload.image_url:
-            message["notification"]["image"] = payload.image_url
-
-        if payload.collapse_key:
-            message["android"]["collapse_key"] = payload.collapse_key
-
-        try:
-            access_token = await self._get_access_token()
-
-            async with httpx.AsyncClient() as client:
-                response = await client.post(
-                    url,
-                    headers={
-                        "Authorization": f"Bearer {access_token}",
-                        "Content-Type": "application/json",
-                    },
-                    json={"message": message},
-                    timeout=30.0,
-                )
-
-            if response.status_code == 200:
-                response_data = response.json()
-                return PushResult(
-                    success=True,
-                    platform=Platform.ANDROID,
-                    device_token=device_token,
-                    message_id=response_data.get("name"),
-                )
-            error_data = response.json()
-            return PushResult(
-                success=False,
-                platform=Platform.ANDROID,
-                device_token=device_token,
-                error_code=error_data.get("error", {}).get("code"),
-                error_message=str(error_data),
-            )
-        except Exception as e:
-            logger.error("FCM send failed: %s", e)
-            return PushResult(
-                success=False,
-                platform=Platform.ANDROID,
-                device_token=device_token,
-                error_message=str(e),
-            )
-
-    async def _get_access_token(self) -> str:
-        """Get OAuth2 access token for FCM"""
-        # In production, use proper OAuth2 token generation
-        return "placeholder_token"
-
-
 class PushNotificationService:
     """
-    Unified push notification service for iOS and Android
+    Unified push notification service for iOS only.
+    NOTE: Android push notifications disabled - FCM removed for Fly.io deployment.
+    Users will receive notifications via in-app notification center.
     """
 
     def __init__(self):
@@ -266,10 +184,6 @@ class PushNotificationService:
             team_id=settings.APPLE_TEAM_ID,
             bundle_id=settings.APPLE_BUNDLE_ID,
             private_key=settings.APPLE_PRIVATE_KEY,
-        )
-        self.fcm = FCMClient(
-            project_id=settings.FIREBASE_PROJECT_ID,
-            credentials={},
         )
         self.notification_service = NotificationService()
 
@@ -321,7 +235,15 @@ class PushNotificationService:
             if token.platform == Platform.IOS.value:
                 result = await self.apns.send(token.token, payload)
             else:
-                result = await self.fcm.send(token.token, payload)
+                # Android push disabled - FCM removed for Fly.io
+                # Users receive notifications via in-app notification center
+                logger.info("Android push disabled for Fly.io deployment. User %s will use in-app notifications.", user_id)
+                result = PushResult(
+                    success=True,  # In-app notification will be shown
+                    platform=Platform.ANDROID,
+                    device_token=token.token,
+                    message_id=None,
+                )
 
             results.append(result)
 

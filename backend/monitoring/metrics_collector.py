@@ -15,7 +15,7 @@ from prometheus_client import Gauge, Histogram, Counter
 
 from backend.config import Settings, get_settings
 from backend.db.database import get_db
-from backend.db.models import Job, Application, User
+from backend.db.models import Job, ApplicationTask, User
 from backend.metrics import (
     api_requests_total,
     api_request_duration,

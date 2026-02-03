@@ -55,14 +55,6 @@
 	<string>This app needs photo library access to upload images.</string>
 
 
-	<!-- Firebase -->
-	<key>FirebaseAppDelegateProxyEnabled</key>
-	<false/>
-	<key>FirebaseScreenReportingEnabled</key>
-	<false/>
-	<key>FirebaseAutomaticScreenReportingEnabled</key>
-	<false/>
-
 	<!-- Push Notifications -->
 	<key>UIBackgroundModes</key>
 	<array>

@@ -1,0 +1,4 @@
+# file: C:\Users\Administrator\Documents\jobswipe\backend\api\routers\applications.py
+# hypothesis_version: 6.151.4
+
+['/', '/{job_id}', '/{job_id}/audit', '/{job_id}/cancel', '/{job_id}/status', 'cancelled', 'completed', 'error', 'failed', 'message', 'queued', 'running', 'success']

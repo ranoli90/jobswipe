@@ -21,18 +21,13 @@ logger = logging.getLogger(__name__)
 # Import notification libraries (will be available in production)
 try:
     import aioapns
-    import firebase_admin
     import sendgrid
-    from firebase_admin import credentials, messaging
     from sendgrid.helpers.mail import Content, Email, Mail, To
 except ImportError:
     logger.warning(
         "Notification libraries not available - push notifications and email will be disabled"
     )
     aioapns = None
-    messaging = None
-    credentials = None
-    firebase_admin = None
     sendgrid = None
     Mail = None
     Email = None
@@ -46,7 +41,6 @@ class NotificationService:
     def __init__(self):
         # Initialize notification services
         self.apns_client = None
-        self.fcm_app = None
         self.sendgrid_client = None
 
         # Check environment variables and initialize services
@@ -72,15 +66,8 @@ class NotificationService:
             except Exception as e:
                 logger.error("Failed to initialize APNs client: %s", e)
 
-        # FCM (Firebase Cloud Messaging)
-        fcm_credentials_path = os.getenv("FCM_CREDENTIALS_PATH")
-        if fcm_credentials_path and firebase_admin and credentials:
-            try:
-                cred = credentials.Certificate(fcm_credentials_path)
-                self.fcm_app = firebase_admin.initialize_app(cred)
-                logger.info("FCM client initialized")
-            except Exception as e:
-                logger.error("Failed to initialize FCM client: %s", e)
+        # FCM (Firebase Cloud Messaging) - REMOVED for Fly.io deployment
+        # Push notifications for Android disabled - users use in-app notifications
 
         # SendGrid (Email service)
         sendgrid_api_key = os.getenv("SENDGRID_API_KEY")
@@ -96,10 +83,6 @@ class NotificationService:
     @property
     def apns_enabled(self) -> bool:
         return self.apns_client is not None
-
-    @property
-    def fcm_enabled(self) -> bool:
-        return self.fcm_app is not None
 
     @property
     def email_enabled(self) -> bool:
@@ -304,14 +287,13 @@ class NotificationService:
                     ios_tokens, title, message, metadata
                 )
 
-            # Send to Android devices via FCM
+            # Android push notifications disabled - FCM removed for Fly.io
+            # Users receive notifications via in-app notification center
             android_tokens = [
                 token for token in device_tokens if token.platform == "android"
             ]
-            if android_tokens and self.fcm_enabled:
-                await self._send_fcm_notifications(
-                    android_tokens, title, message, metadata
-                )
+            if android_tokens:
+                logger.debug("Android push disabled - %d Android users will use in-app notifications", len(android_tokens))
 
         except Exception as e:
             logger.error("Failed to send push notifications: %s", e)
@@ -360,62 +342,6 @@ class NotificationService:
 
         except Exception as e:
             logger.error("Failed to send APNs notifications: %s", e)
-
-    async def _send_fcm_notifications(
-        self,
-        device_tokens: List[DeviceToken],
-        title: str,
-        message: str,
-        metadata: Dict = None,
-    ):
-        """Send push notifications via FCM to multiple Android devices"""
-        if not self.fcm_app or not messaging:
-            return
-
-        try:
-            # Create FCM message
-            fcm_message = messaging.Message(
-                notification=messaging.Notification(
-                    title=title,
-                    body=message,
-                ),
-                data={
-                    k: str(v) for k, v in (metadata or {}).items()
-                },  # FCM data must be strings
-                android=messaging.AndroidConfig(
-                    priority="high",
-                    notification=messaging.AndroidNotification(
-                        sound="default",
-                        priority="high",
-                    ),
-                ),
-                apns=messaging.APNSConfig(
-                    payload=messaging.APNSPayload(
-                        aps=messaging.Aps(
-                            sound="default",
-                            badge=1,
-                        ),
-                    ),
-                ),
-            )
-
-            # Send to multiple tokens
-            tokens = [token.token for token in device_tokens]
-            response = messaging.send_multicast(fcm_message, tokens)
-
-            logger.debug("FCM notifications sent: %s successful, %s failed" % (response.success_count, response.failure_count)
-            )
-
-            # Handle failures (token cleanup, etc.)
-            if response.failure_count > 0:
-                for i, result in enumerate(response.responses):
-                    if not result.success:
-                        token = device_tokens[i]
-                        logger.warning("FCM notification failed for device %s: %s" % (token.device_id, result.exception)
-                        )
-
-        except Exception as e:
-            logger.error("Failed to send FCM notifications: %s", e)
 
     async def send_email_verification(self, user_id: str, verification_token: str):
         """Send email verification notification to user

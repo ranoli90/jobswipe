@@ -1,0 +1,4 @@
+# file: C:\Users\Administrator\Documents\jobswipe\backend\api\routers\notifications.py
+# hypothesis_version: 6.151.4
+
+[400, 404, 500, 1000, '/', '/device-token', '/mark-all-read', '/preferences', '/stats', '/unread-count', '08:00', '22:00', 'android', 'email_enabled', 'id', 'ios', 'message', 'notifications', 'preferences', 'push_enabled', 'push_job_match_found', 'quiet_hours_enabled', 'quiet_hours_end', 'quiet_hours_start', 'read', 'stats', 'unread_count']

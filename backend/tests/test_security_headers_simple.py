@@ -12,7 +12,7 @@ from unittest.mock import MagicMock
 # Add the backend directory to Python path
 sys.path.insert(0, '/home/brooketogo98/jobswipe/backend')
 
-from backend.api.main import SecurityHeadersMiddleware
+from backend.api.middleware.security_headers import SecurityHeadersMiddleware
 
 
 async def test_security_headers_middleware():

@@ -1,0 +1,4 @@
+# file: C:\Users\Administrator\Documents\jobswipe\backend\db\models.py
+# hypothesis_version: 6.151.4
+
+[1000, '08:00', '1.0', '22:00', 'ApiKey', 'ApplicationAuditLog', 'ApplicationTask', 'CASCADE', 'CandidateProfile', 'Job', 'JobIndex', 'SET NULL', 'User', 'UserJobInteraction', 'action', 'active', 'api_key_usage_logs', 'api_keys', 'api_keys.id', 'application_tasks', 'application_tasks.id', 'candidate_profiles', 'consent_type', 'cookie_consents', 'data_export_requests', 'device_id', 'device_tokens', 'domains', 'email', 'extend_existing', 'external_id', 'job_id', 'job_index', 'jobs', 'jobs.id', 'json', 'key_prefix', 'notifications', 'push', 'queued', 'source', 'unique_key_prefix', 'unique_user_device', 'user', 'user_consents', 'user_id', 'users', 'users.id']

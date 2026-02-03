@@ -80,7 +80,11 @@ class CandidateProfile(Base):
     __table_args__ = ({"extend_existing": True},)
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    user_id = Column(
+        UUID(as_uuid=True), 
+        ForeignKey("users.id", ondelete="CASCADE"), 
+        nullable=False
+    )
     full_name = Column(EncryptedString)
     phone = Column(EncryptedString)
     location = Column(String)
@@ -116,11 +120,14 @@ class Job(Base):
     """Job model"""
 
     __tablename__ = "jobs"
-    __table_args__ = ({"extend_existing": True},)
+    __table_args__ = (
+        UniqueConstraint("source", "external_id", name="uq_jobs_source_external_id"),
+        {"extend_existing": True},
+    )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     source = Column(String, nullable=False)
-    external_id = Column(String)
+    external_id = Column(String, index=True)
     title = Column(String, nullable=False, index=True)
     company = Column(String, index=True)
     location = Column(String, index=True)
@@ -157,15 +164,21 @@ class UserJobInteraction(Base):
     """User-job interaction model"""
 
     __tablename__ = "user_job_interactions"
-    __table_args__ = ({"extend_existing": True},)
+    __table_args__ = (
+        UniqueConstraint("user_id", "job_id", "action", name="uq_user_job_interactions_user_job_action"),
+        {"extend_existing": True},
+    )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True
     )
-    job_id = Column(UUID(as_uuid=True), ForeignKey("jobs.id"), nullable=False, index=True)
+    job_id = Column(
+        UUID(as_uuid=True), ForeignKey("jobs.id", ondelete="CASCADE"), 
+        nullable=False, index=True
+    )
     action = Column(String, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
     interaction_metadata = Column(JSON)
 
     # Relationships
@@ -177,11 +190,20 @@ class ApplicationTask(Base):
     """Application task model"""
 
     __tablename__ = "application_tasks"
-    __table_args__ = ({"extend_existing": True},)
+    __table_args__ = (
+        UniqueConstraint("user_id", "job_id", name="uq_application_tasks_user_job"),
+        {"extend_existing": True},
+    )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey(USERS_TABLE), nullable=False)
-    job_id = Column(UUID(as_uuid=True), ForeignKey("jobs.id"), nullable=False)
+    user_id = Column(
+        UUID(as_uuid=True), ForeignKey(USERS_TABLE), 
+        nullable=False, index=True
+    )
+    job_id = Column(
+        UUID(as_uuid=True), ForeignKey("jobs.id", ondelete="CASCADE"), 
+        nullable=False, index=True
+    )
     status = Column(String, default="queued", index=True)
     attempt_count = Column(Integer, default=0)
     last_error = Column(Text)
@@ -252,15 +274,19 @@ class Notification(Base):
     __table_args__ = ({"extend_existing": True},)
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    user_id = Column(
+        UUID(as_uuid=True), ForeignKey("users.id"), 
+        nullable=False, index=True
+    )
     task_id = Column(
-        UUID(as_uuid=True), ForeignKey("application_tasks.id"), nullable=True
+        UUID(as_uuid=True), ForeignKey("application_tasks.id", ondelete="SET NULL"), 
+        nullable=True
     )
     type = Column(String, nullable=False)
     title = Column(String, nullable=False)
     message = Column(Text, nullable=False)
     data = Column(JSON)
-    read = Column(Boolean, default=False)
+    read = Column(Boolean, default=False, index=True)
     delivered = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     read_at = Column(DateTime, nullable=True)
@@ -278,7 +304,8 @@ class UserNotificationPreferences(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(
-        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, unique=True
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), 
+        nullable=False, unique=True
     )
 
     # Push notification preferences
@@ -315,10 +342,16 @@ class DeviceToken(Base):
     """Device token model for push notifications"""
 
     __tablename__ = "device_tokens"
-    __table_args__ = ({"extend_existing": True},)
+    __table_args__ = (
+        UniqueConstraint("user_id", "device_id", name="unique_user_device"),
+        {"extend_existing": True},
+    )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    user_id = Column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), 
+        nullable=False
+    )
     device_id = Column(String, nullable=False)  # Unique device identifier
     platform = Column(String, nullable=False)  # 'ios' or 'android'
     token = Column(String, nullable=False, unique=True)  # APNs or FCM token
@@ -328,10 +361,6 @@ class DeviceToken(Base):
 
     # Relationships
     user = relationship("User")
-
-    __table_args__ = (
-        UniqueConstraint("user_id", "device_id", name="unique_user_device"),
-    )
 
 
 class NotificationTemplate(Base):
@@ -359,7 +388,10 @@ class ApiKey(Base):
     """API key model for internal service authentication"""
 
     __tablename__ = "api_keys"
-    __table_args__ = ({"extend_existing": True},)
+    __table_args__ = (
+        UniqueConstraint("key_prefix", name="unique_key_prefix"),
+        {"extend_existing": True},
+    )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     # Hashed key prefix (first 8 chars stored in plaintext for identification)
@@ -384,8 +416,6 @@ class ApiKey(Base):
     # Relationships
     creator = relationship("User")
 
-    __table_args__ = (UniqueConstraint("key_prefix", name="unique_key_prefix"),)
-
 
 class ApiKeyUsageLog(Base):
     """API key usage log for auditing and rate limiting"""
@@ -394,7 +424,10 @@ class ApiKeyUsageLog(Base):
     __table_args__ = ({"extend_existing": True},)
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    api_key_id = Column(UUID(as_uuid=True), ForeignKey("api_keys.id"), nullable=False)
+    api_key_id = Column(
+        UUID(as_uuid=True), ForeignKey("api_keys.id"), 
+        nullable=False, index=True
+    )
     endpoint = Column(String, nullable=False)
     method = Column(String, nullable=False)
     status_code = Column(Integer)
@@ -416,7 +449,10 @@ class UserConsent(Base):
     """User consent tracking for GDPR and CCPA compliance"""
 
     __tablename__ = "user_consents"
-    __table_args__ = ({"extend_existing": True},)
+    __table_args__ = (
+        UniqueConstraint("user_id", "consent_type", name="uq_user_consents_user_consent_type"),
+        {"extend_existing": True},
+    )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)

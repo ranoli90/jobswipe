@@ -1,0 +1,4 @@
+# file: C:\Users\Administrator\Documents\jobswipe\backend\api\validators.py
+# hypothesis_version: 6.151.4
+
+[100, 255, '-', '.', '..', 'Invalid email format', '^[\\d\\s\\-\\(\\)\\+\\.]+$', 'email', 'phone']

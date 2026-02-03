@@ -1,0 +1,4 @@
+# file: C:\Users\Administrator\Documents\jobswipe\backend\db\database.py
+# hypothesis_version: 6.151.4
+
+[1800, 'DATABASE_URL', 'Migration failed: %s', 'alembic.ini', 'check_same_thread', 'head', 'sqlalchemy.url', 'sqlite', 'sqlite:///./test.db']

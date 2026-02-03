@@ -1,0 +1,4 @@
+# file: C:\Users\Administrator\Documents\jobswipe\backend\api\middleware\compression.py
+# hypothesis_version: 6.151.4
+
+[500, '/ws/', ';', 'Accept-Encoding', 'Content-Encoding', 'Content-Type', 'Vary', 'application/json', 'application/xml', 'application/xml+rss', 'auto', 'body', 'br', 'brotli', 'gzip', 'image/svg+xml', 'text/', 'text/css', 'text/html', 'text/javascript', 'text/plain', 'text/xml']

@@ -1,0 +1,4 @@
+# file: C:\Users\Administrator\Documents\jobswipe\backend\api\routers\analytics.py
+# hypothesis_version: 6.151.4
+
+[0.08, 0.65, 0.78, 1250, 4200, 5000, 35000, '/application-funnel', '/dashboard-summary', '/engagement-trends', '/generate-report', '/job-market-analysis', '/metrics', '2026-01-25T00:00:00Z', 'csv', 'html', 'job_market', 'json', 'matching_accuracy', 'user_behavior']

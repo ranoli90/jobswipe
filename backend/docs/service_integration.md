@@ -13,6 +13,42 @@ JobSwipe is composed of several microservices that can be integrated with:
 | Metrics | 9090 | Prometheus metrics endpoint |
 | Health | /health | Health check endpoint |
 
+## API Endpoint Summary
+
+| Endpoint | Method | Description | Auth |
+|----------|--------|-------------|------|
+| **Job Feed Service** ||||
+| `/api/v1/feed` | GET | Get personalized job feed | JWT |
+| `/api/v1/matches` | GET | Get matched jobs with scores | JWT |
+| `/api/v1/jobs/search` | GET | Search jobs with filters | JWT |
+| `/api/v1/jobs/{id}` | GET | Get job details | JWT |
+| `/api/v1/jobs/{id}/swipe` | POST | Record swipe action | JWT |
+| `/api/v1/jobs/{id}/save` | POST | Save/unsave job | JWT |
+| `/api/v1/jobs/saved` | GET | Get saved jobs | JWT |
+| **Application Service** ||||
+| `/api/v1/applications` | GET | List user applications | JWT |
+| `/api/v1/applications` | POST | Create application | JWT |
+| `/api/v1/applications/{job_id}` | PUT | Update application status | JWT |
+| `/api/v1/applications/{job_id}` | DELETE | Delete application | JWT |
+| `/api/v1/applications/{job_id}/status` | GET | Get application status | JWT |
+| `/api/v1/applications/{job_id}/audit` | GET | Get application audit log | JWT |
+| `/api/v1/applications/{job_id}/cancel` | POST | Cancel application | JWT |
+| **Notification Service** ||||
+| `/api/v1/notifications` | GET | Get notifications | JWT |
+| `/api/v1/notifications/unread-count` | GET | Get unread count | JWT |
+| `/api/v1/notifications/{id}/read` | PUT | Mark notification as read | JWT |
+| `/api/v1/notifications/mark-all-read` | PUT | Mark all as read | JWT |
+| `/api/v1/notifications/preferences` | GET | Get preferences | JWT |
+| `/api/v1/notifications/preferences` | PUT | Update preferences | JWT |
+| **Profile Service** ||||
+| `/api/v1/profile` | GET | Get user profile | JWT |
+| `/api/v1/profile` | PUT | Update profile | JWT |
+| `/api/v1/profile/resume` | POST | Upload resume | JWT |
+| **Ingestion Service** ||||
+| `/api/v1/ingestion/jobs` | POST | Submit jobs for ingestion | API Key |
+| `/api/v1/ingestion/sources/greenhouse/sync` | POST | Sync Greenhouse | API Key |
+| `/api/v1/ingestion/sources/lever/sync` | POST | Sync Lever | API Key |
+
 ## Authentication Integration
 
 ### Using API Keys
@@ -123,18 +159,41 @@ GET /api/v1/automation/applications/{task_id}
 Authorization: Bearer <user_token>
 ```
 
-## Matching Service
+## Job Feed Service
+
+### Getting Job Feed
+
+```http
+GET /api/v1/feed?cursor=optional_cursor&page_size=20
+Authorization: Bearer <user_token>
+```
 
 ### Getting Job Matches
 
 ```http
-POST /api/v1/matching/jobs
-Content-Type: application/json
+GET /api/v1/matches?limit=20&offset=0&min_score=0.0
 Authorization: Bearer <user_token>
+```
 
-{
-  "job_ids": ["job-uuid-1", "job-uuid-2", "job-uuid-3"]
-}
+### Searching Jobs
+
+```http
+GET /api/v1/jobs/search?query=software&location=remote&limit=20
+Authorization: Bearer <user_token>
+```
+
+### Saving Jobs
+
+```http
+POST /api/v1/jobs/{job_id}/save
+Authorization: Bearer <user_token>
+```
+
+### Getting Saved Jobs
+
+```http
+GET /api/v1/jobs/saved
+Authorization: Bearer <user_token>
 ```
 
 **Response:**
@@ -156,42 +215,148 @@ Authorization: Bearer <user_token>
 }
 ```
 
-### Updating Profile for Better Matching
+### Getting Job Details
 
 ```http
-PUT /api/v1/matching/profile
+GET /api/v1/jobs/{job_id}
+Authorization: Bearer <user_token>
+```
+
+### Recording Swipe Actions
+
+```http
+POST /api/v1/jobs/{job_id}/swipe
 Content-Type: application/json
 Authorization: Bearer <user_token>
 
 {
-  "skills": ["Python", "PostgreSQL", "AWS"],
-  "experience_years": 5,
-  "preferred_locations": ["Remote", "San Francisco"],
-  "job_types": ["full_time", "contract"]
+  "action": "right"
 }
+```
+
+## Application Service
+
+### Creating Applications
+
+```http
+POST /api/v1/applications
+Content-Type: application/json
+Authorization: Bearer <user_token>
+
+{
+  "job_id": "job-uuid"
+}
+```
+
+### Listing Applications
+
+```http
+GET /api/v1/applications
+Authorization: Bearer <user_token>
+```
+
+### Getting Application Status
+
+```http
+GET /api/v1/applications/{job_id}/status
+Authorization: Bearer <user_token>
+```
+
+### Getting Application Audit Log
+
+```http
+GET /api/v1/applications/{job_id}/audit
+Authorization: Bearer <user_token>
+```
+
+### Cancelling Applications
+
+```http
+POST /api/v1/applications/{job_id}/cancel
+Authorization: Bearer <user_token>
+```
+
+### Updating Application Status
+
+```http
+PUT /api/v1/applications/{job_id}
+Content-Type: application/json
+Authorization: Bearer <user_token>
+
+{
+  "status": "cancelled"
+}
+```
+
+### Deleting Applications
+
+```http
+DELETE /api/v1/applications/{job_id}
+Authorization: Bearer <user_token>
 ```
 
 ## Notification Service
 
-### Sending Custom Notifications
+### Getting User Notifications
 
 ```http
-POST /api/v1/notifications/send
+GET /api/v1/notifications?limit=50
+Authorization: Bearer <user_token>
+```
+
+### Getting Unread Count
+
+```http
+GET /api/v1/notifications/unread-count
+Authorization: Bearer <user_token>
+```
+
+### Marking Notifications as Read
+
+```http
+PUT /api/v1/notifications/{notification_id}/read
+Authorization: Bearer <user_token>
+```
+
+### Marking All Notifications as Read
+
+```http
+PUT /api/v1/notifications/mark-all-read
+Authorization: Bearer <user_token>
+```
+
+### Getting Notification Preferences
+
+```http
+GET /api/v1/notifications/preferences
+Authorization: Bearer <user_token>
+```
+
+### Updating Notification Preferences
+
+```http
+PUT /api/v1/notifications/preferences
 Content-Type: application/json
-X-API-Key: <service_api_key>
+Authorization: Bearer <user_token>
 
 {
-  "user_id": "user-uuid",
-  "type": "custom",
-  "title": "New Job Match",
-  "message": "We found a new job that matches your profile!",
-  "channels": ["push", "email"],
-  "metadata": {
-    "job_id": "job-uuid",
-    "match_score": 0.85
-  }
+  "push_enabled": true,
+  "push_application_submitted": true,
+  "push_application_completed": true,
+  "push_application_failed": true,
+  "push_captcha_detected": true,
+  "push_job_match_found": true,
+  "email_enabled": true,
+  "email_application_submitted": false,
+  "email_application_completed": true,
+  "email_application_failed": true,
+  "quiet_hours_enabled": false,
+  "quiet_hours_start": "22:00",
+  "quiet_hours_end": "08:00"
 }
 ```
+
+### Notification Types
 
 ### Notification Types
 

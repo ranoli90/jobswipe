@@ -1,0 +1,4 @@
+# file: C:\Users\Administrator\Documents\jobswipe\backend\services\api_key_service.py
+# hypothesis_version: 6.151.4
+
+[1000, 'API key expired: %s', 'Revoked API key: %s', 'Rotated API key: %s', 'analytics', 'auto', 'automation', 'avg_duration_ms', 'bcrypt', 'created_at', 'error_requests', 'expires_at', 'id', 'ingestion', 'key', 'key_id', 'key_prefix', 'name', 'permissions', 'rate_limit', 'service_type', 'since', 'success_requests', 'total_request_bytes', 'total_requests', 'total_response_bytes', 'webhook']

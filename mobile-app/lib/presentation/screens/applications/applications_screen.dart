@@ -5,7 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../bloc/applications/applications_bloc.dart';
-import '../../../core/models/application.dart';
+import '../../../models/application.dart';
 
 class ApplicationsScreen extends StatefulWidget {
   const ApplicationsScreen({super.key});
@@ -23,7 +23,7 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
     context.read<ApplicationsBloc>().add(ApplicationsLoadRequested());
   }
 
-  void _onRefresh() {
+  Future<void> _onRefresh() async {
     context.read<ApplicationsBloc>().add(ApplicationsRefreshRequested());
   }
 
@@ -390,7 +390,7 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          application.jobTitle,
+                          application.jobTitle ?? 'Unknown Job',
                           style: AppTypography.titleMedium.copyWith(
                             color: AppColors.textPrimary,
                             fontWeight: FontWeight.w600,
@@ -398,7 +398,7 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          application.company,
+                          application.companyName ?? 'Unknown Company',
                           style: AppTypography.bodyMedium.copyWith(
                             color: AppColors.textSecondary,
                           ),
@@ -466,7 +466,7 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
                       child: OutlinedButton.icon(
                         onPressed: () => _onViewAuditLog(application.id),
                         icon: const Icon(Icons.history_outlined),
-                        label: 'View Log',
+                        label: const Text('View Log'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.primary,
                           side: BorderSide(color: AppColors.primary),
@@ -481,7 +481,7 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
                       child: OutlinedButton.icon(
                         onPressed: () => _onCancelApplication(application.id),
                         icon: const Icon(Icons.cancel_outlined),
-                        label: 'Cancel',
+                        label: const Text('Cancel'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.error,
                           side: BorderSide(color: AppColors.error),

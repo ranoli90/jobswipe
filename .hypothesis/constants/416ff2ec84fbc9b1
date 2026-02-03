@@ -1,0 +1,4 @@
+# file: C:\Users\Administrator\Documents\jobswipe\backend\api\middleware\error_handling.py
+# hypothesis_version: 6.151.4
+
+[400, 401, 403, 404, 409, 422, 429, 500, 501, 503, 'AUTHENTICATION_ERROR', 'AUTHORIZATION_ERROR', 'Access denied', 'An error occurred', 'BAD_REQUEST', 'CONFLICT', 'DEBUG', 'ERROR', 'HTTP_ERROR', 'INFO', 'INTERNAL_ERROR', 'NOT_FOUND', 'RATE_LIMIT_EXCEEDED', 'Request failed', 'SERVICE_UNAVAILABLE', 'Security event: %s', 'VALIDATION_ERROR', 'WARNING', 'client_ip', 'code', 'details', 'error', 'event', 'exception_type', 'field_errors', 'headers', 'message', 'method', 'path', 'query_params', 'request_id', 'requires_auth', 'retry_after', 'security', 'service', 'status_code', 'success', 'traceback', 'type', 'user_id']

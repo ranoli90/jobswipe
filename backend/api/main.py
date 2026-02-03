@@ -37,6 +37,17 @@ except Exception as e:
     # Don't exit, let the app start with a basic health endpoint
     settings = None
 
+# Initialize Sentry error tracking (Fly.io deployment)
+try:
+    from backend.monitoring.sentry_config import init_sentry, configure_for_fly_io
+    sentry_initialized = init_sentry() is not None
+    if sentry_initialized:
+        configure_for_fly_io()
+        print("Sentry error tracking initialized successfully", file=sys.stderr)
+except Exception as e:
+    print(f"Warning: Sentry initialization failed: {e}", file=sys.stderr)
+    sentry_initialized = False
+
  # Import middleware modules with error handling
 try:
     from backend.api.middleware.compression import add_compression_middleware
@@ -399,12 +410,12 @@ if middleware_available:
     # Add error handling middleware
     add_error_handling_middleware(app)
     
-     # Add dynamic rate limit middleware
-     add_dynamic_rate_limit_middleware(app)
-     
-     # Add metrics middleware
-     app.add_middleware(MetricsMiddleware)
-     app.add_middleware(SlowAPIMiddleware)
+    # Add dynamic rate limit middleware
+    add_dynamic_rate_limit_middleware(app)
+    
+    # Add metrics middleware
+    app.add_middleware(MetricsMiddleware)
+    app.add_middleware(SlowAPIMiddleware)
 
 # Import routers after app is created to avoid circular dependency
 from backend.api.routers import (analytics, application_automation,

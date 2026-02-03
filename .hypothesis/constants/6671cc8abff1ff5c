@@ -1,0 +1,4 @@
+# file: C:\Users\Administrator\Documents\jobswipe\backend\services\job_deduplication.py
+# hypothesis_version: 6.151.4
+
+[0.2, 0.4, 100.0, 100, 500, '[^a-zA-Z0-9\\s]', '\\s+', 'company', 'description', 'overall', 'title']

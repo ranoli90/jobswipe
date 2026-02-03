@@ -32,6 +32,7 @@ This project and everyone participating in it is governed by our Code of Conduct
 2. Clone your fork locally
 3. Set up the development environment
 4. Create a new branch for your feature or bug fix
+5. Review the [CODEBASE_ANALYSIS_REPORT.md](CODEBASE_ANALYSIS_REPORT.md) to understand existing code structure and areas for improvement
 
 ```bash
 # Clone your fork
@@ -122,6 +123,9 @@ isort backend/
 # Run linting
 flake8 backend/
 mypy backend/
+
+# Check for unused code
+vulture backend/
 ```
 
 ### Dart (Mobile)
@@ -140,7 +144,26 @@ flutter analyze
 
 # Run tests
 flutter test
+
+# Check for unused dependencies
+flutter pub deps
 ```
+
+## Common Issues to Fix
+
+Based on the [CODEBASE_ANALYSIS_REPORT.md](CODEBASE_ANALYSIS_REPORT.md), here are common issues to look for:
+
+### Backend
+- Unused imports and variables
+- Unreachable code after 'raise' statements
+- Syntax issues in several files
+- Complex matching and resume parsing logic
+
+### Frontend
+- Unused dependencies in pubspec.yaml
+- API mismatch with flutter_card_swiper package
+- Type conversion and null handling errors
+- Deprecated 'withOpacity' method usage
 
 ## Making Changes
 

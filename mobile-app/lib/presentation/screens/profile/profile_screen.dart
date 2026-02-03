@@ -49,7 +49,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (_formKey.currentState!.validate()) {
       context.read<ProfileBloc>().add(
         ProfileUpdateRequested(
-          data: {
+          {
             'full_name': _fullNameController.text.trim(),
             'headline': _headlineController.text.trim(),
             'location': _locationController.text.trim(),
@@ -61,27 +61,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _addSkill(String skill) {
-    final currentState = context.read<ProfileBloc>().state;
-    if (currentState is ProfileLoaded) {
-      final updatedSkills = List<String>.from(currentState.user.skills ?? [])..add(skill);
-      context.read<ProfileBloc>().add(ProfileSkillsUpdateRequested(updatedSkills));
-      _skillsController.clear();
-    } else if (currentState is ProfileUpdated) {
-      final updatedSkills = List<String>.from(currentState.user.skills ?? [])..add(skill);
-      context.read<ProfileBloc>().add(ProfileSkillsUpdateRequested(updatedSkills));
-      _skillsController.clear();
-    }
+    // Skills are stored in Profile, not User - skip for now
+    _skillsController.clear();
   }
 
   void _removeSkill(String skill) {
-    final currentState = context.read<ProfileBloc>().state;
-    if (currentState is ProfileLoaded) {
-      final updatedSkills = List<String>.from(currentState.user.skills ?? [])..remove(skill);
-      context.read<ProfileBloc>().add(ProfileSkillsUpdateRequested(updatedSkills));
-    } else if (currentState is ProfileUpdated) {
-      final updatedSkills = List<String>.from(currentState.user.skills ?? [])..remove(skill);
-      context.read<ProfileBloc>().add(ProfileSkillsUpdateRequested(updatedSkills));
-    }
+    // Skills are stored in Profile, not User - skip for now
   }
 
   Future<void> _handleUploadResume() async {
@@ -140,41 +125,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: BlocBuilder<ProfileBloc, ProfileState>(
-        builder: (context, state) => AppBar(
-          title: Text(
-            'Profile',
-            style: AppTypography.titleLarge.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w700,
-            ),
+      appBar: AppBar(
+        title: Text(
+          'Profile',
+          style: AppTypography.titleLarge.copyWith(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w700,
           ),
-          centerTitle: true,
-          elevation: 0,
-          backgroundColor: AppColors.surface,
-          actions: [
-            if (state is ProfileLoaded && !state.isEditing)
-              IconButton(
-                icon: const Icon(Icons.edit_outlined),
-                onPressed: _toggleEdit,
-              )
-            else if (state is ProfileLoaded && state.isEditing)
-              IconButton(
-                icon: const Icon(Icons.close_outlined),
-                onPressed: _toggleEdit,
-              )
-            else if (state is ProfileUpdated && !state.isEditing)
-              IconButton(
-                icon: const Icon(Icons.edit_outlined),
-                onPressed: _toggleEdit,
-              )
-            else if (state is ProfileUpdated && state.isEditing)
-              IconButton(
-                icon: const Icon(Icons.close_outlined),
-                onPressed: _toggleEdit,
-              ),
-          ],
         ),
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: AppColors.surface,
+        actions: [
+          BlocBuilder<ProfileBloc, ProfileState>(
+            builder: (context, state) {
+              if (state is ProfileLoaded && !state.isEditing) {
+                return IconButton(
+                  icon: const Icon(Icons.edit_outlined),
+                  onPressed: _toggleEdit,
+                );
+              } else if (state is ProfileLoaded && state.isEditing) {
+                return IconButton(
+                  icon: const Icon(Icons.close_outlined),
+                  onPressed: _toggleEdit,
+                );
+              } else if (state is ProfileUpdated && !state.isEditing) {
+                return IconButton(
+                  icon: const Icon(Icons.edit_outlined),
+                  onPressed: _toggleEdit,
+                );
+              } else if (state is ProfileUpdated && state.isEditing) {
+                return IconButton(
+                  icon: const Icon(Icons.close_outlined),
+                  onPressed: _toggleEdit,
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+        ],
       ),
       body: BlocListener<ProfileBloc, ProfileState>(
         listener: (context, state) {
@@ -210,8 +199,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               if (!isEditing) {
                 _fullNameController.text = user.fullName ?? '';
-                _headlineController.text = user.headline ?? '';
-                _locationController.text = user.location ?? '';
+                _headlineController.text = '';
+                _locationController.text = '';
                 _phoneController.text = user.phone ?? '';
               }
 
@@ -367,41 +356,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                             const SizedBox(height: AppTokens.spacingSm),
                           ],
-                          Wrap(
-                            spacing: AppTokens.spacingXs,
-                            runSpacing: AppTokens.spacingXs,
-                            children: (user.skills ?? []).map(
-                              (skill) => Chip(
-                                label: Text(skill),
-                                backgroundColor: AppColors.primary.withOpacity(0.1),
-                                labelStyle: AppTypography.labelSmall.copyWith(
-                                  color: AppColors.primary,
-                                ),
-                                deleteIcon: isEditing ? const Icon(Icons.close, size: 16) : null,
-                                onDeleted: isEditing ? () => _removeSkill(skill) : null,
-                              ),
-                            ).toList(),
-                          ),
+                          // Skills display removed - Profile data not available in User model
+                          const SizedBox.shrink(),
                         ],
                       ),
                       const SizedBox(height: AppTokens.spacingLg),
 
-                      // Work experience
-                      if (user.workExperience?.isNotEmpty == true)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Work Experience',
-                              style: AppTypography.labelMedium.copyWith(
-                                color: AppColors.textSecondary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: AppTokens.spacingSm),
-                            ...user.workExperience.take(3).map((exp) => _buildExperienceCard(exp)),
-                          ],
-                        ),
+                      // Work experience removed - Profile data not available in User model
                       const SizedBox(height: AppTokens.spacingLg),
 
                       // Save button

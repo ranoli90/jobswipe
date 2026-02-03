@@ -1,0 +1,4 @@
+# file: C:\Users\Administrator\Documents\jobswipe\backend\api\routers\api_keys.py
+# hypothesis_version: 6.151.4
+
+[1000, '/', '/{key_id}', '/{key_id}/revoke', '/{key_id}/rotate', '/{key_id}/stats', 'API key not found', 'admin', 'analytics', 'automation', 'created_at', 'expires_at', 'id', 'ingestion', 'is_active', 'key', 'key_id', 'key_name', 'key_prefix', 'last_used_at', 'name', 'period_end', 'period_start', 'permissions', 'rate_limit', 'service_type', 'usage_count', 'webhook']

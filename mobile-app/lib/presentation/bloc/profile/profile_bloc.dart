@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/data/profile_repository.dart';
 import '../../../models/profile.dart';
+import '../../../models/user.dart';
 
 // Profile Events
 abstract class ProfileEvent extends Equatable {

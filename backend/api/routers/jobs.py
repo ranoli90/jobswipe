@@ -4,6 +4,7 @@ Jobs Router
 Handles job-related operations including feed retrieval, job details, and interactions.
 """
 
+from datetime import datetime
 import json
 import logging
 import os
@@ -356,3 +357,232 @@ async def swipe_job(
         "message": f"Successfully swiped {swipe_data.action}",
         "job_id": job_id,
     }
+
+
+@router.get("/search", response_model=List[JobCard])
+async def search_jobs(
+    query: str = Query(..., min_length=1, description="Search query string"),
+    location: Optional[str] = Query(None, description="Filter by location"),
+    company: Optional[str] = Query(None, description="Filter by company"),
+    job_type: Optional[str] = Query(None, description="Filter by job type"),
+    limit: int = Query(20, ge=1, le=100, description="Number of results to return"),
+    offset: int = Query(0, ge=0, description="Offset for pagination"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Search jobs with query parameters.
+
+    Args:
+        query: Search query string (required)
+        location: Optional location filter
+        company: Optional company filter
+        job_type: Optional job type filter
+        limit: Number of results to return (1-100, default: 20)
+        offset: Offset for pagination (default: 0)
+        current_user: Current authenticated user
+        db: Database session
+
+    Returns:
+        List of job cards matching the search criteria
+    """
+    try:
+        # Build the base query
+        search_query = db.query(Job).filter(
+            Job.title.ilike(f"%{query}%") | Job.description.ilike(f"%{query}%")
+        )
+
+        # Apply filters
+        if location:
+            search_query = search_query.filter(Job.location.ilike(f"%{location}%"))
+        if company:
+            search_query = search_query.filter(Job.company.ilike(f"%{company}%"))
+        if job_type:
+            search_query = search_query.filter(Job.type.ilike(f"%{job_type}%"))
+
+        # Apply pagination
+        search_query = search_query.offset(offset).limit(limit)
+
+        # Execute query
+        jobs = search_query.all()
+
+        # Convert to JobCard format
+        job_cards = [
+            JobCard(
+                id=str(job.id),
+                title=job.title,
+                company=job.company,
+                location=job.location,
+                snippet=(
+                    job.description[:200] + "..."
+                    if len(job.description) > 200
+                    else job.description
+                ),
+                score=0.5,  # Default score for search results
+                apply_url=job.apply_url,
+            )
+            for job in jobs
+        ]
+
+        logger.info(
+            "Job search performed by user %s: query='%s', found=%d",
+            current_user.id,
+            query,
+            len(job_cards),
+        )
+
+        return job_cards
+
+    except Exception as e:
+        logger.error("Error searching jobs for user %s: %s", current_user.id, str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to search jobs",
+        )
+
+
+@router.post("/{job_id}/save")
+async def save_job(
+    job_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Save/bookmark a job for later review.
+
+    Args:
+        job_id: Job identifier
+        current_user: Current authenticated user
+        db: Database session
+
+    Returns:
+        Success message
+    """
+    import uuid
+
+    try:
+        # Validate job_id format
+        try:
+            job_uuid = uuid.UUID(job_id)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid job ID format"
+            )
+
+        # Check if job exists
+        job = db.query(Job).filter(Job.id == job_uuid).first()
+        if not job:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Job not found"
+            )
+
+        # Check if already saved
+        existing_save = (
+            db.query(UserJobInteraction)
+            .filter(
+                UserJobInteraction.user_id == current_user.id,
+                UserJobInteraction.job_id == job_id,
+                UserJobInteraction.action == "save",
+            )
+            .first()
+        )
+
+        if existing_save:
+            # Job is already saved, unsave it (toggle behavior)
+            db.delete(existing_save)
+            db.commit()
+            logger.info(
+                "Job unsaved for user %s, job %s", current_user.id, job_id
+            )
+            return {
+                "success": True,
+                "message": "Job removed from saved list",
+                "job_id": job_id,
+                "saved": False,
+            }
+
+        # Create save interaction
+        interaction = UserJobInteraction(
+            user_id=current_user.id,
+            job_id=job_uuid,
+            action="save",
+            interaction_metadata={"saved_at": datetime.now().isoformat()},
+        )
+
+        db.add(interaction)
+        db.commit()
+
+        logger.info("Job saved for user %s, job %s", current_user.id, job_id)
+
+        return {
+            "success": True,
+            "message": "Job saved successfully",
+            "job_id": job_id,
+            "saved": True,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Error saving job for user %s: %s", current_user.id, str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to save job: {str(e)}",
+        )
+
+
+@router.get("/saved", response_model=List[JobCard])
+async def get_saved_jobs(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Get all saved jobs for the current user.
+
+    Args:
+        current_user: Current authenticated user
+        db: Database session
+
+    Returns:
+        List of saved job cards
+    """
+    try:
+        # Get all saved job interactions
+        saved_interactions = (
+            db.query(UserJobInteraction)
+            .filter(
+                UserJobInteraction.user_id == current_user.id,
+                UserJobInteraction.action == "save",
+            )
+            .all()
+        )
+
+        # Get job details for each saved job
+        saved_jobs = []
+        for interaction in saved_interactions:
+            job = db.query(Job).filter(Job.id == interaction.job_id).first()
+            if job:
+                saved_jobs.append(
+                    JobCard(
+                        id=str(job.id),
+                        title=job.title,
+                        company=job.company,
+                        location=job.location,
+                        snippet=(
+                            job.description[:200] + "..."
+                            if len(job.description) > 200
+                            else job.description
+                        ),
+                        score=0.5,
+                        apply_url=job.apply_url,
+                    )
+                )
+
+        return saved_jobs
+
+    except Exception as e:
+        logger.error("Error getting saved jobs for user %s: %s", current_user.id, str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get saved jobs",
+        )

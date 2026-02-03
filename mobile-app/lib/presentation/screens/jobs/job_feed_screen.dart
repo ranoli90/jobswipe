@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
-import '../../../core/di/service_locator.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../bloc/jobs/jobs_bloc.dart';
 import '../../widgets/job_card_widget.dart';
+import '../../widgets/shimmer_widget.dart';
+import '../../widgets/bottom_nav_bar.dart';
 
 class JobFeedScreen extends StatefulWidget {
   const JobFeedScreen({super.key});
@@ -21,6 +22,8 @@ class _JobFeedScreenState extends State<JobFeedScreen> {
   final ScrollController _scrollController = ScrollController();
   int _currentIndex = 0;
   Timer? _loadMoreTimer;
+  double _swipeProgressX = 0.0;
+  double _swipeProgressY = 0.0;
 
   @override
   void initState() {
@@ -78,7 +81,27 @@ class _JobFeedScreenState extends State<JobFeedScreen> {
     }
   }
 
-  void _onSwipe(int previousIndex, int? currentIndex, CardSwiperDirection direction) {
+  void _onSwipeUp(int index) {
+    if (index < _getJobCount()) {
+      final job = _getJobAt(index);
+      context.read<JobsBloc>().add(
+        JobsSwipeRequested(
+          jobId: job.id,
+          action: 'super_like',
+        ),
+      );
+      // Show a confirmation snackbar
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Super Liked! This job has been prioritized.'),
+          backgroundColor: AppColors.primary,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  FutureOr<bool> _onSwipe(int previousIndex, int? currentIndex, CardSwiperDirection direction) {
     setState(() {
       _currentIndex = currentIndex ?? 0;
     });
@@ -102,6 +125,7 @@ class _JobFeedScreenState extends State<JobFeedScreen> {
         );
       }
     }
+    return true;
   }
 
   int _getJobCount() {
@@ -148,9 +172,7 @@ class _JobFeedScreenState extends State<JobFeedScreen> {
       body: BlocBuilder<JobsBloc, JobsState>(
         builder: (context, state) {
           if (state is JobsLoading && _getJobCount() == 0) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const JobCardShimmer();
           }
 
           if (state is JobsError) {
@@ -212,6 +234,18 @@ class _JobFeedScreenState extends State<JobFeedScreen> {
               controller: _cardController,
               cardsCount: state.jobs.length,
               onSwipe: _onSwipe,
+              onSwipeDirectionChange: (horizontalDirection, verticalDirection) {
+                setState(() {
+                  _swipeProgressX = horizontalDirection == CardSwiperDirection.left 
+                      ? -0.5 
+                      : horizontalDirection == CardSwiperDirection.right 
+                          ? 0.5 
+                          : 0.0;
+                  _swipeProgressY = verticalDirection == CardSwiperDirection.top 
+                      ? -0.5 
+                      : 0.0;
+                });
+              },
               numberOfCardsDisplayed: 2,
               backCardOffset: const Offset(40, 40),
               padding: const EdgeInsets.symmetric(
@@ -222,14 +256,17 @@ class _JobFeedScreenState extends State<JobFeedScreen> {
                 final job = state.jobs[index];
                 return JobCardWidget(
                   job: job,
-                  onLike: () => _cardController.swipeRight(),
-                  onDislike: () => _cardController.swipeLeft(),
+                  onLike: () => _cardController.swipe(CardSwiperDirection.right),
+                  onDislike: () => _cardController.swipe(CardSwiperDirection.left),
+                  onSuperLike: () => _onSwipeUp(index),
                   onTap: () {
                     Navigator.of(context).pushNamed(
                       '/jobs/detail',
                       arguments: job.id,
                     );
                   },
+                  swipeProgressX: percentThresholdX.toDouble(),
+                  swipeProgressY: percentThresholdY.toDouble(),
                 );
               },
             );
@@ -238,88 +275,15 @@ class _JobFeedScreenState extends State<JobFeedScreen> {
           return const SizedBox.shrink();
         },
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        boxShadow: AppTokens.shadowLg,
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppTokens.spacingLg,
-            vertical: AppTokens.spacingMd,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(
-                icon: Icons.home_outlined,
-                label: 'Feed',
-                isSelected: true,
-                onTap: () {
-                  // Already on feed
-                },
-              ),
-              _buildNavItem(
-                icon: Icons.work_outline,
-                label: 'Applications',
-                isSelected: false,
-                onTap: () {
-                  Navigator.of(context).pushNamed('/applications');
-                },
-              ),
-              _buildNavItem(
-                icon: Icons.person_outline,
-                label: 'Profile',
-                isSelected: false,
-                onTap: () {
-                  Navigator.of(context).pushNamed('/profile');
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem({
-    required IconData icon,
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppTokens.spacingMd,
-          vertical: AppTokens.spacingSm,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? AppColors.primary : AppColors.textSecondary,
-              size: 24,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: AppTypography.labelSmall.copyWith(
-                color: isSelected ? AppColors.primary : AppColors.textSecondary,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
+      bottomNavigationBar: BottomNavBar(
+        currentIndex: 0,
+        onTap: (index) {
+          if (index == 1) {
+            Navigator.of(context).pushNamed('/applications');
+          } else if (index == 2) {
+            Navigator.of(context).pushNamed('/profile');
+          }
+        },
       ),
     );
   }

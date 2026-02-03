@@ -45,8 +45,8 @@ authlib>=1.6.6
 python-json-logger>=2.0.7
 python-multipart>=0.0.22
 aioapns>=3.1
-firebase-admin>=6.0.0
 sendgrid>=6.10.0
+sentry-sdk>=2.0.0
 brotli>=1.2.0
 openai
 spacy

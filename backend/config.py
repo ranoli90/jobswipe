@@ -78,8 +78,8 @@ class Settings(BaseSettings):
     apple_bundle_id: str = Field(..., env="APPLE_BUNDLE_ID")
     apple_private_key: str = Field(..., env="APPLE_PRIVATE_KEY")
 
-    # Firebase Cloud Messaging
-    log_level: str = Field(default="INFO", env="LOG_LEVEL")
+    # Push Notification Settings
+    push_enabled: bool = Field(default=False, env="PUSH_ENABLED")
     log_file: str = Field(default="logs/app.log", env="LOG_FILE")
     log_max_size: int = Field(default=10485760, env="LOG_MAX_SIZE")
     log_backup_count: int = Field(default=5, env="LOG_BACKUP_COUNT")
@@ -209,6 +209,10 @@ class Settings(BaseSettings):
             )
         return v
 
+
+def get_settings() -> Settings:
+    """Dependency injection function to get settings instance"""
+    return settings
 
 # Create settings instance with error handling for better debugging
 try:

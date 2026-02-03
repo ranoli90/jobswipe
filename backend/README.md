@@ -47,41 +47,69 @@ The JobSwipe backend is a comprehensive FastAPI-based API server that powers the
 ## API Endpoints
 
 ### Authentication
-- `POST /v1/auth/login` - User login
-- `POST /v1/auth/register` - User registration
-- `POST /v1/auth/refresh` - Token refresh
-- `POST /v1/auth/logout` - User logout
-- `POST /v1/auth/mfa/setup` - MFA setup
-- `POST /v1/auth/oauth2/google` - Google OAuth2 login
+- `POST /api/v1/auth/login` - User login
+- `POST /api/v1/auth/register` - User registration
+- `POST /api/v1/auth/refresh` - Token refresh
+- `POST /api/v1/auth/logout` - User logout
+- `POST /api/v1/auth/mfa/setup` - MFA setup
+- `POST /api/v1/auth/oauth2/google` - Google OAuth2 login
 
 ### Jobs
-- `GET /v1/jobs` - Get job feed with matching
-- `GET /v1/jobs/{job_id}` - Get job details
-- `POST /v1/jobs/{job_id}/swipe` - Record swipe action
-- `GET /v1/jobs/search` - Search jobs
+- `GET /api/v1/feed` - Get personalized job feed with matching
+- `GET /api/v1/matches` - Get job matches with scores
+- `GET /api/v1/jobs/search` - Search jobs with filters
+- `GET /api/v1/jobs/{job_id}` - Get job details
+- `POST /api/v1/jobs/{job_id}/swipe` - Record swipe action
+- `POST /api/v1/jobs/{job_id}/save` - Save/unsave job
+- `GET /api/v1/jobs/saved` - Get saved jobs
 
 ### Applications
-- `GET /v1/applications` - Get user applications
-- `POST /v1/applications/automate` - Start automated application
-- `GET /v1/applications/{app_id}/status` - Check application status
+- `GET /api/v1/applications` - Get user applications
+- `POST /api/v1/applications` - Create application
+- `GET /api/v1/applications/{job_id}/status` - Check application status
+- `GET /api/v1/applications/{job_id}/audit` - Get application audit log
+- `POST /api/v1/applications/{job_id}/cancel` - Cancel application
+- `PUT /api/v1/applications/{job_id}` - Update application status
+- `DELETE /api/v1/applications/{job_id}` - Delete application
 
 ### Profile
-- `GET /v1/profile` - Get user profile
-- `PUT /v1/profile` - Update profile
-- `POST /v1/profile/resume` - Upload resume
-- `GET /v1/profile/analytics` - Profile analytics
+- `GET /api/v1/profile` - Get user profile
+- `PUT /api/v1/profile` - Update profile
+- `POST /api/v1/profile/resume` - Upload resume
+
+### Notifications
+- `GET /api/v1/notifications` - Get user notifications
+- `GET /api/v1/notifications/unread-count` - Get unread notification count
+- `PUT /api/v1/notifications/{id}/read` - Mark notification as read
+- `PUT /api/v1/notifications/mark-all-read` - Mark all notifications as read
+- `GET /api/v1/notifications/preferences` - Get notification preferences
+- `PUT /api/v1/notifications/preferences` - Update notification preferences
 
 ### Analytics
-- `GET /v1/analytics/matching` - Matching performance
-- `GET /v1/analytics/applications` - Application analytics
-- `GET /v1/analytics/user-behavior` - User behavior insights
+- `GET /api/v1/analytics/metrics` - Get analytics metrics
+- `POST /api/v1/analytics/generate-report` - Generate analytics report
 
 ### Ingestion (Admin)
-- `POST /v1/ingestion/sources/greenhouse/sync` - Sync Greenhouse jobs
-- `POST /v1/ingestion/sources/lever/sync` - Sync Lever jobs
-- `POST /v1/ingestion/sources/rss/sync` - Sync RSS feeds
-- `POST /v1/ingestion/deduplicate/run` - Run deduplication
-- `POST /v1/ingestion/categorize/run` - Run categorization
+- `POST /api/v1/ingestion/jobs` - Submit jobs for ingestion
+- `POST /api/v1/ingestion/sources/greenhouse/sync` - Sync Greenhouse jobs
+- `POST /api/v1/ingestion/sources/lever/sync` - Sync Lever jobs
+- `POST /api/v1/ingestion/sources/rss/sync` - Sync RSS feeds
+
+### Job Deduplication (Admin)
+- `GET /api/v1/deduplicate/find` - Find duplicate jobs
+- `POST /api/v1/deduplicate/remove` - Remove duplicate jobs
+- `POST /api/v1/deduplicate/run` - Run deduplication process
+
+### Job Categorization (Admin)
+- `POST /api/v1/categorize/all` - Categorize all jobs
+- `GET /api/v1/categorize/distribution` - Get category distribution
+- `POST /api/v1/categorize/run` - Run categorization process
+
+### Health & Monitoring
+- `GET /health` - Basic health check
+- `GET /ready` - Readiness check
+- `GET /health/detailed` - Comprehensive health check
+- `GET /metrics` - Prometheus metrics
 
 ## Configuration
 
@@ -280,6 +308,27 @@ The JobSwipe backend follows a modular, service-oriented architecture:
 - **Databases**: PostgreSQL primary, Redis cache
 - **AI Services**: Self-hosted Ollama for ML workloads
 - **Monitoring**: Health checks, metrics, and alerting
+
+## Codebase Analysis
+
+Based on the [CODEBASE_ANALYSIS_REPORT.md](../CODEBASE_ANALYSIS_REPORT.md), the backend codebase has several areas for improvement:
+
+### Key Findings
+- **API Layer**: Well-structured with proper authentication and validation
+- **Services**: 15+ modular services with AI integration (Ollama)
+- **Database**: SQLAlchemy ORM with Alembic migrations
+- **Security**: Comprehensive middleware stack (rate limiting, PII encryption)
+
+### Areas for Improvement
+- **Unused Code**: Remove unused imports, variables, and functions
+- **Complex Code**: Refactor matching service and resume parser
+- **Syntax Issues**: Fix syntax issues in several files
+- **Testing**: Improve test structure to reduce redundancy
+
+### Complex Code Areas
+1. **Matching Service** (`matching.py`): Contains complex BM25 scoring and AI integration
+2. **Resume Parser** (`resume_parser.py`): Complex text processing logic
+3. **Database Models** (`models.py`): Intricate relationships between users, jobs, applications
 
 ## License
 

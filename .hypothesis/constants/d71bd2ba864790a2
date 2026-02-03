@@ -1,0 +1,4 @@
+# file: C:\Users\Administrator\Documents\jobswipe\backend\api\routers\compliance.py
+# hypothesis_version: 6.151.4
+
+[100, ',', '/audit-log', '/compliance', '/consent', '/data-retention', '/deletion/request', '/export/data', '/export/request', '/privacy-policy', '1.0', 'Content-Disposition', 'Request data export', 'X-Forwarded-For', 'action', 'admin', 'admin_id', 'application/json', 'completed', 'compliance', 'consent_type', 'count', 'created_at', 'deleted_counts', 'deletion_id', 'details', 'enforced_at', 'export_id', 'granted', 'id', 'ip', 'ip_address', 'json', 'logs', 'message', 'pending', 'security', 'status', 'unknown', 'user-agent', 'user_id']

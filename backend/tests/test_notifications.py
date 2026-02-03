@@ -111,7 +111,8 @@ class TestNotificationService:
     def test_service_initialization(self, notification_service):
         """Test that service initializes correctly without external services"""
         assert notification_service.apns_enabled is False
-        assert notification_service.fcm_enabled is False
+        # FCM removed - only email_enabled property exists now
+        assert hasattr(notification_service, 'email_enabled')
         assert notification_service.email_enabled is False
 
     # ============================================================
@@ -406,29 +407,27 @@ class TestNotificationService:
     async def test_send_push_notification_mock(
         self, notification_service, sample_device_token
     ):
-        """Test push notification sending with mocked APNs/FCM"""
+        """Test push notification sending with mocked APNs (FCM removed)"""
         with patch.object(notification_service, "apns_client", None):
-            with patch.object(notification_service, "fcm_app", None):
-                # Should not raise, just log warning
-                await notification_service._send_push_notifications_safe(
-                    "user-123", "application_submitted", "Test message", {}
-                )
+            # Should not raise, just log warning about no push client
+            await notification_service._send_push_notifications_safe(
+                "user-123", "application_submitted", "Test message", {}
+            )
 
     @pytest.mark.asyncio
     async def test_send_push_notification_success_mock(
         self, notification_service, sample_device_token
     ):
-        """Test successful push notification sending with mocked client"""
+        """Test successful push notification sending with mocked APNs client"""
         # Create mock APNs client
         mock_apns = AsyncMock()
         mock_apns.send_notification.return_value = True
 
         with patch.object(notification_service, "apns_client", mock_apns):
-            with patch.object(notification_service, "fcm_app", None):
-                # Should complete without error
-                await notification_service._send_push_notifications_safe(
-                    "user-123", "application_submitted", "Test message", {}
-                )
+            # Should complete without error
+            await notification_service._send_push_notifications_safe(
+                "user-123", "application_submitted", "Test message", {}
+            )
 
     # ============================================================
     # Test: Mock Email Notification Sending

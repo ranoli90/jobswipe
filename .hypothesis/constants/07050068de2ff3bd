@@ -1,0 +1,4 @@
+# file: C:\Users\Administrator\Documents\jobswipe\backend\api\routers\jobs_ingestion.py
+# hypothesis_version: 6.151.4
+
+[1234, 3600, '/ingest', '/sources', '/sources/lever/sync', '/sources/rss/sync', '/start-periodic', '/status', '/stop-periodic', '2026-01-25T10:30:00Z', '2026-01-25T11:30:00Z', 'Greenhouse', 'Lever', 'Syncing RSS feed: %s', 'board_token', 'greenhouse', 'https://api.lever.co', 'incremental', 'jobs_synced', 'lever', 'message', 'name', 'org_slug', 'sources', 'success', 'type', 'url']

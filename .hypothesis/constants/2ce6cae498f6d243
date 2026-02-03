@@ -1,0 +1,4 @@
+# file: C:\Users\Administrator\Documents\jobswipe\backend\api\routers\profile.py
+# hypothesis_version: 6.151.4
+
+['/', '/resume', 'current_user.id', 'education', 'full_name', 'headline', 'location', 'parsed_at', 'phone', 'skills', 'str(e)', 'work_experience']
