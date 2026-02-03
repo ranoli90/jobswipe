@@ -7,7 +7,7 @@ for the monitoring dashboard.
 
 import logging
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List
 
 import psutil
@@ -143,7 +143,7 @@ class MetricsCollector:
             try:
                 self.db = next(get_db())
             except Exception as e:
-                logger.warning(f"Failed to initialize database session: {str(e)}")
+                logger.warning("Failed to initialize database session: %s", str(e))
                 self.db = None
 
     def collect_business_kpi_metrics(self) -> Dict[str, Any]:
@@ -154,7 +154,7 @@ class MetricsCollector:
                 return {}
 
             # Calculate date range for daily metrics (last 24 hours)
-            end_date = datetime.utcnow()
+            end_date = datetime.now(timezone.utc)
             start_date = end_date - timedelta(days=1)
 
             metrics = {}
@@ -269,7 +269,7 @@ class MetricsCollector:
             return metrics
 
         except Exception as e:
-            logger.error(f"Failed to collect business KPI metrics: {str(e)}")
+            logger.error("Failed to collect business KPI metrics: %s", str(e))
             return {}
 
     def collect_performance_metrics(self) -> Dict[str, Any]:
@@ -322,7 +322,7 @@ class MetricsCollector:
             return metrics
 
         except Exception as e:
-            logger.error(f"Failed to collect performance metrics: {str(e)}")
+            logger.error("Failed to collect performance metrics: %s", str(e))
             return {}
 
     def collect_system_metrics(self) -> Dict[str, Any]:
@@ -357,19 +357,19 @@ class MetricsCollector:
             return metrics
 
         except Exception as e:
-            logger.error(f"Failed to collect system metrics: {str(e)}")
+            logger.error("Failed to collect system metrics: %s", str(e))
             return {}
 
     def collect_all_metrics(self) -> Dict[str, Any]:
         """Collect all metrics from all sources"""
         all_metrics = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "business_kpi": self.collect_business_kpi_metrics(),
             "performance": self.collect_performance_metrics(),
             "system": self.collect_system_metrics(),
         }
 
-        logger.info(f"Successfully collected all metrics: {len(all_metrics)} categories")
+        logger.info("Successfully collected all metrics: %s categories", len(all_metrics))
         return all_metrics
 
     def analyze_metrics_trends(self, time_window: int = 3600) -> Dict[str, Any]:
@@ -381,12 +381,12 @@ class MetricsCollector:
             if self.db is not None:
                 # Jobs processed trend (24-hour comparison)
                 current_day_jobs = self.db.query(func.count(Job.id)).filter(
-                    Job.created_at >= datetime.utcnow() - timedelta(hours=24)
+                    Job.created_at >= datetime.now(timezone.utc) - timedelta(hours=24)
                 ).scalar() or 0
 
                 previous_day_jobs = self.db.query(func.count(Job.id)).filter(
-                    Job.created_at >= datetime.utcnow() - timedelta(hours=48),
-                    Job.created_at < datetime.utcnow() - timedelta(hours=24)
+                    Job.created_at >= datetime.now(timezone.utc) - timedelta(hours=48),
+                    Job.created_at < datetime.now(timezone.utc) - timedelta(hours=24)
                 ).scalar() or 0
 
                 if previous_day_jobs > 0:
@@ -395,12 +395,12 @@ class MetricsCollector:
 
                 # Applications trend (24-hour comparison)
                 current_day_apps = self.db.query(func.count(Application.id)).filter(
-                    Application.created_at >= datetime.utcnow() - timedelta(hours=24)
+                    Application.created_at >= datetime.now(timezone.utc) - timedelta(hours=24)
                 ).scalar() or 0
 
                 previous_day_apps = self.db.query(func.count(Application.id)).filter(
-                    Application.created_at >= datetime.utcnow() - timedelta(hours=48),
-                    Application.created_at < datetime.utcnow() - timedelta(hours=24)
+                    Application.created_at >= datetime.now(timezone.utc) - timedelta(hours=48),
+                    Application.created_at < datetime.now(timezone.utc) - timedelta(hours=24)
                 ).scalar() or 0
 
                 if previous_day_apps > 0:
@@ -409,12 +409,12 @@ class MetricsCollector:
 
                 # User registration trend (24-hour comparison)
                 current_day_users = self.db.query(func.count(User.id)).filter(
-                    User.created_at >= datetime.utcnow() - timedelta(hours=24)
+                    User.created_at >= datetime.now(timezone.utc) - timedelta(hours=24)
                 ).scalar() or 0
 
                 previous_day_users = self.db.query(func.count(User.id)).filter(
-                    User.created_at >= datetime.utcnow() - timedelta(hours=48),
-                    User.created_at < datetime.utcnow() - timedelta(hours=24)
+                    User.created_at >= datetime.now(timezone.utc) - timedelta(hours=48),
+                    User.created_at < datetime.now(timezone.utc) - timedelta(hours=24)
                 ).scalar() or 0
 
                 if previous_day_users > 0:
@@ -425,7 +425,7 @@ class MetricsCollector:
             return trends
 
         except Exception as e:
-            logger.error(f"Failed to analyze metrics trends: {str(e)}")
+            logger.error("Failed to analyze metrics trends: %s", str(e))
             return {}
 
     def detect_anomalies(self) -> List[Dict[str, Any]]:
@@ -489,11 +489,11 @@ class MetricsCollector:
                     "description": "Low application conversion rate detected"
                 })
 
-            logger.info(f"Detected {len(anomalies)} anomalies")
+            logger.info("Detected %s anomalies", len(anomalies))
             return anomalies
 
         except Exception as e:
-            logger.error(f"Failed to detect anomalies: {str(e)}")
+            logger.error("Failed to detect anomalies: %s", str(e))
             return []
 
 
@@ -512,24 +512,24 @@ class MetricsCollectionTask:
     def start(self):
         """Start periodic metrics collection"""
         self.is_running = True
-        logger.info(f"Starting metrics collection task with interval: {self.interval} seconds")
+        logger.info("Starting metrics collection task with interval: %s seconds", self.interval)
 
         while self.is_running:
             try:
                 self._collector = MetricsCollector()
                 metrics = self._collector.collect_all_metrics()
-                logger.debug(f"Collected {len(metrics)} metrics")
+                logger.debug("Collected %s metrics", len(metrics))
 
                 # Detect anomalies
                 anomalies = self._collector.detect_anomalies()
                 if anomalies:
-                    logger.warning(f"Detected {len(anomalies)} anomalies")
+                    logger.warning("Detected %s anomalies", len(anomalies))
                     self._notify_anomalies(anomalies)
 
                 time.sleep(self.interval)
 
             except Exception as e:
-                logger.error(f"Metrics collection task failed: {str(e)}")
+                logger.error("Metrics collection task failed: %s", str(e))
                 time.sleep(10)
 
     def stop(self):
@@ -540,11 +540,7 @@ class MetricsCollectionTask:
     def _notify_anomalies(self, anomalies: List[Dict[str, Any]]):
         """Notify about detected anomalies (placeholder implementation)"""
         for anomaly in anomalies:
-            logger.warning(
-                f"ANOMALY DETECTED: {anomaly['description']} "
-                f"(Value: {anomaly['value']}, Threshold: {anomaly['threshold']}, "
-                f"Severity: {anomaly['severity']})"
-            )
+            logger.warning("ANOMALY DETECTED: %s (Value: %s, Threshold: %s, Severity: %s)", anomaly['description'], anomaly['value'], anomaly['threshold'], anomaly['severity'])
 
 
 # Global metrics collector instance

@@ -18,7 +18,7 @@ import json
 import logging
 import secrets
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -158,7 +158,7 @@ class ComplianceService:
         )
 
         if existing:
-            logger.info(f"Returning existing export request {existing.id} for user {user_id}")
+            logger.info("Returning existing export request %s for user %s", existing.id, user_id)
             return existing
 
         # Create new export request
@@ -167,8 +167,8 @@ class ComplianceService:
             user_id=user_id,
             status=ExportStatus.PENDING,
             format=format,
-            requested_at=datetime.utcnow(),
-            expires_at=datetime.utcnow() + timedelta(days=self.RETENTION_PERIODS["export_requests"]),
+            requested_at=datetime.now(timezone.utc),
+            expires_at=datetime.now(timezone.utc) + timedelta(days=self.RETENTION_PERIODS["export_requests"]),
             ip_address=ip_address,
             user_agent=user_agent,
         )
@@ -186,7 +186,8 @@ class ComplianceService:
         )
 
         security_logger.info(
-            f"Data export requested for user {user_id}",
+            "Data export requested for user %s",
+            user_id,
             extra={"user_id": str(user_id), "export_id": str(export_request.id)},
         )
 
@@ -209,7 +210,7 @@ class ComplianceService:
         )
 
         if not export_request:
-            logger.error(f"Export request {export_request_id} not found")
+            logger.error("Export request %s not found", export_request_id)
             return None
 
         try:
@@ -223,7 +224,7 @@ class ComplianceService:
             export_content = json.dumps(user_data, indent=2, default=str)
             export_request.export_data = export_content
             export_request.status = ExportStatus.COMPLETED
-            export_request.completed_at = datetime.utcnow()
+            export_request.completed_at = datetime.now(timezone.utc)
 
             self.db.commit()
 
@@ -234,7 +235,7 @@ class ComplianceService:
                 details={"export_id": str(export_request_id)},
             )
 
-            logger.info(f"Data export {export_request_id} completed successfully")
+            logger.info("Data export %s completed successfully", export_request_id)
             return export_content
 
         except Exception as e:
@@ -242,7 +243,7 @@ class ComplianceService:
             export_request.error_message = str(e)
             self.db.commit()
 
-            logger.error(f"Data export {export_request_id} failed: {e}")
+            logger.error("Data export %s failed: %s", export_request_id, e)
             return None
 
     def _collect_user_data(self, user_id: uuid.UUID) -> Dict[str, Any]:
@@ -263,7 +264,7 @@ class ComplianceService:
         # Collect data from all related tables
         data = {
             "export_metadata": {
-                "exported_at": datetime.utcnow().isoformat(),
+                "exported_at": datetime.now(timezone.utc).isoformat(),
                 "user_id": str(user_id),
                 "export_version": "1.0",
                 "regulations": ["GDPR", "CCPA"],
@@ -465,7 +466,7 @@ class ComplianceService:
             return None
 
         # Check if export has expired
-        if export_request.expires_at and export_request.expires_at < datetime.utcnow():
+        if export_request.expires_at and export_request.expires_at < datetime.now(timezone.utc):
             export_request.status = ExportStatus.EXPIRED
             self.db.commit()
             return None
@@ -514,7 +515,7 @@ class ComplianceService:
         )
 
         if existing:
-            logger.info(f"Returning existing deletion request {existing.id} for user {user_id}")
+            logger.info("Returning existing deletion request %s for user %s", existing.id, user_id)
             return existing
 
         # Create new deletion request
@@ -523,8 +524,8 @@ class ComplianceService:
             user_id=user_id,
             status=DeletionStatus.PENDING,
             reason=reason,
-            requested_at=datetime.utcnow(),
-            grace_period_end=datetime.utcnow() + timedelta(days=self.RETENTION_PERIODS["deleted_accounts"]),
+            requested_at=datetime.now(timezone.utc),
+            grace_period_end=datetime.now(timezone.utc) + timedelta(days=self.RETENTION_PERIODS["deleted_accounts"]),
             ip_address=ip_address,
             user_agent=user_agent,
         )
@@ -542,7 +543,8 @@ class ComplianceService:
         )
 
         security_logger.info(
-            f"Data deletion requested for user {user_id}",
+            "Data deletion requested for user %s",
+            user_id,
             extra={"user_id": str(user_id), "deletion_id": str(deletion_request.id)},
         )
 
@@ -568,7 +570,7 @@ class ComplianceService:
         )
 
         if not deletion_request:
-            logger.error(f"Deletion request {deletion_request_id} not found")
+            logger.error("Deletion request %s not found", deletion_request_id)
             return False
 
         try:
@@ -581,7 +583,7 @@ class ComplianceService:
             self._anonymize_user_data(user_id)
 
             deletion_request.status = DeletionStatus.COMPLETED
-            deletion_request.completed_at = datetime.utcnow()
+            deletion_request.completed_at = datetime.now(timezone.utc)
             self.db.commit()
 
             # Log completion
@@ -592,7 +594,8 @@ class ComplianceService:
             )
 
             security_logger.info(
-                f"Data deletion completed for user {user_id}",
+                "Data deletion completed for user %s",
+                user_id,
                 extra={"user_id": str(user_id), "deletion_id": str(deletion_request_id)},
             )
 
@@ -603,7 +606,7 @@ class ComplianceService:
             deletion_request.error_message = str(e)
             self.db.commit()
 
-            logger.error(f"Data deletion {deletion_request_id} failed: {e}")
+            logger.error("Data deletion %s failed: %s", deletion_request_id, e)
             return False
 
     def _anonymize_user_data(self, user_id: uuid.UUID) -> None:
@@ -692,7 +695,7 @@ class ComplianceService:
             return False
 
         deletion_request.status = DeletionStatus.COMPLETED  # Mark as completed (cancelled)
-        deletion_request.completed_at = datetime.utcnow()
+        deletion_request.completed_at = datetime.now(timezone.utc)
         self.db.commit()
 
         self._log_compliance_action(
@@ -774,8 +777,8 @@ class ComplianceService:
             user_id=user_id,
             consent_type=consent_type.value,
             status=ConsentStatus.GRANTED if granted else ConsentStatus.REVOKED,
-            granted_at=datetime.utcnow() if granted else None,
-            revoked_at=datetime.utcnow() if not granted else None,
+            granted_at=datetime.now(timezone.utc) if granted else None,
+            revoked_at=datetime.now(timezone.utc) if not granted else None,
             ip_address=ip_address,
             user_agent=user_agent,
             consent_version=consent_version,
@@ -849,7 +852,7 @@ class ComplianceService:
             action=action.value,
             details=details or {},
             ip_address=ip_address,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
         )
 
         self.db.add(log_entry)
@@ -910,7 +913,7 @@ class ComplianceService:
         }
 
         # Delete expired export requests
-        export_cutoff = datetime.utcnow() - timedelta(days=self.RETENTION_PERIODS["export_requests"])
+        export_cutoff = datetime.now(timezone.utc) - timedelta(days=self.RETENTION_PERIODS["export_requests"])
         expired_exports = (
             self.db.query(DataExportRequest)
             .filter(
@@ -925,7 +928,7 @@ class ComplianceService:
             deleted_counts["export_requests"] += 1
 
         # Delete old audit logs
-        audit_cutoff = datetime.utcnow() - timedelta(days=self.RETENTION_PERIODS["audit_logs"])
+        audit_cutoff = datetime.now(timezone.utc) - timedelta(days=self.RETENTION_PERIODS["audit_logs"])
         deleted_counts["audit_logs"] = (
             self.db.query(ComplianceAuditLog)
             .filter(ComplianceAuditLog.created_at < audit_cutoff)
@@ -933,7 +936,7 @@ class ComplianceService:
         )
 
         # Delete old failed login attempts
-        login_cutoff = datetime.utcnow() - timedelta(days=self.RETENTION_PERIODS["failed_login_attempts"])
+        login_cutoff = datetime.now(timezone.utc) - timedelta(days=self.RETENTION_PERIODS["failed_login_attempts"])
         deleted_counts["failed_login_attempts"] = (
             self.db.query(FailedLoginAttempt)
             .filter(FailedLoginAttempt.attempted_at < login_cutoff)
@@ -949,7 +952,7 @@ class ComplianceService:
             details=deleted_counts,
         )
 
-        logger.info(f"Retention policies enforced: {deleted_counts}")
+        logger.info("Retention policies enforced: %s", deleted_counts)
 
         return deleted_counts
 

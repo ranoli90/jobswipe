@@ -185,7 +185,7 @@ class ApiKeyAuthMiddleware(BaseHTTPMiddleware):
             return response
 
         except Exception as e:
-            logger.error("API key authentication error: %s", str(e))
+            logger.error("API key authentication error occurred")
             return JSONResponse(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 content={

@@ -5,7 +5,7 @@ Provides endpoints for accessing and managing monitoring data, metrics, and dash
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -40,8 +40,8 @@ def get_prometheus_metrics():
     try:
         return generate_latest()
     except Exception as e:
-        logger.error(f"Failed to generate metrics: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to generate metrics")
+        logger.error("Failed to generate metrics: %s", str(e))
+        raise HTTPException(status_code=500, detail="Failed to generate metrics") from e
 
 
 @router.get("/dashboard/summary")
@@ -55,7 +55,7 @@ def get_dashboard_summary(
     """
     try:
         # Calculate time range boundaries
-        end_time = datetime.utcnow()
+        end_time = datetime.now(timezone.utc)
         start_time = end_time - timedelta(seconds=time_range)
 
         # Collect key business metrics
@@ -114,7 +114,7 @@ def get_metric_details(
         if not metric:
             raise HTTPException(status_code=404, detail=f"Metric '{metric_name}' not found")
 
-        end_time = datetime.utcnow()
+        end_time = datetime.now(timezone.utc)
         start_time = end_time - timedelta(seconds=time_range)
 
         metric_info = {
@@ -143,8 +143,8 @@ def get_metric_details(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to get metric details: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to get metric details")
+        logger.error("Failed to get metric details: %s", str(e))
+        raise HTTPException(status_code=500, detail="Failed to get metric details") from e
 
 
 @router.get("/dashboard/alerts")
@@ -207,8 +207,8 @@ def get_active_alerts(
             "total_alerts": len(alerts)
         }
     except Exception as e:
-        logger.error(f"Failed to get active alerts: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to get active alerts")
+        logger.error("Failed to get active alerts: %s", str(e))
+        raise HTTPException(status_code=500, detail="Failed to get active alerts") from e
 
 
 @router.get("/dashboard/performance")
@@ -246,8 +246,8 @@ def get_performance_metrics(
             }
         }
     except Exception as e:
-        logger.error(f"Failed to get performance metrics: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to get performance metrics")
+        logger.error("Failed to get performance metrics: %s", str(e))
+        raise HTTPException(status_code=500, detail="Failed to get performance metrics") from e
 
 
 def _get_average_api_response_time() -> float:

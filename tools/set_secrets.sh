@@ -26,13 +26,13 @@ if [ -f ".env.production" ]; then
     set +a
 fi
 
-DATABASE_URL=${DATABASE_URL:-postgresql+psycopg2://jobswipe:jobswipe@db.internal:5432/jobswipe}
+DATABASE_URL=${DATABASE_URL:-postgresql+psycopg2://db.internal:5432/jobswipe}
 SECRET_KEY=${SECRET_KEY:-$(openssl rand -hex 32)}
 ENCRYPTION_PASSWORD=${ENCRYPTION_PASSWORD:-$(openssl rand -hex 32)}
 ENCRYPTION_SALT=${ENCRYPTION_SALT:-$(openssl rand -hex 32)}
 OAUTH_STATE_SECRET=${OAUTH_STATE_SECRET:-$(openssl rand -hex 32)}
-CELERY_BROKER_URL=${CELERY_BROKER_URL:-redis://default:password@redis.internal:6379/0}
-CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND:-redis://default:password@redis.internal:6379/1}
+CELERY_BROKER_URL=${CELERY_BROKER_URL:-redis://redis.internal:6379/0}
+CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND:-redis://redis.internal:6379/1}
 KAFKA_BROKER_URL=${KAFKA_BROKER_URL:-kafka.internal:9092}
 
 echo "Setting secrets for $APP_NAME..."

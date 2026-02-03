@@ -12,7 +12,7 @@ test('JobSwipe Web App Test', async ({ page }) => {
 
   try {
     // Navigate to running app
-    await page.goto('http://localhost:8081');
+    await page.goto('http://localhost:8082');
     
     // Basic UI validation
     await expect(page.getByText('JobSwipe')).toBeVisible({ timeout: 15000 });

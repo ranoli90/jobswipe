@@ -143,11 +143,11 @@ class SecurityHeadersValidator:
     
     def run_all_tests(self) -> List[Dict]:
         """Run tests on all configured endpoints"""
-        print(f"Testing security headers on {self.base_url}")
+        print("Testing security headers on %s" % self.base_url)
         print("=" * 80)
         
         for endpoint in ENDPOINTS:
-            print(f"\nTesting: {endpoint}")
+            print("\nTesting: %s" % endpoint)
             
             # Test with GET method
             result = self.test_endpoint(endpoint, "GET")
@@ -181,56 +181,56 @@ class SecurityHeadersValidator:
             total_mismatched += len(result["mismatched_headers"])
         
         print("\n" + "=" * 80)
-        print(f"Test Summary:")
-        print(f"Total endpoints tested: {total_tests}")
-        print(f"Passing tests: {passing_tests}")
-        print(f"Failing tests: {total_tests - passing_tests}")
-        print(f"Missing headers: {total_missing}")
-        print(f"Mismatched headers: {total_mismatched}")
+        print("Test Summary:")
+        print("Total endpoints tested: %d" % total_tests)
+        print("Passing tests: %d" % passing_tests)
+        print("Failing tests: %d" % (total_tests - passing_tests))
+        print("Missing headers: %d" % total_missing)
+        print("Mismatched headers: %d" % total_mismatched)
         print("=" * 80)
     
     def _generate_markdown_report(self, filename: str):
         """Generate Markdown report"""
         with open(filename, "w") as f:
-            f.write(f"# Security Headers Validation Report\n\n")
-            f.write(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-            f.write(f"**Target:** {self.base_url}\n\n")
+            f.write("# Security Headers Validation Report\n\n")
+            f.write("**Generated:** %s\n" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+            f.write("**Target:** %s\n\n" % self.base_url)
             
-            f.write(f"## Summary\n\n")
-            f.write(f"- Total endpoints tested: {len(self.results)}\n")
-            f.write(f"- Endpoints with missing headers: {sum(1 for r in self.results if r['missing_headers'])}\n")
-            f.write(f"- Endpoints with mismatched headers: {sum(1 for r in self.results if r['mismatched_headers'])}\n")
-            f.write(f"- Endpoints with errors: {sum(1 for r in self.results if r['errors'])}\n\n")
+            f.write("## Summary\n\n")
+            f.write("- Total endpoints tested: %d\n" % len(self.results))
+            f.write("- Endpoints with missing headers: %d\n" % sum(1 for r in self.results if r['missing_headers']))
+            f.write("- Endpoints with mismatched headers: %d\n" % sum(1 for r in self.results if r['mismatched_headers']))
+            f.write("- Endpoints with errors: %d\n\n" % sum(1 for r in self.results if r['errors']))
             
-            f.write(f"## Detailed Results\n\n")
+            f.write("## Detailed Results\n\n")
             
             for result in self.results:
-                f.write(f"### {result['method']} {result['endpoint']}\n\n")
+                f.write("### %s %s\n\n" % (result['method'], result['endpoint']))
                 
                 if result['errors']:
-                    f.write(f"**Errors:**\n")
+                    f.write("**Errors:**\n")
                     for error in result['errors']:
-                        f.write(f"- {error}\n")
+                        f.write("- %s\n" % error)
                     f.write("\n")
                     continue
                 
-                f.write(f"**Status Code:** {result['status_code']}\n\n")
+                f.write("**Status Code:** %s\n\n" % result['status_code'])
                 
                 if result['missing_headers']:
-                    f.write(f"**Missing Headers:**\n")
+                    f.write("**Missing Headers:**\n")
                     for header in result['missing_headers']:
-                        f.write(f"- {header}\n")
+                        f.write("- %s\n" % header)
                     f.write("\n")
                 
                 if result['mismatched_headers']:
-                    f.write(f"**Mismatched Headers:**\n")
+                    f.write("**Mismatched Headers:**\n")
                     for header in result['mismatched_headers']:
-                        f.write(f"- {header['name']}: expected '{header['expected']}', received '{header['received']}'\n")
+                        f.write("- %s: expected '%s', received '%s'\n" % (header['name'], header['expected'], header['received']))
                     f.write("\n")
                 
-                f.write(f"**Headers Received:**\n")
+                f.write("**Headers Received:**\n")
                 for header_name, value in result['headers_received'].items():
-                    f.write(f"- {header_name}: {value}\n")
+                    f.write("- %s: %s\n" % (header_name, value))
                 f.write("\n")
                 f.write("---\n\n")
     
@@ -253,8 +253,7 @@ class SecurityHeadersValidator:
                     result['method'],
                     result['status_code'],
                     " | ".join(result['missing_headers']),
-                    " | ".join([f"{h['name']}: {h['expected']} != {h['received']}" 
-                               for h in result['mismatched_headers']]),
+                    " | ".join(["%s: %s != %s" % (h['name'], h['expected'], h['received']) for h in result['mismatched_headers']]),
                     " | ".join(result['errors'])
                 ])
 

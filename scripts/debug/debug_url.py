@@ -4,7 +4,7 @@ from sqlalchemy.engine.url import make_url
 def test_url():
     test_cases = [
         "secret:DATABASE_URL",
-        "postgresql://user:password@localhost:5432/dbname",
+        "postgresql://localhost:5432/dbname",
         "sqlite:///./test.db"
     ]
     

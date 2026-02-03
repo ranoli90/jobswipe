@@ -10,7 +10,7 @@ import logging.config
 import os
 import sys
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from contextlib import closing
 from contextvars import ContextVar
 from urllib.parse import urlparse
@@ -50,7 +50,7 @@ try:
         configure_for_fly_io()
         logging.getLogger(__name__).info("Sentry error tracking initialized successfully")
 except Exception as e:
-    logging.getLogger(__name__).warning(f"Sentry initialization failed: {e}")
+    logging.getLogger(__name__).warning("Sentry initialization failed: %s", e)
     sentry_initialized = False
 
  # Import middleware modules with error handling
@@ -69,7 +69,7 @@ try:
     from backend.tracing import setup_tracing
     middleware_available = True
 except Exception as e:
-    logging.getLogger(__name__).warning(f"Some middleware not available: {e}")
+    logging.getLogger(__name__).warning("Some middleware not available: %s", e)
     middleware_available = False
 
 # Import database and services with error handling
@@ -77,7 +77,7 @@ try:
     from backend.db.database import get_db, engine
     db_available = True
 except Exception as e:
-    print(f"Warning: Database not available: {e}", file=sys.stderr)
+    print("Warning: Database not available: %s" % e, file=sys.stderr)
     db_available = False
     get_db = None
     engine = None
@@ -105,7 +105,7 @@ try:
 except OSError as e:
     # Fallback to console-only logging
     log_file = None
-    logging.getLogger(__name__).warning(f"Could not create log directory: {e}")
+    logging.getLogger(__name__).warning("Could not create log directory: %s" % e)
 
 # Build logging config dynamically
 formatters = {}
@@ -258,12 +258,12 @@ if settings:
         logger.info("Redis rate limiter initialized successfully")
     except Exception as e:
         if ENV == "production":
-            logger.critical(f"Redis rate limiter failed in production: {e}")
+            logger.critical("Redis rate limiter failed in production: %s", e)
             sys.exit(1)
         else:
             limiter = Limiter(key_func=get_remote_address, storage_uri="memory://")
             app.state.limiter = limiter
-            logger.warning(f"Redis rate limiter failed, using in-memory fallback: {e}")
+            logger.warning("Redis rate limiter failed, using in-memory fallback: %s", e)
 else:
     if ENV == "production":
         logger.critical("Settings not loaded in production - cannot initialize rate limiter")
@@ -296,7 +296,7 @@ async def startup():
         start_metrics_collection(interval=60)  # Collect metrics every 60 seconds
         logger.info("Metrics collection task started successfully")
     except Exception as e:
-        logger.warning(f"Failed to start metrics collection task: {str(e)}")
+        logger.warning("Failed to start metrics collection task: %s", str(e))
 
 
 @app.on_event("shutdown")
@@ -306,7 +306,7 @@ async def shutdown():
             engine.dispose()
             logger.info("Database engine disposed gracefully")
     except Exception as e:
-        logger.warning(f"Database engine dispose failed: {e}")
+        logger.warning("Database engine dispose failed: %s", e)
     logger.info("Application shutdown complete")
 
 
@@ -378,9 +378,7 @@ def get_cors_origins():
                 host = ""
             host_lower = host.lower()
             if host_lower in blocked_hosts:
-                logger.warning(
-                    f"SECURITY: Blocking localhost origin '{origin}' in production environment"
-                )
+                logger.warning("SECURITY: Blocking localhost origin '%s' in production environment", origin)
                 continue
             filtered_origins.append(origin)
 
@@ -433,11 +431,9 @@ if settings:
         allow_headers=settings.cors_allow_headers,
     )
 
-    logger.info(
-        f"CORS configured for environment '{settings.environment}' with {len(cors_origins)} allowed origin(s)"
-    )
+    logger.info("CORS configured for environment '%s' with %d allowed origin(s)", settings.environment, len(cors_origins))
     if cors_origins:
-        logger.debug(f"Allowed CORS origins: {cors_origins}")
+        logger.debug("Allowed CORS origins: %s", cors_origins)
 else:
     # In non-production, allow safe localhost defaults; fail fast only in production
     if ENV == 'production':
@@ -469,53 +465,53 @@ if middleware_available:
     try:
         app.add_middleware(SecurityHeadersMiddleware)
     except Exception as e:
-        logger.warning(f"Failed to add SecurityHeadersMiddleware: {e}")
+        logger.warning("Failed to add SecurityHeadersMiddleware: %s", e)
     try:
         app.add_middleware(InputSanitizationMiddleware)
     except Exception as e:
-        logger.warning(f"Failed to add InputSanitizationMiddleware: {e}")
+        logger.warning("Failed to add InputSanitizationMiddleware: %s", e)
     try:
         app.add_middleware(OutputEncodingMiddleware)
     except Exception as e:
-        logger.warning(f"Failed to add OutputEncodingMiddleware: {e}")
+        logger.warning("Failed to add OutputEncodingMiddleware: %s", e)
     try:
         app.add_middleware(CookieConsentMiddleware)
     except Exception as e:
-        logger.warning(f"Failed to add CookieConsentMiddleware: {e}")
+        logger.warning("Failed to add CookieConsentMiddleware: %s", e)
 
     # Add compression middleware
     try:
         add_compression_middleware(app)
     except Exception as e:
-        logger.warning(f"Failed to add compression middleware: {e}")
+        logger.warning("Failed to add compression middleware: %s", e)
 
     # Add file validation middleware
     try:
         add_file_validation_middleware(app)
     except Exception as e:
-        logger.warning(f"Failed to add file validation middleware: {e}")
+        logger.warning("Failed to add file validation middleware: %s", e)
 
     # Add error handling middleware
     try:
         add_error_handling_middleware(app)
     except Exception as e:
-        logger.warning(f"Failed to add error handling middleware: {e}")
+        logger.warning("Failed to add error handling middleware: %s", e)
 
     # Add dynamic rate limit middleware
     try:
         add_dynamic_rate_limit_middleware(app)
     except Exception as e:
-        logger.warning(f"Failed to add dynamic rate limit middleware: {e}")
+        logger.warning("Failed to add dynamic rate limit middleware: %s", e)
 
     # Add metrics middleware
     try:
         app.add_middleware(MetricsMiddleware)
     except Exception as e:
-        logger.warning(f"Failed to add metrics middleware: {e}")
+        logger.warning("Failed to add metrics middleware: %s", e)
     try:
         app.add_middleware(SlowAPIMiddleware)
     except Exception as e:
-        logger.warning(f"Failed to add SlowAPI middleware: {e}")
+        logger.warning("Failed to add SlowAPI middleware: %s", e)
 
 # Import routers after app is created to avoid circular dependency
 from backend.api.routers import (analytics, application_automation,
@@ -544,7 +540,7 @@ if settings:
         app.include_router(monitoring_router, prefix="/api/v1/monitoring", tags=["monitoring"])
         logger.info("All API routers loaded successfully")
     except Exception as e:
-        logger.error(f"Failed to load some routers: {e}")
+        logger.error("Failed to load some routers: %s", e)
 
 
 @app.get("/health")
@@ -552,7 +548,7 @@ async def health_check():
     """Health check endpoint for load balancers and monitoring."""
     return {
         "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "version": "1.0.0"
     }
 
@@ -570,7 +566,7 @@ async def readiness_check():
                 db.execute(text("SELECT 1"))
                 db_status = "connected"
         except Exception as e:
-            logger.error(f"Database health check failed: {e}")
+            logger.error("Database health check failed: %s", e)
             db_status = "disconnected"
     else:
         db_status = "not_configured"
@@ -582,10 +578,10 @@ async def readiness_check():
             r.ping()
             redis_status = "connected"
         except redis.ConnectionError as e:
-            logger.warning(f"Redis connection failed: {e}")
+            logger.warning("Redis connection failed: %s", e)
             redis_status = "disconnected"
         except Exception as e:
-            logger.warning(f"Redis health check failed: {e}")
+            logger.warning("Redis health check failed: %s", e)
             redis_status = "disconnected"
         finally:
             try:
@@ -615,7 +611,7 @@ async def readiness_check():
             "status": overall,
             "database": db_status,
             "redis": redis_status,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
     )
 
@@ -648,22 +644,22 @@ async def worker_health_check():
             worker_count = len(active_workers)
             return {
                 "status": "healthy",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "worker_count": worker_count,
                 "workers": list(active_workers.keys())
             }
         else:
             return {
                 "status": "warning",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "worker_count": 0,
                 "message": "No active workers found"
             }
     except Exception as e:
-        logger.error(f"Worker health check failed: {e}")
+        logger.error("Worker health check failed: %s", e)
         return {
             "status": "unhealthy",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "error": str(e)
         }
 
@@ -708,7 +704,7 @@ async def rabbitmq_health_check():
             content=result.to_dict()
         )
     except Exception as e:
-        logger.error(f"RabbitMQ health check failed: {e}")
+        logger.error("RabbitMQ health check failed: %s", e)
         return JSONResponse(
             status_code=503,
             content={
@@ -716,7 +712,7 @@ async def rabbitmq_health_check():
                 "status": "unhealthy",
                 "message": "RabbitMQ health check failed",
                 "error": str(e),
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         )
 
@@ -747,7 +743,7 @@ async def opensearch_health_check():
             content=result.to_dict()
         )
     except Exception as e:
-        logger.error(f"OpenSearch health check failed: {e}")
+        logger.error("OpenSearch health check failed: %s", e)
         return JSONResponse(
             status_code=503,
             content={
@@ -755,7 +751,7 @@ async def opensearch_health_check():
                 "status": "unhealthy",
                 "message": "OpenSearch health check failed",
                 "error": str(e),
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         )
 
@@ -786,7 +782,7 @@ async def celery_health_check():
             content=result.to_dict()
         )
     except Exception as e:
-        logger.error(f"Celery health check failed: {e}")
+        logger.error("Celery health check failed: %s", e)
         return JSONResponse(
             status_code=503,
             content={
@@ -794,7 +790,7 @@ async def celery_health_check():
                 "status": "unhealthy",
                 "message": "Celery health check failed",
                 "error": str(e),
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         )
 
@@ -870,14 +866,14 @@ async def detailed_health_check():
             content=result
         )
     except Exception as e:
-        logger.error(f"Detailed health check failed: {e}")
+        logger.error("Detailed health check failed: %s", e)
         return JSONResponse(
             status_code=503,
             content={
                 "status": "unhealthy",
                 "message": "Health check failed",
                 "error": str(e),
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         )
 
@@ -891,6 +887,22 @@ async def root():
         "docs": "/docs",
         "health": "/health",
     }
+
+
+def sanitize_log_data(data):
+    """
+    Sanitize data for logging to prevent log injection attacks.
+
+    Replaces newlines and carriage returns with escaped versions.
+    """
+    if isinstance(data, str):
+        return data.replace('\n', '\\n').replace('\r', '\\r')
+    elif isinstance(data, dict):
+        return {k: sanitize_log_data(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [sanitize_log_data(item) for item in data]
+    else:
+        return str(data).replace('\n', '\\n').replace('\r', '\\r')
 
 
 @app.post("/csp-report")
@@ -925,13 +937,16 @@ async def csp_report(request: Request):
             "column_number": csp_report.get("column-number"),
         }
 
+        # Sanitize violation details to prevent log injection
+        sanitized_violation = sanitize_log_data(violation_details)
+
         # Log to security logger for monitoring
         security_logger.warning(
             "CSP violation reported",
             extra={
                 "ip": request.client.host if request.client else "unknown",
                 "user_agent": request.headers.get("user-agent", "unknown"),
-                "violation": violation_details,
+                "violation": sanitized_violation,
             },
         )
 
@@ -944,7 +959,7 @@ async def csp_report(request: Request):
 
     except Exception as e:
         # Log error but don't expose details to client
-        security_logger.error(f"Failed to process CSP report: {e}")
+        security_logger.error("Failed to process CSP report")
         return {"status": "report received"}
 
 

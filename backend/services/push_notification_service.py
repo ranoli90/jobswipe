@@ -297,7 +297,7 @@ class PushNotificationService:
 
             for user_id, result in zip(batch, batch_results):
                 if isinstance(result, Exception):
-                    logger.error("Failed to send to %s: %s", ('user_id', 'result'))
+                    logger.error("Failed to send to %s: %s", user_id, result)
                     results[user_id] = []
 
 

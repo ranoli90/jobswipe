@@ -238,8 +238,8 @@ class JobIngestionService:
                 all_jobs.extend(jobs)
                 logger.info("Ingested %s jobs from %s", len(jobs), source)
 
-            except Exception:
-                logger.error("Error ingesting jobs from %s: %s", ('source', 'e'))
+            except Exception as e:
+                logger.error("Error ingesting jobs from %s: %s", source, str(e))
 
         return all_jobs
 
@@ -294,8 +294,8 @@ class JobIngestionService:
                         except Exception as e:
                             logger.error("Error parsing RSS entry: %s", e)
 
-        except Exception:
-            logger.error("Error ingesting RSS feed %s: %s", ("config['url']", 'e'))
+        except Exception as e:
+            logger.error("Error ingesting RSS feed %s: %s", config['url'], str(e))
 
         return jobs[:MAX_JOB_POSTINGS_PER_SOURCE]
 
@@ -353,8 +353,8 @@ class JobIngestionService:
                             except Exception as e:
                                 logger.error("Error parsing job link: %s", e)
 
-            except Exception:
-                logger.error("Error scraping %s jobs: %s", ("company_config['name']", 'e'))
+            except Exception as e:
+                logger.error("Error scraping %s jobs: %s", company_config['name'], str(e))
 
         return jobs[:MAX_JOB_POSTINGS_PER_SOURCE]
 
