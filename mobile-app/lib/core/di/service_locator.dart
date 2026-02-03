@@ -67,9 +67,7 @@ Future<void> setupLocator() async {
   // Connectivity & Offline Service (must be before JobRepository)
   getIt.registerLazySingleton<Connectivity>(() => Connectivity());
   getIt.registerLazySingleton<OfflineService>(
-    () => kIsWeb 
-      ? OfflineService(getIt<SharedPreferences>())
-      : OfflineService(getIt<SharedPreferences>(), getIt<Connectivity>()),
+    () => OfflineService(getIt<SharedPreferences>(), getIt<Connectivity>()),
   );
   
   // Repositories

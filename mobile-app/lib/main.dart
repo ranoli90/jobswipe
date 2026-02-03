@@ -1,8 +1,9 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'config/app_config.dart';
 import 'core/theme/app_theme.dart';
 import 'core/di/service_locator.dart';
 import 'presentation/screens/auth/login_screen.dart';
