@@ -10,8 +10,8 @@ primary_region = 'iad'
   dockerfile = "Dockerfile"
   
   [deploy]
-    # Run migrations before starting machines
-    release_command = "sh -c 'python /app/backend/migrate_db.py --check || python /app/backend/migrate_db.py'"
+    # Run migrations before starting machines (simplified to avoid timeout)
+    release_command = "python /app/backend/migrate_db.py"
 
 [env]
   ENVIRONMENT = 'production'
