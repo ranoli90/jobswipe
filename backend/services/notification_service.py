@@ -7,7 +7,7 @@ Handles sending notifications to users via various channels.
 import asyncio
 import logging
 import os
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy.orm import Session
@@ -144,20 +144,20 @@ class NotificationService:
             # Get notification template
             template = await self._get_notification_template(notification_type)
             if not template:
-                logger.warning("No template found for notification type: %s" % (notification_type)
-                )
+                logger.warning("No template found for notification type: %s", notification_type)
                 # Fall back to basic notification without template
                 rendered_title = self._get_notification_title(notification_type)
                 rendered_message = message
             
 
             # Render template with metadata
-            rendered_title = self._render_template(
-                template.title_template, metadata
-            )
-            rendered_message = self._render_template(
-                template.message_template, metadata
-            )
+            if template:
+                rendered_title = self._render_template(
+                    template.title_template, metadata
+                )
+                rendered_message = self._render_template(
+                    template.message_template, metadata
+                )
 
             # Get user preferences
             preferences = await self._get_user_preferences(user_id)
@@ -182,7 +182,7 @@ class NotificationService:
             await self._store_notification(notification)
 
             notification["delivered"] = True
-            logger.info("Notification sent to user %s: %s", ('user_id', 'notification_type'))
+            logger.info("Notification sent to user %s: %s", user_id, notification_type)
 
         except Exception as e:
             logger.error("Failed to send notification: %s", e)
@@ -337,8 +337,7 @@ class NotificationService:
                     logger.debug("APNs notification sent to device %s", token.device_id)
 
                 except Exception as e:
-                    logger.error("Failed to send APNs notification to device %s: %s" % (token.device_id, e)
-                    )
+                    logger.error("Failed to send APNs notification to device %s: %s", token.device_id, e)
 
         except Exception as e:
             logger.error("Failed to send APNs notifications: %s", e)
@@ -404,11 +403,10 @@ class NotificationService:
                 html_content = self._render_template(
                     template.email_html_template, metadata
                 )
-            
-
-            subject, html_content = self._get_email_template(
-                notification_type, message, metadata
-            )
+            else:
+                subject, html_content = self._get_email_template(
+                    notification_type, message, metadata
+                )
 
             # Create email
             from_email = Email(os.getenv("FROM_EMAIL", "noreply@jobswipe.com"))
@@ -422,8 +420,7 @@ class NotificationService:
             if response.status_code == 202:
                 logger.debug("Email notification sent to user %s", user_id)
             else:
-                logger.error("Failed to send email to user %s: %s - %s" % (user_id, response.status_code, response.body)
-                )
+                logger.error("Failed to send email to user %s: %s - %s", user_id, response.status_code, response.body)
 
         except Exception as e:
             logger.error("Failed to send email notification: %s", e)
@@ -657,12 +654,9 @@ class NotificationService:
                 notification.read = True
                 notification.read_at = datetime.now()
                 db.commit()
-                logger.debug("Marked notification %s as read for user %s" % (notification_id, user_id)
-                )
-            
-
-            logger.warning("Notification %s not found for user %s" % (notification_id, user_id)
-            )
+                logger.debug("Marked notification %s as read for user %s", notification_id, user_id)
+            else:
+                logger.warning("Notification %s not found for user %s", notification_id, user_id)
         except Exception as e:
             db.rollback()
             logger.error("Failed to mark notification as read: %s", e)
@@ -862,11 +856,10 @@ class NotificationService:
                 for key, value in preferences.items():
                     if hasattr(existing_prefs, key):
                         setattr(existing_prefs, key, value)
-            
-
-            # Create new preferences
-            new_prefs = UserNotificationPreferences(user_id=user_id, **preferences)
-            db.add(new_prefs)
+            else:
+                # Create new preferences
+                new_prefs = UserNotificationPreferences(user_id=user_id, **preferences)
+                db.add(new_prefs)
 
             db.commit()
             logger.debug("Notification preferences updated for user %s", user_id)
@@ -888,11 +881,16 @@ class NotificationService:
                 return await operation()
             except Exception as e:
                 if attempt == max_retries - 1:
-                    logger.error("Operation failed after %s attempts: %s", ('max_retries', 'e'))
+                    logger.error("Operation failed after %s attempts: %s", max_retries, e)
                     raise
 
                 wait_time = delay * (2**attempt)
-                logger.warning("Operation failed (attempt %s/%s): %s. Retrying in %ss" % (attempt + 1, max_retries, e, wait_time)
+                logger.warning(
+                    "Operation failed (attempt %s/%s): %s. Retrying in %ss",
+                    attempt + 1,
+                    max_retries,
+                    e,
+                    wait_time,
                 )
                 await asyncio.sleep(wait_time)
 
@@ -978,7 +976,7 @@ class NotificationService:
                 .filter(
                     Notification.delivered is False,
                     Notification.created_at
-                    >= datetime.now() - datetime.timedelta(hours=24),
+                    >= datetime.now() - timedelta(hours=24),
                 )
                 .count()
             )
@@ -995,7 +993,7 @@ class NotificationService:
                 "recent_failures": recent_failures,
                 "service_status": {
                     "apns": self.apns_enabled,
-                    "fcm": self.fcm_enabled,
+                    "fcm": False,
                     "email": self.email_enabled,
                 },
             }

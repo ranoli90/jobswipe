@@ -8,7 +8,7 @@ import asyncio
 import json
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
@@ -335,7 +335,8 @@ class EmbeddingQueue:
             # Remove from processing set
             await self._client.zrem(self.PROCESSING_SET, task_id)
 
-            logger.debug("Requeued embedding task for retry: %s (attempt %s)" % (task_id, retry_count + 1)
+            logger.debug(
+                "Requeued embedding task for retry: %s (attempt %s)", task_id, retry_count + 1
             )
             return True
         
@@ -352,13 +353,13 @@ class EmbeddingQueue:
         await self._client.hset(
             self.FAILED_QUEUE, task_id, json.dumps(task.to_dict())
         )
-            await self._client.expire(self.FAILED_QUEUE, 7 * 24 * 60 * 60)
+        await self._client.expire(self.FAILED_QUEUE, 7 * 24 * 60 * 60)
 
-            # Remove from pending queue
-            await self._client.hdel(self.PENDING_QUEUE, task_id)
+        # Remove from pending queue
+        await self._client.hdel(self.PENDING_QUEUE, task_id)
 
-            logger.error("Embedding task failed: %s - %s", ('task_id', 'error'))
-            return False
+        logger.error("Embedding task failed: %s - %s", task_id, error)
+        return False
 
     async def get_status(self, task_id: str) -> Optional[Dict[str, Any]]:
         """
@@ -426,7 +427,7 @@ class EmbeddingQueue:
             await self.complete(task.task_id, result)
 
         except Exception as e:
-            logger.error("Error processing task %s: %s", ('task.task_id', 'e'))
+            logger.error("Error processing task %s: %s", task.task_id, e)
             await self.fail(task.task_id, str(e))
 
     async def _worker_loop(self, embedding_service) -> None:
@@ -461,7 +462,7 @@ class EmbeddingQueue:
         for i in range(num_workers):
             worker = asyncio.create_task(self._worker_loop(embedding_service))
             self._worker_tasks.append(worker)
-            logger.debug("Started embedding worker %s/%s", ('i + 1', 'num_workers'))
+            logger.debug("Started embedding worker %s/%s", i + 1, num_workers)
 
     async def _stop_workers(self) -> None:
         """Stop all worker processes"""

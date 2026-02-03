@@ -194,7 +194,7 @@ class ApplicationsBloc extends Bloc<ApplicationsEvent, ApplicationsState> {
       );
       emit(ApplicationsAuditLogLoaded(
         applicationId: event.applicationId,
-        auditLog: auditLog.cast<Map<String, dynamic>>(),
+        auditLog: auditLog,
       ));
     } catch (error) {
       emit(ApplicationsError(error.toString()));

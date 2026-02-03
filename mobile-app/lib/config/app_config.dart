@@ -1,5 +1,19 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+/// Environment variables class
+/// 
+/// This class provides centralized access to environment variables
+/// using dart-define for compile-time configuration and .env for development.
+class Env {
+  /// API Base URL configured via dart-define or .env
+  /// 
+  /// Default value is for Android emulator (10.0.2.2 maps to host localhost)
+  static const apiBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://10.0.2.2:8000',
+  );
+}
+
 /// App Configuration
 /// 
 /// This file contains configuration settings for different environments.
@@ -9,7 +23,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 /// 
 /// Usage:
 /// - Development: Uses .env file automatically
-/// - Production: flutter build apk --dart-define=ENV=production
+/// - Production: flutter build apk --dart-define=API_BASE_URL=https://api.example.com --dart-define=ENV=production
 
 class AppConfig {
   // Environment - check dart-define first, then .env, then default
@@ -24,26 +38,24 @@ class AppConfig {
   }
   
   // API Configuration
+  // Uses Env.apiBaseUrl as the source of truth, with /api suffix appended
   static String get baseUrl {
-    // Check dart-define first (for production builds)
-    const dartBaseUrl = String.fromEnvironment('API_BASE_URL');
-    if (dartBaseUrl.isNotEmpty) return dartBaseUrl;
+    // Get the base URL from Env (which checks dart-define first, then default)
+    final baseUrlWithoutApi = Env.apiBaseUrl;
     
-    // Check .env file
+    // Check if .env has a custom API_BASE_URL that differs from the default
     final envBaseUrl = dotenv.env['API_BASE_URL'];
-    if (envBaseUrl != null && envBaseUrl.isNotEmpty) {
+    if (envBaseUrl != null && envBaseUrl.isNotEmpty && envBaseUrl != 'http://10.0.2.2:8000') {
+      // Use .env value if it's a custom value (not the default)
       return '$envBaseUrl/api';
     }
     
-    // Fallback to environment-based defaults
-    switch (env) {
-      case 'production':
-        return 'https://jobswipe-9obhra.fly.dev/api';
-      case 'staging':
-        return 'https://jobswipe-backend-staging.fly.dev/api';
-      default:
-        return 'http://localhost:8000/api';
-    }
+    // For default or dart-define values, append /api suffix
+    // Remove trailing slash if present to avoid double slashes
+    final cleanUrl = baseUrlWithoutApi.endsWith('/') 
+        ? baseUrlWithoutApi.substring(0, baseUrlWithoutApi.length - 1)
+        : baseUrlWithoutApi;
+    return '$cleanUrl/api';
   }
 
   /// Get API version from environment or default

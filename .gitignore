@@ -95,3 +95,7 @@ fly_logs.json
 fly_logs_analysis.json
 Untitled*.txt
 resumeconvo.txt
+
+# Large files
+flutter.zip
+models/

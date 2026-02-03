@@ -11,5 +11,5 @@ sys.path.insert(0, str(project_root))
 
 __version__ = "1.0.0"
 
-# Export submodules
-from . import api, db, services, workers
+# Avoid eager submodule imports to prevent side effects during test discovery
+__all__ = ["__version__"]

@@ -3,7 +3,6 @@ import 'package:equatable/equatable.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/data/profile_repository.dart';
 import '../../../models/profile.dart';
-import '../../../models/user.dart';
 
 // Profile Events
 abstract class ProfileEvent extends Equatable {
@@ -75,7 +74,7 @@ class ProfileInitial extends ProfileState {}
 class ProfileLoading extends ProfileState {}
 
 class ProfileLoaded extends ProfileState {
-  final User user;
+  final Profile user;
   final bool isEditing;
 
   const ProfileLoaded(this.user, {this.isEditing = false});
@@ -85,7 +84,7 @@ class ProfileLoaded extends ProfileState {
 }
 
 class ProfileUpdated extends ProfileState {
-  final User user;
+  final Profile user;
   final String message;
   final bool isEditing;
 
