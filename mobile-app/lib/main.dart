@@ -175,7 +175,7 @@ void main() {
       debugPrint('FlutterError: ${details.exceptionAsString()}');
       debugPrint('Stack trace: ${details.stack}');
       if (kIsWeb) debugPrint('Web environment detected');
-      DebugOverlay.addError(details.exceptionAsString(), details.stack.toString());
+      _DebugOverlayState.addError(details.exceptionAsString(), details.stack.toString());
     };
 
     Widget appContent;
@@ -234,7 +234,7 @@ void main() {
     runApp(appContent);
   }, (error, stack) {
     debugPrint('Uncaught zone error: $error');
-    DebugOverlay.addError(error.toString(), stack.toString());
+    _DebugOverlayState.addError(error.toString(), stack.toString());
   });
 }
 
