@@ -4,14 +4,14 @@ class ApiEndpoints {
   // So endpoints here should NOT include /api prefix
 
   // Auth endpoints
-  static const String login = '/v1/auth/login';
-  static const String register = '/v1/auth/register';
-  static const String logout = '/v1/auth/logout';
-  static const String getCurrentUser = '/v1/auth/me';
-  static const String refreshToken = '/v1/auth/refresh';
-  static const String verifyEmail = '/v1/auth/verify-email';
-  static const String forgotPassword = '/v1/auth/forgot-password';
-  static const String resetPassword = '/v1/auth/reset-password';
+  static const String login = '/v1/login';
+  static const String register = '/v1/register';
+  static const String logout = '/v1/logout';
+  static const String getCurrentUser = '/v1/me';
+  static const String refreshToken = '/v1/refresh';
+  static const String verifyEmail = '/v1/verify-email';
+  static const String forgotPassword = '/v1/forgot-password';
+  static const String resetPassword = '/v1/reset-password';
 
   // Profile endpoints
   static const String getProfile = '/v1/profile';

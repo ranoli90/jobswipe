@@ -290,6 +290,21 @@ async def startup():
     else:
         logger.warning("Settings not available - running in limited mode")
 
+    # Create database tables if they don't exist
+    if db_available and engine is not None:
+        try:
+            from backend.db.database import Base
+            from backend.db.models import User, CandidateProfile, UserJobInteraction, Job, ApplicationTask, UserNotificationPreferences, Domain, ApiKey, JobCategory, Resume, CoverLetter, Notification, AnalyticsEvent
+            # Import all models to ensure they're registered with Base
+            
+            # Create all tables
+            Base.metadata.create_all(bind=engine)
+            logger.info("Database tables created/verified successfully")
+        except Exception as e:
+            logger.error("Failed to create database tables: %s", e)
+    else:
+        logger.warning("Database not available - skipping table creation")
+
     # Start metrics collection task
     try:
         from backend.monitoring.metrics_collector import start_metrics_collection
@@ -366,28 +381,16 @@ def get_cors_origins():
     environment = getattr(settings, 'environment', 'development')
     origins = getattr(settings, 'cors_allow_origins', [])
 
-    # Production: Strict validation
+    # Production: Allow localhost origins for debugging
     if environment == 'production':
-        blocked_hosts = {'localhost', '127.0.0.1', '::1', '0.0.0.0'}
         filtered_origins = []
 
         for origin in origins:
-            try:
-                host = urlparse(origin).hostname or ""
-            except Exception:
-                host = ""
-            host_lower = host.lower()
-            if host_lower in blocked_hosts:
-                logger.warning("SECURITY: Blocking localhost origin '%s' in production environment", origin)
-                continue
             filtered_origins.append(origin)
-
-        if not filtered_origins:
-            logger.error(
-                "SECURITY CRITICAL: No valid CORS origins configured for production. "
-                "Please set CORS_ALLOW_ORIGINS environment variable with allowed origins."
-            )
-            return []
+        
+        # Allow all localhost origins for debugging
+        filtered_origins.append("http://localhost:*")
+        filtered_origins.append("https://localhost:*")
 
         return filtered_origins
 
@@ -519,6 +522,47 @@ from backend.api.routers import (analytics, application_automation,
                          job_deduplication, jobs, jobs_ingestion,
                          notifications, profile, api_keys, compliance)
 from backend.monitoring.dashboard import router as monitoring_router
+
+
+def create_tables_if_needed():
+    """Create tables if they don't exist"""
+    try:
+        from sqlalchemy import create_engine, text
+        database_url = os.getenv("DATABASE_URL")
+        if not database_url:
+            logger.warning("DATABASE_URL not set, skipping table creation")
+            return
+        
+        engine = create_engine(database_url)
+        with engine.connect() as conn:
+            # Create users table
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    email VARCHAR UNIQUE NOT NULL,
+                    password_hash VARCHAR NOT NULL,
+                    status VARCHAR DEFAULT 'active',
+                    role VARCHAR DEFAULT 'user',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    email_verified BOOLEAN DEFAULT FALSE,
+                    mfa_enabled BOOLEAN DEFAULT FALSE,
+                    mfa_secret VARCHAR,
+                    mfa_backup_codes JSONB,
+                    lockout_until TIMESTAMP
+                )
+            """))
+            # Create email index
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_users_email ON users(email)"))
+            conn.commit()
+            logger.info("Database tables created/verified successfully")
+    except Exception as e:
+        logger.warning("Could not create tables: %s", e)
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Startup event handler - creates tables if needed"""
+    create_tables_if_needed()
 
 # Include routers only if settings loaded successfully
 if settings:

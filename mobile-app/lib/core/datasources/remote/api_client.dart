@@ -73,7 +73,7 @@ class ApiClient {
               final refreshToken = await _secureStorage.read('refresh_token');
               if (refreshToken != null) {
                 final refreshResponse = await _dio.post(
-                  '/v1/auth/refresh',
+                  '/v1/refresh',
                   data: {'refresh_token': refreshToken},
                   options: Options(
                     headers: {'Authorization': null}, // Don't add token for refresh
