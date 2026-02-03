@@ -5,10 +5,9 @@ Manages WebSocket connections for real-time job updates, notifications, and more
 """
 
 import asyncio
-import json
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, Optional, Set
 

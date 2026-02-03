@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../core/di/service_locator.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/app_typography.dart';
@@ -412,7 +411,7 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
                       vertical: AppTokens.spacingXs,
                     ),
                     decoration: BoxDecoration(
-                      color: _getStatusColor(application.status).withOpacity(0.1),
+                      color: _getStatusColor(application.status).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(AppTokens.radiusSm),
                     ),
                     child: Row(
@@ -511,7 +510,7 @@ class _ApplicationsScreenState extends State<ApplicationsScreen> {
         });
       },
       backgroundColor: AppColors.surface,
-      selectedColor: AppColors.primary.withOpacity(0.1),
+      selectedColor: AppColors.primary.withValues(alpha: 0.1),
       checkmarkColor: AppColors.primary,
       labelStyle: AppTypography.labelMedium.copyWith(
         color: isSelected ? AppColors.primary : AppColors.textSecondary,

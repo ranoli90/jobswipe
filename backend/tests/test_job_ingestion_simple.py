@@ -153,7 +153,7 @@ class TestJobIngestionServiceSimple:
 
     def test_job_sources_configuration(self):
         """Test that job sources are correctly configured"""
-        service = JobIngestionService()
+        JobIngestionService()
 
         assert "greenhouse" in JobIngestionService.JOB_SOURCES
         assert "lever" in JobIngestionService.JOB_SOURCES
@@ -170,11 +170,11 @@ class TestJobIngestionServiceSimple:
 
     def test_job_types_configuration(self):
         """Test that job types are correctly configured"""
-        service = JobIngestionService()
+        JobIngestionService()
 
         # Import module-level constant
         from services.job_ingestion_service import JOB_TYPES
-        
+
         assert len(JOB_TYPES) > 0
         assert "Software Engineer" in JOB_TYPES
         assert "Data Scientist" in JOB_TYPES
@@ -182,7 +182,7 @@ class TestJobIngestionServiceSimple:
 
     def test_source_companies_configuration(self):
         """Test that companies are configured for each source"""
-        service = JobIngestionService()
+        JobIngestionService()
 
         greenhouse_companies = JobIngestionService.JOB_SOURCES["greenhouse"][
             "companies"

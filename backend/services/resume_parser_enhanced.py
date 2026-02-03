@@ -4,12 +4,11 @@ Enhanced Resume Parser Service with AI Integration
 Provides advanced resume parsing capabilities using OpenAI and spaCy.
 """
 
-import json
 import logging
 import os
 import re
-from datetime import datetime
-from typing import Dict, List, Optional
+from datetime import datetime, timezone
+from typing import Dict, List
 
 import docx  # python-docx for DOCX parsing
 import fitz  # PyMuPDF for PDF parsing

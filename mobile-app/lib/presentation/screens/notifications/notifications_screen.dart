@@ -216,12 +216,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           decoration: BoxDecoration(
             color: notification.isRead 
                 ? AppColors.surface 
-                : AppColors.primary.withOpacity(0.05),
+                : AppColors.primary.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(AppTokens.radiusMd),
             border: Border.all(
               color: notification.isRead 
                   ? AppColors.divider 
-                  : AppColors.primary.withOpacity(0.2),
+                  : AppColors.primary.withValues(alpha: 0.2),
             ),
           ),
           child: ListTile(
@@ -291,7 +291,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           Icon(
             Icons.notifications_none_outlined,
             size: 64,
-            color: AppColors.textSecondary.withOpacity(0.5),
+            color: AppColors.textSecondary.withValues(alpha: 0.5),
           ),
           const SizedBox(height: AppTokens.spacingMd),
           Text(
@@ -305,7 +305,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           Text(
             'We\'ll notify you when something important happens',
             style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.textSecondary.withOpacity(0.7),
+              color: AppColors.textSecondary.withValues(alpha: 0.7),
             ),
             textAlign: TextAlign.center,
           ),
@@ -359,15 +359,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Color _getIconBackgroundColor(NotificationType type) {
     switch (type) {
       case NotificationType.applicationUpdate:
-        return AppColors.primary.withOpacity(0.1);
+        return AppColors.primary.withValues(alpha: 0.1);
       case NotificationType.jobMatch:
-        return AppColors.success.withOpacity(0.1);
+        return AppColors.success.withValues(alpha: 0.1);
       case NotificationType.message:
-        return AppColors.accent.withOpacity(0.1);
+        return AppColors.accent.withValues(alpha: 0.1);
       case NotificationType.system:
-        return AppColors.warning.withOpacity(0.1);
+        return AppColors.warning.withValues(alpha: 0.1);
       case NotificationType.profile:
-        return AppColors.secondary.withOpacity(0.1);
+        return AppColors.secondary.withValues(alpha: 0.1);
     }
   }
 

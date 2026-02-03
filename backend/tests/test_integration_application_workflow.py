@@ -3,7 +3,6 @@ Integration tests for job application submission workflow
 Tests the full flow: API -> Celery -> External site application
 """
 
-import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -34,7 +33,7 @@ class TestApplicationWorkflowIntegration:
         from slowapi import Limiter
         from slowapi.util import get_remote_address
         app.state.limiter = Limiter(key_func=get_remote_address)
-        
+
         # Mock authentication
         with patch("backend.services.api_key_service.ApiKeyService.verify_key", return_value=True):
             # Mock task creation

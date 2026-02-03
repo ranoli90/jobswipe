@@ -11,7 +11,6 @@ import json
 import logging
 import os
 import re
-import time
 from datetime import datetime
 from typing import Dict, List
 
@@ -21,7 +20,6 @@ from bs4 import BeautifulSoup
 
 from backend.db.database import get_db
 from backend.db.models import Job
-from backend.services.matching import calculate_job_score
 from backend.services.openai_service import OpenAIService
 
 logger = logging.getLogger(__name__)
@@ -241,7 +239,7 @@ class JobIngestionService:
                 logger.info("Ingested %s jobs from %s", len(jobs), source)
 
             except Exception as e:
-                logger.error("Error ingesting jobs from %s: %s", ('source', 'e'))
+                logger.error("Error ingesting jobs from %s: %s", source, str(e))
 
         return all_jobs
 
@@ -297,7 +295,7 @@ class JobIngestionService:
                             logger.error("Error parsing RSS entry: %s", e)
 
         except Exception as e:
-            logger.error("Error ingesting RSS feed %s: %s", ("config['url']", 'e'))
+            logger.error("Error ingesting RSS feed %s: %s", config['url'], str(e))
 
         return jobs[:MAX_JOB_POSTINGS_PER_SOURCE]
 
@@ -356,7 +354,7 @@ class JobIngestionService:
                                 logger.error("Error parsing job link: %s", e)
 
             except Exception as e:
-                logger.error("Error scraping %s jobs: %s", ("company_config['name']", 'e'))
+                logger.error("Error scraping %s jobs: %s", company_config['name'], str(e))
 
         return jobs[:MAX_JOB_POSTINGS_PER_SOURCE]
 
@@ -452,7 +450,7 @@ class JobIngestionService:
                 db.commit()
                 logger.info("Updated job: %s", job_data['title'])
 
-            
+
 
             # Create new job
             new_job = Job(
@@ -498,7 +496,7 @@ class JobIngestionService:
                     # Send to Kafka for real-time processing
                     self.kafka_producer.send(KAFKA_JOB_TOPIC, job)
                     logger.debug("Sent job to Kafka: %s", job['title'])
-                
+
 
                 # Process directly if Kafka not available
                 await self.process_job(job)

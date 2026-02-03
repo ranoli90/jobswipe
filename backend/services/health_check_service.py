@@ -11,13 +11,12 @@ import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import httpx
 import redis.asyncio as redis_async
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine
 
 # Try to import Celery
 from backend.workers.celery_app import celery_app
@@ -94,7 +93,7 @@ class HealthCheckCache:
 class HealthCheckService:
     """
     Service for performing health checks on all application dependencies.
-    
+
     Supports:
     - Database health checks
     - Redis health checks
@@ -119,7 +118,7 @@ class HealthCheckService:
         self.rabbitmq_url = rabbitmq_url or "http://localhost:15672/api/health"
         self.opensearch_url = opensearch_url or "http://localhost:9200/_cluster/health"
         self.cache = HealthCheckCache(ttl_seconds=cache_ttl_seconds)
-        
+
         # Default timeouts (in seconds)
         self.timeouts = {
             "database": 5,
@@ -137,7 +136,7 @@ class HealthCheckService:
             return cached
 
         start_time = time.time()
-        
+
         if not self.database_url:
             result = HealthCheckResult(
                 service="database",
@@ -155,15 +154,15 @@ class HealthCheckService:
                 echo=False,
                 pool_pre_ping=True,
             )
-            
+
             async with engine.connect() as conn:
                 await asyncio.wait_for(
                     conn.execute(text("SELECT 1")),
                     timeout=self.timeouts["database"]
                 )
-            
+
             await engine.dispose()
-            
+
             latency_ms = (time.time() - start_time) * 1000
             result = HealthCheckResult(
                 service="database",
@@ -172,7 +171,7 @@ class HealthCheckService:
                 message="Database connection successful",
                 details={"url": self.database_url.split("@")[-1]},  # Hide credentials
             )
-            
+
         except asyncio.TimeoutError:
             latency_ms = (time.time() - start_time) * 1000
             result = HealthCheckResult(
@@ -203,7 +202,7 @@ class HealthCheckService:
             return cached
 
         start_time = time.time()
-        
+
         if not self.redis_url:
             result = HealthCheckResult(
                 service="redis",
@@ -220,16 +219,16 @@ class HealthCheckService:
                 socket_connect_timeout=self.timeouts["redis"],
                 socket_timeout=self.timeouts["redis"],
             )
-            
+
             await asyncio.wait_for(
                 redis_client.ping(),
                 timeout=self.timeouts["redis"]
             )
-            
+
             # Get Redis info
             info = await redis_client.info()
             await redis_client.close()
-            
+
             latency_ms = (time.time() - start_time) * 1000
             result = HealthCheckResult(
                 service="redis",
@@ -242,7 +241,7 @@ class HealthCheckService:
                     "connected_clients": info.get("connected_clients"),
                 },
             )
-            
+
         except asyncio.TimeoutError:
             latency_ms = (time.time() - start_time) * 1000
             result = HealthCheckResult(
@@ -279,13 +278,13 @@ class HealthCheckService:
                 # Try RabbitMQ Management API health endpoint
                 response = await client.get(self.rabbitmq_url)
                 response.raise_for_status()
-                
+
                 latency_ms = (time.time() - start_time) * 1000
-                
+
                 # Parse health response
                 health_data = response.json()
                 status = HealthStatus.HEALTHY
-                
+
                 # Check if status is in response
                 if isinstance(health_data, dict):
                     if health_data.get("status") == "ok":
@@ -294,7 +293,7 @@ class HealthCheckService:
                         status = HealthStatus.DEGRADED
                     else:
                         status = HealthStatus.UNHEALTHY
-                
+
                 result = HealthCheckResult(
                     service="rabbitmq",
                     status=status,
@@ -302,7 +301,7 @@ class HealthCheckService:
                     message="RabbitMQ is healthy",
                     details=health_data if isinstance(health_data, dict) else {},
                 )
-                
+
         except asyncio.TimeoutError:
             latency_ms = (time.time() - start_time) * 1000
             result = HealthCheckResult(
@@ -339,12 +338,12 @@ class HealthCheckService:
                 # Check cluster health
                 response = await client.get(self.opensearch_url)
                 response.raise_for_status()
-                
+
                 latency_ms = (time.time() - start_time) * 1000
-                
+
                 health_data = response.json()
                 cluster_status = health_data.get("status", "unknown")
-                
+
                 # Map OpenSearch status to our status
                 if cluster_status == "green":
                     status = HealthStatus.HEALTHY
@@ -352,7 +351,7 @@ class HealthCheckService:
                     status = HealthStatus.DEGRADED
                 else:
                     status = HealthStatus.UNHEALTHY
-                
+
                 result = HealthCheckResult(
                     service="opensearch",
                     status=status,
@@ -365,7 +364,7 @@ class HealthCheckService:
                         "active_shards": health_data.get("active_shards"),
                     },
                 )
-                
+
         except asyncio.TimeoutError:
             latency_ms = (time.time() - start_time) * 1000
             result = HealthCheckResult(
@@ -400,17 +399,17 @@ class HealthCheckService:
         try:
             # Use Celery's inspect to check workers
             inspect = celery_app.control.inspect(timeout=self.timeouts["celery"])
-            
+
             # Get active workers
             active_workers = inspect.active()
             stats = inspect.stats()
-            
+
             latency_ms = (time.time() - start_time) * 1000
-            
+
             if active_workers:
                 worker_count = len(active_workers)
                 worker_names = list(active_workers.keys())
-                
+
                 # Get worker statistics if available
                 worker_details = {}
                 if stats:
@@ -419,7 +418,7 @@ class HealthCheckService:
                             "processed": worker_stats.get("total", {}).get("tasks", 0),
                             "prefetch_count": worker_stats.get("prefetch_count", 0),
                         }
-                
+
                 result = HealthCheckResult(
                     service="celery",
                     status=HealthStatus.HEALTHY,
@@ -439,7 +438,7 @@ class HealthCheckService:
                     message="No active Celery workers found",
                     details={"worker_count": 0},
                 )
-                
+
         except asyncio.TimeoutError:
             latency_ms = (time.time() - start_time) * 1000
             result = HealthCheckResult(
@@ -465,12 +464,12 @@ class HealthCheckService:
     async def check_all(self) -> Dict[str, Any]:
         """
         Run all health checks in parallel.
-        
+
         Returns:
             Dictionary with overall status and individual service results
         """
         start_time = time.time()
-        
+
         # Run all checks in parallel
         results = await asyncio.gather(
             self.check_database(),
@@ -484,7 +483,7 @@ class HealthCheckService:
         # Process results
         services = {}
         overall_status = HealthStatus.HEALTHY
-        
+
         for result in results:
             if isinstance(result, Exception):
                 # Handle exceptions that weren't caught
@@ -517,10 +516,10 @@ class HealthCheckService:
     async def get_service_health(self, service_name: str) -> Optional[HealthCheckResult]:
         """
         Get health check for a specific service.
-        
+
         Args:
             service_name: Name of the service (database, redis, rabbitmq, opensearch, celery)
-            
+
         Returns:
             HealthCheckResult or None if service not found
         """
@@ -531,16 +530,16 @@ class HealthCheckService:
             "opensearch": self.check_opensearch,
             "celery": self.check_celery,
         }
-        
+
         if service_name not in check_methods:
             return None
-            
+
         return await check_methods[service_name]()
 
     def set_timeout(self, service: str, timeout_seconds: float):
         """
         Set timeout for a specific service check.
-        
+
         Args:
             service: Service name
             timeout_seconds: Timeout in seconds
@@ -565,7 +564,7 @@ def get_health_check_service(
 ) -> HealthCheckService:
     """Get or create the singleton health check service instance"""
     global _health_check_service
-    
+
     if _health_check_service is None:
         _health_check_service = HealthCheckService(
             database_url=database_url,
@@ -573,5 +572,5 @@ def get_health_check_service(
             rabbitmq_url=rabbitmq_url,
             opensearch_url=opensearch_url,
         )
-    
+
     return _health_check_service

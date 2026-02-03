@@ -6,7 +6,7 @@ Handles job ingestion from Lever public API and career pages.
 
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 import httpx
@@ -68,7 +68,7 @@ async def fetch_lever_postings(org_slug: str) -> List[LeverJob]:
         logger.error("HTTP error fetching Lever postings for %s: %s - %s" % (org_slug, e.response.status_code, e.response.text)
         )
         raise
-    except Exception as e:
+    except Exception:
         logger.error("Error fetching Lever postings for %s: %s", ('org_slug', 'str(e)'))
         raise
 
@@ -136,13 +136,13 @@ def update_or_create_job(lever_job: LeverJob, db) -> Job:
         db.add(existing_job)
         logger.info("Updated Lever job: %s (%s)", normalized_job["title"], normalized_job["external_id"])
         return existing_job
-    
+
 
     # Create new job
     new_job = Job(**normalized_job)
     db.add(new_job)
     logger.info("Created new Lever job: %s (%s)", normalized_job["title"], normalized_job["external_id"])
-        return new_job
+    return new_job
 
 
 async def sync_lever_postings(org_slug: str, incremental: bool = True) -> List[Job]:
@@ -189,7 +189,7 @@ async def sync_lever_postings(org_slug: str, incremental: bool = True) -> List[J
         )
         return synced_jobs
 
-    except Exception as e:
+    except Exception:
         db.rollback()
         logger.error("Error syncing Lever organization %s: %s", ('org_slug', 'str(e)'))
         raise

@@ -83,7 +83,6 @@ def init_db():
             logger.warning(
                 "Falling back to direct table creation for SQLite development"
             )
-            from backend.db import models
 
             Base.metadata.create_all(bind=engine)
             logger.info("Database initialized with create_all (development mode)")

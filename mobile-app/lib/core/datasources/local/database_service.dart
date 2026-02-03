@@ -1,20 +1,43 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:hive/hive.dart';
 import '../../../models/job.dart';
 import '../../../models/application.dart';
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
   static Database? _database;
+  static Box? _webStorage;
 
   factory DatabaseService() => _instance;
 
   DatabaseService._internal();
 
-  Future<Database> get database async {
+  Future<Database?> get database async {
+    if (kIsWeb) {
+      await _initWebStorage();
+      return null;
+    }
     if (_database != null) return _database!;
     _database = await _initDatabase();
     return _database!;
+  }
+
+  Future<void> _initWebStorage() async {
+    if (!kIsWeb) return;
+    // Hive initialization not needed for web
+    _webStorage = await Hive.openBox('jobswipe_web');
+  }
+
+  Future<void> webInsert(String key, Map<String, dynamic> value) async {
+    if (!kIsWeb || _webStorage == null) return;
+    await _webStorage!.put(key, value);
+  }
+
+  Future<Map<String, dynamic>?> webGet(String key) async {
+    if (!kIsWeb || _webStorage == null) return null;
+    return _webStorage!.get(key);
   }
 
   Future<Database> _initDatabase() async {
@@ -87,6 +110,10 @@ class DatabaseService {
   // Job operations
   Future<void> insertJob(Job job) async {
     final db = await database;
+    if (db == null) {
+      await webInsert('job_${job.id}', job.toJson());
+      return;
+    }
     await db.insert(
       'jobs',
       job.toJson(),
@@ -96,6 +123,12 @@ class DatabaseService {
 
   Future<void> insertJobs(List<Job> jobs) async {
     final db = await database;
+    if (db == null) {
+      for (final job in jobs) {
+        await webInsert('job_${job.id}', job.toJson());
+      }
+      return;
+    }
     final batch = db.batch();
 
     for (final job in jobs) {
@@ -111,6 +144,13 @@ class DatabaseService {
 
   Future<List<Job>> getJobs({int? limit, int? offset}) async {
     final db = await database;
+    if (db == null) {
+      final jobs = await Future.wait([
+        for (final key in _webStorage!.keys)
+          if (key.startsWith('job_')) webGet(key)
+      ]);
+      return jobs.where((map) => map != null).map((map) => Job.fromJson(map!)).toList();
+    }
     final maps = await db.query(
       'jobs',
       where: 'is_active = ?',
@@ -125,6 +165,9 @@ class DatabaseService {
 
   Future<Job?> getJobById(String id) async {
     final db = await database;
+    if (db == null) {
+      final jobData = await webGet('job_$id'); return jobData != null ? Job.fromJson(jobData) : null;
+    }
     final maps = await db.query(
       'jobs',
       where: 'id = ?',
@@ -137,6 +180,10 @@ class DatabaseService {
 
   Future<void> updateJob(Job job) async {
     final db = await database;
+    if (db == null) {
+      await webInsert('job_${job.id}', job.toJson());
+      return;
+    }
     await db.update(
       'jobs',
       job.toJson(),
@@ -147,6 +194,10 @@ class DatabaseService {
 
   Future<void> deleteJob(String id) async {
     final db = await database;
+    if (db == null) {
+      await _webStorage!.delete('job_$id');
+      return;
+    }
     await db.update(
       'jobs',
       {'is_active': 0, 'updated_at': DateTime.now().toIso8601String()},
@@ -158,6 +209,7 @@ class DatabaseService {
   // Application operations
   Future<void> insertApplication(Application application) async {
     final db = await database;
+    if (db == null) return;
     await db.insert(
       'applications',
       application.toJson(),
@@ -167,6 +219,7 @@ class DatabaseService {
 
   Future<List<Application>> getApplications({String? userId}) async {
     final db = await database;
+    if (db == null) return [];
     final maps = await db.query(
       'applications',
       where: userId != null ? 'user_id = ?' : null,
@@ -179,6 +232,7 @@ class DatabaseService {
 
   Future<Application?> getApplicationById(String id) async {
     final db = await database;
+    if (db == null) return null;
     final maps = await db.query(
       'applications',
       where: 'id = ?',
@@ -191,6 +245,7 @@ class DatabaseService {
 
   Future<void> updateApplicationStatus(String id, String status) async {
     final db = await database;
+    if (db == null) return;
     await db.update(
       'applications',
       {'status': status, 'updated_at': DateTime.now().toIso8601String()},
@@ -202,6 +257,7 @@ class DatabaseService {
   // Job matches operations
   Future<void> insertJobMatch(JobMatch match) async {
     final db = await database;
+    if (db == null) return;
     final data = {
       'id': match.id,
       'title': match.title,
@@ -226,6 +282,7 @@ class DatabaseService {
 
   Future<List<JobMatch>> getJobMatches({bool? isViewed}) async {
     final db = await database;
+    if (db == null) return [];
     final whereClauses = <String>[];
     final whereArgs = <dynamic>[];
 
@@ -263,6 +320,12 @@ class DatabaseService {
   // Cache operations for offline access
   Future<void> cacheJobs(List<Job> jobs) async {
     final db = await database;
+    if (db == null) {
+      for (final job in jobs) {
+        await webInsert('job_${job.id}', job.toJson());
+      }
+      return;
+    }
     final batch = db.batch();
     
     for (final job in jobs) {
@@ -278,6 +341,13 @@ class DatabaseService {
 
   Future<List<Job>> getCachedJobs() async {
     final db = await database;
+    if (db == null) {
+      final jobs = await Future.wait([
+        for (final key in _webStorage!.keys)
+          if (key.startsWith('job_')) webGet(key)
+      ]);
+      return jobs.where((map) => map != null).map((map) => Job.fromJson(map!)).toList();
+    }
     final maps = await db.query(
       'jobs',
       where: 'is_active = ?',
@@ -291,6 +361,7 @@ class DatabaseService {
 
   Future<void> markMatchAsViewed(String id) async {
     final db = await database;
+    if (db == null) return;
     await db.update(
       'job_matches',
       {'is_viewed': 1},
@@ -302,13 +373,19 @@ class DatabaseService {
   // Utility methods
   Future<void> clearAllData() async {
     final db = await database;
+    if (db == null) {
+      await _webStorage!.clear();
+      return;
+    }
     await db.delete('job_matches');
     await db.delete('applications');
     await db.delete('jobs');
   }
 
   Future<void> close() async {
+    if (kIsWeb) return;
     final db = await database;
+    if (db == null) return;
     await db.close();
     _database = null;
   }

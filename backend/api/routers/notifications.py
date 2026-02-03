@@ -4,7 +4,7 @@ Notifications API Router
 Handles user notification endpoints.
 """
 
-from typing import List, Dict, Any
+from typing import Dict, Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -175,7 +175,7 @@ async def update_notification_preferences(
         )
         if success:
             return {"message": "Notification preferences updated successfully"}
-        
+
 
         raise HTTPException(status_code=500, detail="Failed to update preferences")
     except Exception as e:
@@ -215,7 +215,7 @@ async def register_device_token(
 
         if success:
             return {"message": "Device token registered successfully"}
-        
+
 
         raise HTTPException(
             status_code=500, detail="Failed to register device token"
@@ -247,7 +247,7 @@ async def unregister_device_token(
 
         if success:
             return {"message": "Device token unregistered successfully"}
-        
+
 
         raise HTTPException(status_code=404, detail="Device token not found")
     except HTTPException:

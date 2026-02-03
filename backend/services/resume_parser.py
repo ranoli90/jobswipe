@@ -390,7 +390,7 @@ def parse_resume_with_openai(text: str) -> dict:
     """
     try:
         prompt = f"""Please analyze the following resume text and extract the following information in JSON format:
-        
+
         1. full_name: The candidate's full name
         2. email: Email address
         3. phone: Phone number
@@ -409,10 +409,10 @@ def parse_resume_with_openai(text: str) -> dict:
         7. certifications: List of certifications
         8. projects: List of notable projects with descriptions
         9. summary: A brief professional summary
-        
+
         Resume text:
         {text}
-        
+
         Please return only valid JSON. Do not include any other text.
         """
 
@@ -451,7 +451,7 @@ def parse_resume(file_content: bytes, filename: str) -> dict:
             text = extract_text_from_docx(file_content)
         elif filename.lower().endswith((".png", ".jpg", ".jpeg", ".bmp", ".tiff")):
             text = extract_text_from_image(file_content)
-        
+
 
         raise ValueError("Unsupported file type")
 

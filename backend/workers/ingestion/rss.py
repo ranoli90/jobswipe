@@ -4,9 +4,8 @@ RSS Feed Job Ingestion
 Handles job ingestion from RSS feeds.
 """
 
-import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 import feedparser
@@ -63,15 +62,14 @@ async def fetch_rss_feed(feed_url: str) -> List[RSSJob]:
                 )
                 jobs.append(job)
 
-            logger.info("Fetched %s jobs from RSS feed: %s", ('len(jobs)', 'feed_url'))
+            logger.info("Fetched %s jobs from RSS feed: %s", len(jobs), feed_url)
             return jobs
 
     except httpx.HTTPStatusError as e:
-        logger.error("HTTP error fetching RSS feed %s: %s - %s" % (feed_url, e.response.status_code, e.response.text)
-        )
+        logger.error("HTTP error fetching RSS feed %s: %s - %s", feed_url, e.response.status_code, e.response.text)
         raise
     except Exception as e:
-        logger.error("Error fetching RSS feed %s: %s", ('feed_url', 'str(e)'))
+        logger.error("Error fetching RSS feed %s: %s", feed_url, str(e))
         raise
 
 
@@ -143,7 +141,7 @@ def update_or_create_job(rss_job: RSSJob, db) -> Job:
         db.add(existing_job)
         logger.info("Updated RSS job: %s (%s)", normalized_job["title"], normalized_job["external_id"])
         return existing_job
-    
+
 
     # Create new job
     new_job = Job(**normalized_job)
@@ -172,13 +170,12 @@ async def sync_rss_feed(feed_url: str) -> List[Job]:
             synced_jobs.append(synced_job)
 
         db.commit()
-        logger.info("Successfully synced %s jobs from RSS feed %s" % (len(synced_jobs), feed_url)
-        )
+        logger.info("Successfully synced %s jobs from RSS feed %s", len(synced_jobs), feed_url)
         return synced_jobs
 
     except Exception as e:
         db.rollback()
-        logger.error("Error syncing RSS feed %s: %s", ('feed_url', 'str(e)'))
+        logger.error("Error syncing RSS feed %s: %s", feed_url, str(e))
         raise
     finally:
         db.close()

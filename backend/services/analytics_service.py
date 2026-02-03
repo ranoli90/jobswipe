@@ -8,9 +8,8 @@ import json
 import logging
 import os
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+from typing import Dict, List
 
-import numpy as np
 import pandas as pd
 
 from backend.db.database import get_db
@@ -98,7 +97,7 @@ class AnalyticsService:
                         matches_by_score_range["medium"] += 1
                     elif score < 0.9:
                         matches_by_score_range["high"] += 1
-                    
+
 
                     matches_by_score_range["very_high"] += 1
 

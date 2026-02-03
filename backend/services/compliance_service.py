@@ -18,23 +18,19 @@ import json
 import logging
 import secrets
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from sqlalchemy.orm import Session
-from sqlalchemy import func
 
 from backend.db.models import (
     User,
-    CandidateProfile,
     UserJobInteraction,
     ApplicationTask,
-    ApplicationAuditLog,
     Notification,
     CoverLetterTemplate,
     DeviceToken,
-    UserNotificationPreferences,
     FailedLoginAttempt,
     UserConsent,
     DataExportRequest,
@@ -100,7 +96,7 @@ class ComplianceAction(str, Enum):
 class ComplianceService:
     """
     Service for handling GDPR and CCPA compliance operations.
-    
+
     This service provides methods for:
     - Data export (right to data portability)
     - Account deletion (right to erasure)
@@ -109,7 +105,7 @@ class ComplianceService:
     - Audit logging
     - Data retention enforcement
     """
-    
+
     # Data retention periods (in days)
     RETENTION_PERIODS = {
         "user_data": 2555,  # 7 years for legal obligations
@@ -120,18 +116,18 @@ class ComplianceService:
         "session_logs": 365,  # 1 year for security
         "notification_logs": 365,  # 1 year
     }
-    
+
     def __init__(self, db: Session):
         """
         Initialize the compliance service.
-        
+
         Args:
             db: SQLAlchemy database session
         """
         self.db = db
-    
+
     # ==================== Data Export (GDPR Article 20 / CCPA) ====================
-    
+
     def request_data_export(
         self,
         user_id: uuid.UUID,
@@ -141,13 +137,13 @@ class ComplianceService:
     ) -> DataExportRequest:
         """
         Request a data export for a user (GDPR Article 20 - Right to data portability).
-        
+
         Args:
             user_id: UUID of the user requesting export
             format: Export format (currently only "json" supported)
             ip_address: IP address of the requester
             user_agent: User agent of the requester
-            
+
         Returns:
             DataExportRequest object
         """
@@ -160,27 +156,27 @@ class ComplianceService:
             )
             .first()
         )
-        
+
         if existing:
-            logger.info(f"Returning existing export request {existing.id} for user {user_id}")
+            logger.info("Returning existing export request %s for user %s", existing.id, user_id)
             return existing
-        
+
         # Create new export request
         export_request = DataExportRequest(
             id=uuid.uuid4(),
             user_id=user_id,
             status=ExportStatus.PENDING,
             format=format,
-            requested_at=datetime.utcnow(),
-            expires_at=datetime.utcnow() + timedelta(days=self.RETENTION_PERIODS["export_requests"]),
+            requested_at=datetime.now(timezone.utc),
+            expires_at=datetime.now(timezone.utc) + timedelta(days=self.RETENTION_PERIODS["export_requests"]),
             ip_address=ip_address,
             user_agent=user_agent,
         )
-        
+
         self.db.add(export_request)
         self.db.commit()
         self.db.refresh(export_request)
-        
+
         # Log the action
         self._log_compliance_action(
             user_id=user_id,
@@ -188,21 +184,22 @@ class ComplianceService:
             details={"export_id": str(export_request.id), "format": format},
             ip_address=ip_address,
         )
-        
+
         security_logger.info(
-            f"Data export requested for user {user_id}",
+            "Data export requested for user %s",
+            user_id,
             extra={"user_id": str(user_id), "export_id": str(export_request.id)},
         )
-        
+
         return export_request
-    
+
     def process_data_export(self, export_request_id: uuid.UUID) -> Optional[str]:
         """
         Process a data export request and generate the export file.
-        
+
         Args:
             export_request_id: UUID of the export request
-            
+
         Returns:
             Path to the generated export file or None if failed
         """
@@ -211,63 +208,63 @@ class ComplianceService:
             .filter(DataExportRequest.id == export_request_id)
             .first()
         )
-        
+
         if not export_request:
-            logger.error(f"Export request {export_request_id} not found")
+            logger.error("Export request %s not found", export_request_id)
             return None
-        
+
         try:
             export_request.status = ExportStatus.PROCESSING
             self.db.commit()
-            
+
             # Collect all user data
             user_data = self._collect_user_data(export_request.user_id)
-            
+
             # Generate export file
             export_content = json.dumps(user_data, indent=2, default=str)
             export_request.export_data = export_content
             export_request.status = ExportStatus.COMPLETED
-            export_request.completed_at = datetime.utcnow()
-            
+            export_request.completed_at = datetime.now(timezone.utc)
+
             self.db.commit()
-            
+
             # Log completion
             self._log_compliance_action(
                 user_id=export_request.user_id,
                 action=ComplianceAction.DATA_EXPORT_COMPLETED,
                 details={"export_id": str(export_request_id)},
             )
-            
-            logger.info(f"Data export {export_request_id} completed successfully")
+
+            logger.info("Data export %s completed successfully", export_request_id)
             return export_content
-            
+
         except Exception as e:
             export_request.status = ExportStatus.FAILED
             export_request.error_message = str(e)
             self.db.commit()
-            
-            logger.error(f"Data export {export_request_id} failed: {e}")
+
+            logger.error("Data export %s failed: %s", export_request_id, e)
             return None
-    
+
     def _collect_user_data(self, user_id: uuid.UUID) -> Dict[str, Any]:
         """
         Collect all user data for export.
-        
+
         Args:
             user_id: UUID of the user
-            
+
         Returns:
             Dictionary containing all user data
         """
         user = self.db.query(User).filter(User.id == user_id).first()
-        
+
         if not user:
             raise ValueError(f"User {user_id} not found")
-        
+
         # Collect data from all related tables
         data = {
             "export_metadata": {
-                "exported_at": datetime.utcnow().isoformat(),
+                "exported_at": datetime.now(timezone.utc).isoformat(),
                 "user_id": str(user_id),
                 "export_version": "1.0",
                 "regulations": ["GDPR", "CCPA"],
@@ -290,7 +287,7 @@ class ComplianceService:
             "consent_history": [],
             "login_history": [],
         }
-        
+
         # Profile data
         if user.profile:
             data["profile"] = {
@@ -304,7 +301,7 @@ class ComplianceService:
                 "resume_file_url": user.profile.resume_file_url,
                 "parsed_at": user.profile.parsed_at.isoformat() if user.profile.parsed_at else None,
             }
-        
+
         # Job interactions
         interactions = (
             self.db.query(UserJobInteraction)
@@ -319,7 +316,7 @@ class ComplianceService:
                 "created_at": interaction.created_at.isoformat() if interaction.created_at else None,
                 "metadata": interaction.interaction_metadata,
             })
-        
+
         # Application tasks
         tasks = (
             self.db.query(ApplicationTask)
@@ -336,7 +333,7 @@ class ComplianceService:
                 "updated_at": task.updated_at.isoformat() if task.updated_at else None,
             }
             data["applications"].append(task_data)
-        
+
         # Notifications
         notifications = (
             self.db.query(Notification)
@@ -354,7 +351,7 @@ class ComplianceService:
                 "created_at": notification.created_at.isoformat() if notification.created_at else None,
                 "read_at": notification.read_at.isoformat() if notification.read_at else None,
             })
-        
+
         # Cover letter templates
         templates = (
             self.db.query(CoverLetterTemplate)
@@ -369,7 +366,7 @@ class ComplianceService:
                 "style_params": template.style_params,
                 "created_at": template.created_at.isoformat() if template.created_at else None,
             })
-        
+
         # Device tokens
         devices = (
             self.db.query(DeviceToken)
@@ -385,7 +382,7 @@ class ComplianceService:
                 "last_used": device.last_used.isoformat() if device.last_used else None,
                 "created_at": device.created_at.isoformat() if device.created_at else None,
             })
-        
+
         # Notification preferences
         if user.notification_preferences:
             prefs = user.notification_preferences
@@ -408,7 +405,7 @@ class ComplianceService:
                 "quiet_hours_start": prefs.quiet_hours_start,
                 "quiet_hours_end": prefs.quiet_hours_end,
             }
-        
+
         # Consent history
         consents = (
             self.db.query(UserConsent)
@@ -426,7 +423,7 @@ class ComplianceService:
                 "ip_address": consent.ip_address,
                 "user_agent": consent.user_agent,
             })
-        
+
         # Login history (failed attempts)
         login_attempts = (
             self.db.query(FailedLoginAttempt)
@@ -442,17 +439,17 @@ class ComplianceService:
                 "ip_address": attempt.ip_address,
                 "user_agent": attempt.user_agent,
             })
-        
+
         return data
-    
+
     def get_export_download(self, export_request_id: uuid.UUID, user_id: uuid.UUID) -> Optional[str]:
         """
         Get the download URL/content for a completed export.
-        
+
         Args:
             export_request_id: UUID of the export request
             user_id: UUID of the user (for verification)
-            
+
         Returns:
             Export data as JSON string or None if not available
         """
@@ -464,27 +461,27 @@ class ComplianceService:
             )
             .first()
         )
-        
+
         if not export_request or export_request.status != ExportStatus.COMPLETED:
             return None
-        
+
         # Check if export has expired
-        if export_request.expires_at and export_request.expires_at < datetime.utcnow():
+        if export_request.expires_at and export_request.expires_at < datetime.now(timezone.utc):
             export_request.status = ExportStatus.EXPIRED
             self.db.commit()
             return None
-        
+
         # Log download
         self._log_compliance_action(
             user_id=user_id,
             action=ComplianceAction.DATA_EXPORT_DOWNLOADED,
             details={"export_id": str(export_request_id)},
         )
-        
+
         return export_request.export_data
-    
+
     # ==================== Data Deletion (GDPR Article 17 / CCPA) ====================
-    
+
     def request_data_deletion(
         self,
         user_id: uuid.UUID,
@@ -494,16 +491,16 @@ class ComplianceService:
     ) -> DataDeletionRequest:
         """
         Request account deletion (GDPR Article 17 - Right to erasure / CCPA deletion right).
-        
+
         The deletion is performed as anonymization to maintain referential integrity
         while removing all PII.
-        
+
         Args:
             user_id: UUID of the user requesting deletion
             reason: Optional reason for deletion
             ip_address: IP address of the requester
             user_agent: User agent of the requester
-            
+
         Returns:
             DataDeletionRequest object
         """
@@ -516,27 +513,27 @@ class ComplianceService:
             )
             .first()
         )
-        
+
         if existing:
-            logger.info(f"Returning existing deletion request {existing.id} for user {user_id}")
+            logger.info("Returning existing deletion request %s for user %s", existing.id, user_id)
             return existing
-        
+
         # Create new deletion request
         deletion_request = DataDeletionRequest(
             id=uuid.uuid4(),
             user_id=user_id,
             status=DeletionStatus.PENDING,
             reason=reason,
-            requested_at=datetime.utcnow(),
-            grace_period_end=datetime.utcnow() + timedelta(days=self.RETENTION_PERIODS["deleted_accounts"]),
+            requested_at=datetime.now(timezone.utc),
+            grace_period_end=datetime.now(timezone.utc) + timedelta(days=self.RETENTION_PERIODS["deleted_accounts"]),
             ip_address=ip_address,
             user_agent=user_agent,
         )
-        
+
         self.db.add(deletion_request)
         self.db.commit()
         self.db.refresh(deletion_request)
-        
+
         # Log the action
         self._log_compliance_action(
             user_id=user_id,
@@ -544,24 +541,25 @@ class ComplianceService:
             details={"deletion_id": str(deletion_request.id), "reason": reason},
             ip_address=ip_address,
         )
-        
+
         security_logger.info(
-            f"Data deletion requested for user {user_id}",
+            "Data deletion requested for user %s",
+            user_id,
             extra={"user_id": str(user_id), "deletion_id": str(deletion_request.id)},
         )
-        
+
         return deletion_request
-    
+
     def process_data_deletion(self, deletion_request_id: uuid.UUID) -> bool:
         """
         Process a data deletion request by anonymizing user data.
-        
+
         This method anonymizes rather than hard-deletes data to maintain
         referential integrity while removing all PII.
-        
+
         Args:
             deletion_request_id: UUID of the deletion request
-            
+
         Returns:
             True if successful, False otherwise
         """
@@ -570,61 +568,62 @@ class ComplianceService:
             .filter(DataDeletionRequest.id == deletion_request_id)
             .first()
         )
-        
+
         if not deletion_request:
-            logger.error(f"Deletion request {deletion_request_id} not found")
+            logger.error("Deletion request %s not found", deletion_request_id)
             return False
-        
+
         try:
             deletion_request.status = DeletionStatus.PROCESSING
             self.db.commit()
-            
+
             user_id = deletion_request.user_id
-            
+
             # Anonymize user data
             self._anonymize_user_data(user_id)
-            
+
             deletion_request.status = DeletionStatus.COMPLETED
-            deletion_request.completed_at = datetime.utcnow()
+            deletion_request.completed_at = datetime.now(timezone.utc)
             self.db.commit()
-            
+
             # Log completion
             self._log_compliance_action(
                 user_id=user_id,
                 action=ComplianceAction.DATA_DELETION_COMPLETED,
                 details={"deletion_id": str(deletion_request_id)},
             )
-            
+
             security_logger.info(
-                f"Data deletion completed for user {user_id}",
+                "Data deletion completed for user %s",
+                user_id,
                 extra={"user_id": str(user_id), "deletion_id": str(deletion_request_id)},
             )
-            
+
             return True
-            
+
         except Exception as e:
             deletion_request.status = DeletionStatus.FAILED
             deletion_request.error_message = str(e)
             self.db.commit()
-            
-            logger.error(f"Data deletion {deletion_request_id} failed: {e}")
+
+            logger.error("Data deletion %s failed: %s", deletion_request_id, e)
             return False
-    
+
     def _anonymize_user_data(self, user_id: uuid.UUID) -> None:
         """
         Anonymize all user data while maintaining referential integrity.
-        
+
         Args:
             user_id: UUID of the user to anonymize
         """
         user = self.db.query(User).filter(User.id == user_id).first()
-        
+
         if not user:
             raise ValueError(f"User {user_id} not found")
-        
+
         # Generate anonymous identifier
         anonymous_id = f"deleted_{secrets.token_hex(16)}"
-        
+
         # Anonymize user account
         user.email = f"{anonymous_id}@deleted.jobswipe"
         user.password_hash = "deleted"
@@ -633,7 +632,7 @@ class ComplianceService:
         user.mfa_secret = None
         user.mfa_backup_codes = None
         user.lockout_until = None
-        
+
         # Anonymize profile
         if user.profile:
             profile = user.profile
@@ -645,13 +644,13 @@ class ComplianceService:
             profile.education = None
             profile.skills = None
             profile.resume_file_url = None
-        
+
         # Delete device tokens
         self.db.query(DeviceToken).filter(DeviceToken.user_id == user_id).delete()
-        
+
         # Delete cover letter templates
         self.db.query(CoverLetterTemplate).filter(CoverLetterTemplate.user_id == user_id).delete()
-        
+
         # Anonymize notifications (keep for analytics but remove PII)
         notifications = (
             self.db.query(Notification)
@@ -661,24 +660,24 @@ class ComplianceService:
         for notification in notifications:
             notification.message = "[Content removed for privacy]"
             notification.data = None
-        
+
         self.db.commit()
-        
+
         # Log anonymization
         self._log_compliance_action(
             user_id=user_id,
             action=ComplianceAction.DATA_ANONYMIZED,
             details={"anonymous_id": anonymous_id},
         )
-    
+
     def cancel_deletion_request(self, deletion_request_id: uuid.UUID, user_id: uuid.UUID) -> bool:
         """
         Cancel a pending deletion request during the grace period.
-        
+
         Args:
             deletion_request_id: UUID of the deletion request
             user_id: UUID of the user (for verification)
-            
+
         Returns:
             True if cancelled, False otherwise
         """
@@ -691,31 +690,31 @@ class ComplianceService:
             )
             .first()
         )
-        
+
         if not deletion_request:
             return False
-        
+
         deletion_request.status = DeletionStatus.COMPLETED  # Mark as completed (cancelled)
-        deletion_request.completed_at = datetime.utcnow()
+        deletion_request.completed_at = datetime.now(timezone.utc)
         self.db.commit()
-        
+
         self._log_compliance_action(
             user_id=user_id,
             action=ComplianceAction.DATA_DELETION_CANCELLED,
             details={"deletion_id": str(deletion_request_id)},
         )
-        
+
         return True
-    
+
     # ==================== Consent Management ====================
-    
+
     def get_user_consents(self, user_id: uuid.UUID) -> Dict[str, Any]:
         """
         Get all current consent status for a user.
-        
+
         Args:
             user_id: UUID of the user
-            
+
         Returns:
             Dictionary of consent types and their status
         """
@@ -725,7 +724,7 @@ class ComplianceService:
             .order_by(UserConsent.created_at.desc())
             .all()
         )
-        
+
         # Get latest status for each consent type
         consent_map = {}
         for consent in consents:
@@ -736,7 +735,7 @@ class ComplianceService:
                     "revoked_at": consent.revoked_at.isoformat() if consent.revoked_at else None,
                     "version": consent.consent_version,
                 }
-        
+
         # Ensure all consent types are present
         for consent_type in ConsentType:
             if consent_type.value not in consent_map:
@@ -746,9 +745,9 @@ class ComplianceService:
                     "revoked_at": None,
                     "version": None,
                 }
-        
+
         return consent_map
-    
+
     def update_consent(
         self,
         user_id: uuid.UUID,
@@ -760,7 +759,7 @@ class ComplianceService:
     ) -> UserConsent:
         """
         Update a specific consent for a user.
-        
+
         Args:
             user_id: UUID of the user
             consent_type: Type of consent being updated
@@ -768,7 +767,7 @@ class ComplianceService:
             ip_address: IP address of the requester
             user_agent: User agent of the requester
             consent_version: Version of the consent terms
-            
+
         Returns:
             UserConsent object
         """
@@ -778,17 +777,17 @@ class ComplianceService:
             user_id=user_id,
             consent_type=consent_type.value,
             status=ConsentStatus.GRANTED if granted else ConsentStatus.REVOKED,
-            granted_at=datetime.utcnow() if granted else None,
-            revoked_at=datetime.utcnow() if not granted else None,
+            granted_at=datetime.now(timezone.utc) if granted else None,
+            revoked_at=datetime.now(timezone.utc) if not granted else None,
             ip_address=ip_address,
             user_agent=user_agent,
             consent_version=consent_version,
         )
-        
+
         self.db.add(consent)
         self.db.commit()
         self.db.refresh(consent)
-        
+
         # Log the action
         action = ComplianceAction.CONSENT_GRANTED if granted else ComplianceAction.CONSENT_REVOKED
         self._log_compliance_action(
@@ -797,17 +796,17 @@ class ComplianceService:
             details={"consent_type": consent_type.value, "version": consent_version},
             ip_address=ip_address,
         )
-        
+
         return consent
-    
+
     def has_consent(self, user_id: uuid.UUID, consent_type: ConsentType) -> bool:
         """
         Check if a user has granted a specific consent.
-        
+
         Args:
             user_id: UUID of the user
             consent_type: Type of consent to check
-            
+
         Returns:
             True if consent is granted, False otherwise
         """
@@ -820,14 +819,14 @@ class ComplianceService:
             .order_by(UserConsent.created_at.desc())
             .first()
         )
-        
+
         if not latest_consent:
             return False
-        
+
         return latest_consent.status == ConsentStatus.GRANTED
-    
+
     # ==================== Audit Logging ====================
-    
+
     def _log_compliance_action(
         self,
         user_id: uuid.UUID,
@@ -837,13 +836,13 @@ class ComplianceService:
     ) -> ComplianceAuditLog:
         """
         Log a compliance-related action.
-        
+
         Args:
             user_id: UUID of the user
             action: Type of compliance action
             details: Additional details
             ip_address: IP address of the requester
-            
+
         Returns:
             ComplianceAuditLog object
         """
@@ -853,14 +852,14 @@ class ComplianceService:
             action=action.value,
             details=details or {},
             ip_address=ip_address,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
         )
-        
+
         self.db.add(log_entry)
         self.db.commit()
-        
+
         return log_entry
-    
+
     def get_audit_logs(
         self,
         user_id: Optional[uuid.UUID] = None,
@@ -871,39 +870,39 @@ class ComplianceService:
     ) -> List[ComplianceAuditLog]:
         """
         Get compliance audit logs with optional filtering.
-        
+
         Args:
             user_id: Filter by user ID
             action: Filter by action type
             start_date: Filter by start date
             end_date: Filter by end date
             limit: Maximum number of results
-            
+
         Returns:
             List of ComplianceAuditLog objects
         """
         query = self.db.query(ComplianceAuditLog)
-        
+
         if user_id:
             query = query.filter(ComplianceAuditLog.user_id == user_id)
-        
+
         if action:
             query = query.filter(ComplianceAuditLog.action == action)
-        
+
         if start_date:
             query = query.filter(ComplianceAuditLog.created_at >= start_date)
-        
+
         if end_date:
             query = query.filter(ComplianceAuditLog.created_at <= end_date)
-        
+
         return query.order_by(ComplianceAuditLog.created_at.desc()).limit(limit).all()
-    
+
     # ==================== Data Retention Enforcement ====================
-    
+
     def enforce_retention_policies(self) -> Dict[str, int]:
         """
         Enforce data retention policies by deleting expired data.
-        
+
         Returns:
             Dictionary with counts of deleted records by type
         """
@@ -912,9 +911,9 @@ class ComplianceService:
             "audit_logs": 0,
             "failed_login_attempts": 0,
         }
-        
+
         # Delete expired export requests
-        export_cutoff = datetime.utcnow() - timedelta(days=self.RETENTION_PERIODS["export_requests"])
+        export_cutoff = datetime.now(timezone.utc) - timedelta(days=self.RETENTION_PERIODS["export_requests"])
         expired_exports = (
             self.db.query(DataExportRequest)
             .filter(
@@ -927,42 +926,42 @@ class ComplianceService:
             export.export_data = None  # Remove the actual data
             export.status = ExportStatus.EXPIRED
             deleted_counts["export_requests"] += 1
-        
+
         # Delete old audit logs
-        audit_cutoff = datetime.utcnow() - timedelta(days=self.RETENTION_PERIODS["audit_logs"])
+        audit_cutoff = datetime.now(timezone.utc) - timedelta(days=self.RETENTION_PERIODS["audit_logs"])
         deleted_counts["audit_logs"] = (
             self.db.query(ComplianceAuditLog)
             .filter(ComplianceAuditLog.created_at < audit_cutoff)
             .delete(synchronize_session=False)
         )
-        
+
         # Delete old failed login attempts
-        login_cutoff = datetime.utcnow() - timedelta(days=self.RETENTION_PERIODS["failed_login_attempts"])
+        login_cutoff = datetime.now(timezone.utc) - timedelta(days=self.RETENTION_PERIODS["failed_login_attempts"])
         deleted_counts["failed_login_attempts"] = (
             self.db.query(FailedLoginAttempt)
             .filter(FailedLoginAttempt.attempted_at < login_cutoff)
             .delete(synchronize_session=False)
         )
-        
+
         self.db.commit()
-        
+
         # Log retention enforcement
         self._log_compliance_action(
             user_id=None,
             action=ComplianceAction.RETENTION_POLICY_ENFORCED,
             details=deleted_counts,
         )
-        
-        logger.info(f"Retention policies enforced: {deleted_counts}")
-        
+
+        logger.info("Retention policies enforced: %s", deleted_counts)
+
         return deleted_counts
-    
+
     # ==================== Privacy Policy and Data Retention Info ====================
-    
+
     def get_privacy_policy_info(self) -> Dict[str, Any]:
         """
         Get privacy policy information.
-        
+
         Returns:
             Dictionary with privacy policy details
         """
@@ -1016,11 +1015,11 @@ class ComplianceService:
                 "marketing": ["facebook_pixel", "google_ads"],
             },
         }
-    
+
     def get_data_retention_info(self) -> Dict[str, Any]:
         """
         Get data retention policy information.
-        
+
         Returns:
             Dictionary with retention policy details
         """
@@ -1083,10 +1082,10 @@ _compliance_service: Optional[ComplianceService] = None
 def get_compliance_service(db: Session) -> ComplianceService:
     """
     Get or create a compliance service instance.
-    
+
     Args:
         db: SQLAlchemy database session
-        
+
     Returns:
         ComplianceService instance
     """

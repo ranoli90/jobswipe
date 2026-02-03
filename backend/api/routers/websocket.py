@@ -5,10 +5,10 @@ Provides WebSocket endpoints for real-time job updates, notifications, and more.
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import (APIRouter, HTTPException, Query, WebSocket,
+from fastapi import (APIRouter, Query, WebSocket,
                      WebSocketDisconnect)
 from fastapi.responses import HTMLResponse
 
@@ -289,26 +289,26 @@ WEBSOCKET_TEST_HTML = """
 </head>
 <body>
     <h1>JobSwipe WebSocket Test</h1>
-    
+
     <div id="status" class="disconnected">Disconnected</div>
-    
+
     <div>
         <label>Token (optional): <input type="text" id="token" size="50"></label>
         <button onclick="connect()">Connect</button>
         <button onclick="disconnect()">Disconnect</button>
     </div>
-    
+
     <div>
         <button onclick="sendPing()">Send Ping</button>
         <button onclick="sendSubscribe()">Subscribe to Jobs</button>
     </div>
-    
+
     <h3>Messages</h3>
     <div id="messages"></div>
-    
+
     <script>
         let ws = null;
-        
+
         function log(message, type = 'received') {
             const div = document.createElement('div');
             div.className = `message ${type}`;
@@ -316,56 +316,56 @@ WEBSOCKET_TEST_HTML = """
             document.getElementById('messages').appendChild(div);
             document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
         }
-        
+
         function updateStatus(connected) {
             const status = document.getElementById('status');
             status.textContent = connected ? 'Connected' : 'Disconnected';
             status.className = connected ? 'connected' : 'disconnected';
         }
-        
+
         function connect() {
             const token = document.getElementById('token').value;
             const url = `ws://${window.location.host}/api/v1/ws/connect${token ? '?token=' + token : ''}`;
-            
+
             ws = new WebSocket(url);
-            
+
             ws.onopen = () => {
                 log({ type: 'connected' }, 'sent');
                 updateStatus(true);
             };
-            
+
             ws.onclose = () => {
                 log({ type: 'disconnected' }, 'error');
                 updateStatus(false);
             };
-            
+
             ws.onerror = (error) => {
                 log({ type: 'error', error }, 'error');
             };
-            
+
             ws.onmessage = (event) => {
                 const data = JSON.parse(event.data);
                 log(data, 'received');
             };
         }
-        
+
         function disconnect() {
             if (ws) {
                 ws.close();
                 ws = null;
             }
         }
-        
+
         function sendPing() {
             if (ws) {
                 ws.send(JSON.stringify({ type: 'ping' }));
                 log({ type: 'ping' }, 'sent');
             }
         }
-        
+
         function sendSubscribe() {
             if (ws) {
-                ws.send(JSON.stringify({ 
+                ws.send(JSON.stringify({
                     type: 'subscribe',
                     connection_types: ['job_updates', 'matches']
                 }));

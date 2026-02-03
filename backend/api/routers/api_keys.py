@@ -4,7 +4,7 @@ API Key Management Router
 Provides endpoints for managing API keys for internal services.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status

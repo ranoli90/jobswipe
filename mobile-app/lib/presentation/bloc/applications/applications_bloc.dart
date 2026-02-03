@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
-import '../../../core/data/application_repository.dart';
+import '../../../core/repositories/application_repository.dart';
 import '../../../models/application.dart';
 
 // Applications Events

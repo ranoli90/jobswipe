@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -22,7 +22,6 @@ from backend.api.routers.auth import get_current_user
 from backend.db.database import get_db
 from backend.db.models import User
 from backend.services.compliance_service import (
-    ComplianceService,
     ConsentType,
     get_compliance_service,
 )
@@ -129,11 +128,11 @@ async def export_user_data(
 ):
     """
     Export all user data in machine-readable JSON format.
-    
+
     This endpoint implements:
     - GDPR Article 20: Right to data portability
     - CCPA: Right to know what personal information is collected
-    
+
     The export includes:
     - Account information
     - Profile data
@@ -142,12 +141,12 @@ async def export_user_data(
     - Notifications
     - Consent history
     - Login history
-    
+
     Returns:
         JSON file containing all user data
     """
     compliance_service = get_compliance_service(db)
-    
+
     # Get or create export request
     export_request = compliance_service.request_data_export(
         user_id=current_user.id,
@@ -155,7 +154,7 @@ async def export_user_data(
         ip_address=get_client_ip(request),
         user_agent=request.headers.get("user-agent"),
     )
-    
+
     # If export is already completed, return the data
     if export_request.status == "completed" and export_request.export_data:
         # Log download
@@ -165,7 +164,7 @@ async def export_user_data(
             details={"export_id": str(export_request.id)},
             ip_address=get_client_ip(request),
         )
-        
+
         return PlainTextResponse(
             content=export_request.export_data,
             media_type="application/json",
@@ -173,16 +172,16 @@ async def export_user_data(
                 "Content-Disposition": f"attachment; filename=jobswipe_data_export_{current_user.id}.json"
             },
         )
-    
+
     # Process the export
     export_data = compliance_service.process_data_export(export_request.id)
-    
+
     if not export_data:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to generate data export",
         )
-    
+
     return PlainTextResponse(
         content=export_data,
         media_type="application/json",
@@ -205,28 +204,28 @@ async def request_data_export(
 ):
     """
     Request a data export for later download.
-    
+
     This creates an export request that will be processed. Once completed,
     the data can be downloaded using the GET /export/data endpoint.
-    
+
     Returns:
         Export request details including status and estimated completion
     """
     compliance_service = get_compliance_service(db)
-    
+
     export_request = compliance_service.request_data_export(
         user_id=current_user.id,
         format="json",
         ip_address=get_client_ip(request),
         user_agent=request.headers.get("user-agent"),
     )
-    
+
     message = (
         "Export is being processed" if export_request.status == "pending"
         else "Export is ready for download" if export_request.status == "completed"
         else f"Export status: {export_request.status}"
     )
-    
+
     return DataExportRequestResponse(
         id=str(export_request.id),
         status=export_request.status,
@@ -252,29 +251,29 @@ async def request_data_deletion(
 ):
     """
     Request deletion of all personal data.
-    
+
     This endpoint implements:
     - GDPR Article 17: Right to erasure (right to be forgotten)
     - CCPA: Right to delete personal information
-    
+
     The deletion process:
     1. Creates a deletion request with PENDING status
     2. Enters a 30-day grace period where the user can cancel
     3. After grace period, data is anonymized (not hard-deleted) to maintain referential integrity
     4. All PII is removed or obfuscated
-    
+
     Returns:
         Deletion request details including grace period end date
     """
     compliance_service = get_compliance_service(db)
-    
+
     deletion_request = compliance_service.request_data_deletion(
         user_id=current_user.id,
         reason=body.reason if body else None,
         ip_address=get_client_ip(request),
         user_agent=request.headers.get("user-agent"),
     )
-    
+
     security_logger.warning(
         f"Account deletion requested for user {current_user.id}",
         extra={
@@ -283,7 +282,7 @@ async def request_data_deletion(
             "ip": get_client_ip(request),
         },
     )
-    
+
     return DataDeletionRequestResponse(
         id=str(deletion_request.id),
         status=deletion_request.status,
@@ -310,18 +309,18 @@ async def cancel_deletion_request(
 ):
     """
     Cancel a pending account deletion request.
-    
+
     This can only be done during the 30-day grace period.
     Once the grace period expires, the deletion cannot be cancelled.
-    
+
     Args:
         deletion_id: The ID of the deletion request to cancel
-        
+
     Returns:
         Success message if cancelled, error if not found or already processed
     """
     compliance_service = get_compliance_service(db)
-    
+
     try:
         deletion_uuid = UUID(deletion_id)
     except ValueError:
@@ -329,18 +328,18 @@ async def cancel_deletion_request(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid deletion request ID",
         )
-    
+
     success = compliance_service.cancel_deletion_request(
         deletion_request_id=deletion_uuid,
         user_id=current_user.id,
     )
-    
+
     if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Deletion request not found or cannot be cancelled (may already be processed or outside grace period)",
         )
-    
+
     security_logger.info(
         f"Account deletion cancelled for user {current_user.id}",
         extra={
@@ -349,7 +348,7 @@ async def cancel_deletion_request(
             "ip": get_client_ip(request),
         },
     )
-    
+
     return {"message": "Account deletion request has been cancelled successfully"}
 
 
@@ -365,26 +364,26 @@ async def get_consent_status(
 ):
     """
     Get all current consent status for the authenticated user.
-    
+
     Returns:
         Summary of all consent types and their current status
     """
     compliance_service = get_compliance_service(db)
-    
+
     consents = compliance_service.get_user_consents(current_user.id)
-    
+
     # Check if all required consents are granted
     required_consents = [
         ConsentType.TERMS_OF_SERVICE.value,
         ConsentType.PRIVACY_POLICY.value,
         ConsentType.DATA_PROCESSING.value,
     ]
-    
+
     all_granted = all(
         consents.get(consent, {}).get("status") == "granted"
         for consent in required_consents
     )
-    
+
     return ConsentStatusSummaryResponse(
         user_id=str(current_user.id),
         consents={
@@ -409,9 +408,9 @@ async def update_consent(
 ):
     """
     Update consent for a specific consent type.
-    
+
     This allows users to grant or revoke consent for specific data processing activities.
-    
+
     Consent types:
     - terms_of_service: Required for using the service
     - privacy_policy: Required for using the service
@@ -420,12 +419,12 @@ async def update_consent(
     - analytics_cookies: Optional analytics tracking
     - marketing_cookies: Optional marketing/advertising cookies
     - third_party_sharing: Optional sharing with third parties
-    
+
     Returns:
         Updated consent status
     """
     compliance_service = get_compliance_service(db)
-    
+
     # Validate consent type
     try:
         consent_type = ConsentType(consent_update.consent_type)
@@ -435,20 +434,20 @@ async def update_consent(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid consent type. Valid types: {', '.join(valid_types)}",
         )
-    
+
     # Prevent revoking required consents
     required_consents = [
         ConsentType.TERMS_OF_SERVICE,
         ConsentType.PRIVACY_POLICY,
         ConsentType.DATA_PROCESSING,
     ]
-    
+
     if consent_type in required_consents and not consent_update.granted:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Cannot revoke required consent: {consent_type.value}",
         )
-    
+
     consent = compliance_service.update_consent(
         user_id=current_user.id,
         consent_type=consent_type,
@@ -457,7 +456,7 @@ async def update_consent(
         user_agent=request.headers.get("user-agent"),
         consent_version=consent_update.version,
     )
-    
+
     security_logger.info(
         f"Consent updated for user {current_user.id}: {consent_type.value} = {consent_update.granted}",
         extra={
@@ -467,7 +466,7 @@ async def update_consent(
             "ip": get_client_ip(request),
         },
     )
-    
+
     return ConsentStatusResponse(
         consent_type=consent.consent_type,
         status=consent.status,
@@ -488,7 +487,7 @@ async def get_privacy_policy_info(
 ):
     """
     Get privacy policy information.
-    
+
     Returns:
         Privacy policy details including:
         - Data controller information
@@ -497,7 +496,7 @@ async def get_privacy_policy_info(
         - Cookie categories
     """
     compliance_service = get_compliance_service(db)
-    
+
     return compliance_service.get_privacy_policy_info()
 
 
@@ -512,7 +511,7 @@ async def get_data_retention_info(
 ):
     """
     Get data retention policy information.
-    
+
     Returns:
         Data retention details including:
         - Retention periods for each data type
@@ -520,7 +519,7 @@ async def get_data_retention_info(
         - Automatic deletion schedule
     """
     compliance_service = get_compliance_service(db)
-    
+
     return compliance_service.get_data_retention_info()
 
 
@@ -536,23 +535,23 @@ async def get_compliance_audit_log(
 ):
     """
     Get compliance audit log for the authenticated user.
-    
+
     This shows all compliance-related actions performed by or on behalf of the user,
     including data exports, deletion requests, and consent changes.
-    
+
     Args:
         limit: Maximum number of log entries to return (default: 100)
-        
+
     Returns:
         List of audit log entries
     """
     compliance_service = get_compliance_service(db)
-    
+
     logs = compliance_service.get_audit_logs(
         user_id=current_user.id,
         limit=limit,
     )
-    
+
     return {
         "user_id": str(current_user.id),
         "logs": [
@@ -584,12 +583,12 @@ async def enforce_retention_policies(
 ):
     """
     Manually enforce data retention policies.
-    
+
     This endpoint is restricted to admin users and triggers:
     - Deletion of expired export files
     - Deletion of old audit logs
     - Deletion of old failed login attempts
-    
+
     Returns:
         Count of deleted records by type
     """
@@ -599,11 +598,11 @@ async def enforce_retention_policies(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin access required",
         )
-    
+
     compliance_service = get_compliance_service(db)
-    
+
     deleted_counts = compliance_service.enforce_retention_policies()
-    
+
     security_logger.warning(
         f"Retention policies enforced by admin {current_user.id}",
         extra={
@@ -612,7 +611,7 @@ async def enforce_retention_policies(
             "ip": get_client_ip(request),
         },
     )
-    
+
     return {
         "message": "Retention policies enforced successfully",
         "deleted_counts": deleted_counts,

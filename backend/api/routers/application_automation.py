@@ -6,7 +6,7 @@ Provides endpoints for managing automated job applications.
 
 import logging
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from backend.api.routers.auth import get_current_user
 from backend.config import settings
 from backend.db.database import get_db
-from backend.db.models import ApplicationTask, CandidateProfile, Job, User
+from backend.db.models import ApplicationTask, CandidateProfile, Domain, Job, User
 from backend.services.application_automation import \
     application_automation_service
 from backend.services.cover_letter_service import cover_letter_service

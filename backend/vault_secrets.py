@@ -4,7 +4,7 @@ Secrets management utilities for JobSwipe
 
 import logging
 import os
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 import hvac
 

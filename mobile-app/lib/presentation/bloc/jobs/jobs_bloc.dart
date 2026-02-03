@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:dio/dio.dart';
-import '../../../core/data/job_repository.dart';
+import '../../../core/repositories/job_repository.dart';
 import '../../../models/job.dart';
 
 // Jobs Events

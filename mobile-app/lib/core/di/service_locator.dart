@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:dio/dio.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 import '../../config/app_config.dart';
 import '../datasources/remote/api_client.dart';
@@ -11,11 +12,11 @@ import '../datasources/local/secure_storage_service.dart';
 import '../datasources/local/offline_service.dart';
 import '../datasources/local/database_service.dart';
 import '../datasources/local/hive_service.dart';
-import '../data/auth_repository.dart';
-import '../data/job_repository.dart';
-import '../data/application_repository.dart';
-import '../data/profile_repository.dart';
-import '../data/notification_repository.dart';
+import '../repositories/auth_repository.dart';
+import '../repositories/job_repository.dart';
+import '../repositories/application_repository.dart';
+import '../repositories/profile_repository.dart';
+import '../repositories/notification_repository.dart';
 import '../../presentation/bloc/auth/auth_bloc.dart';
 import '../../presentation/bloc/jobs/jobs_bloc.dart';
 import '../../presentation/bloc/applications/applications_bloc.dart';
@@ -30,10 +31,15 @@ Future<void> setupLocator() async {
 
   // Services
   final sharedPreferences = await SharedPreferences.getInstance();
-  const secureStorage = FlutterSecureStorage();
-
-  getIt.registerLazySingleton<SharedPreferences>(() => sharedPreferences);
-  getIt.registerLazySingleton<FlutterSecureStorage>(() => secureStorage);
+  // Register SharedPreferences so it can be injected elsewhere
+  getIt.registerSingleton<SharedPreferences>(sharedPreferences);
+  
+  // Web vs Native secure storage
+  if (kIsWeb) {
+    getIt.registerLazySingleton<FlutterSecureStorage>(() => FlutterSecureStorage());
+  } else {
+    getIt.registerLazySingleton<FlutterSecureStorage>(() => const FlutterSecureStorage());
+  }
   
   // API Client
   getIt.registerLazySingleton<Dio>(() => Dio(
@@ -54,8 +60,15 @@ Future<void> setupLocator() async {
   getIt.registerLazySingleton<SecureStorageService>(
     () => SecureStorageService(getIt<FlutterSecureStorage>()),
   );
+  
+  // Database service - web uses Hive fallback
   getIt.registerLazySingleton<DatabaseService>(() => DatabaseService());
-  getIt.registerLazySingleton<HiveService>(() => HiveService());
+  
+  // Connectivity & Offline Service (must be before JobRepository)
+  getIt.registerLazySingleton<Connectivity>(() => Connectivity());
+  getIt.registerLazySingleton<OfflineService>(
+    () => OfflineService(getIt<SharedPreferences>(), getIt<Connectivity>()),
+  );
   
   // Repositories
   getIt.registerLazySingleton<AuthRepository>(
@@ -83,12 +96,6 @@ Future<void> setupLocator() async {
 
   getIt.registerLazySingleton<NotificationRepository>(
     () => NotificationRepository(getIt<ApiClient>()),
-  );
-  
-  // Offline Service
-  getIt.registerLazySingleton<Connectivity>(() => Connectivity());
-  getIt.registerLazySingleton<OfflineService>(
-    () => OfflineService(getIt<SharedPreferences>(), getIt<Connectivity>()),
   );
   
   // BLoCs

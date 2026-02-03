@@ -11,12 +11,5 @@
     </domain-config>
     <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="true">jobswipe-9obhra.fly.dev</domain>
-        <pin-set expiration="2026-12-31">
-            <!-- Certificate pinning for production API -->
-            <!-- Obtain SHA-256 hash from server certificate using:
-            openssl s_client -connect jobswipe-9obhra.fly.dev:443 | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64
-            -->
-            <!-- <pin digest="SHA-256">BASE64_CERTIFICATE_HASH</pin> -->
-        </pin-set>
     </domain-config>
 </network-security-config>

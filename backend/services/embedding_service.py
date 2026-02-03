@@ -8,7 +8,7 @@ import hashlib
 import json
 import logging
 import os
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 import numpy as np
 import redis

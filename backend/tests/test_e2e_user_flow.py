@@ -3,7 +3,6 @@ End-to-End tests for complete user flow
 Tests user registration → profile creation → job swiping → application submission
 """
 
-import json
 import uuid
 
 import pytest
@@ -443,7 +442,7 @@ class TestUserFlowE2E:
         )
 
         # Step 1: Create initial profile state
-        initial_profile = client.get(PROFILE_ENDPOINT, headers=headers).json()
+        client.get(PROFILE_ENDPOINT, headers=headers).json()
 
         # Step 2: Perform various actions
         # Update profile

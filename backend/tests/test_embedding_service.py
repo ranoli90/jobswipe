@@ -2,10 +2,8 @@
 Unit tests for EmbeddingService
 """
 
-import asyncio
-import hashlib
 import json
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest

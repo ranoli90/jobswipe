@@ -12,7 +12,7 @@ from typing import List, Optional
 
 import redis
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
 from backend.api.routers.auth import get_current_user
@@ -51,8 +51,7 @@ class JobMatch(BaseModel):
     metadata: MatchMetadata
     apply_url: Optional[str]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class JobCard(BaseModel):
@@ -66,8 +65,7 @@ class JobCard(BaseModel):
     score: float
     apply_url: Optional[str]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SwipeAction(BaseModel):
@@ -226,7 +224,7 @@ async def get_feed(
 
         return job_cards
 
-    except Exception as e:
+    except Exception:
         logger.error("Error retrieving job feed for user %s: %s", ('current_user.id', 'str(e)'))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

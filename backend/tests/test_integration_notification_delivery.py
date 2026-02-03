@@ -152,7 +152,7 @@ class TestNotificationDeliveryIntegration:
     @pytest.mark.asyncio
     async def test_push_notification_delivery_fcm_success(self, notification_service):
         """Test Android push notification - FCM removed, use in-app notifications
-        
+
         Since FCM is removed for Fly.io deployment, Android devices rely on
         in-app notifications. This test verifies the behavior.
         """
@@ -272,7 +272,7 @@ class TestNotificationDeliveryIntegration:
             # Enable services
             notification_service.sendgrid_client = MagicMock()
 
-            result = await notification_service.send_notification(
+            await notification_service.send_notification(
                 user_id=user_id,
                 task_id=task_id,
                 notification_type="application_submitted",
@@ -336,7 +336,7 @@ class TestNotificationDeliveryIntegration:
         self, notification_service
     ):
         """Test notification delivery to multiple device types (FCM removed)
-        
+
         iOS devices use APNs, Android devices rely on in-app notifications.
         """
         user_id = str(uuid.uuid4())

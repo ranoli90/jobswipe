@@ -67,7 +67,7 @@ def application_task_worker(task_id):
         if success:
             logger.info("Application task completed successfully: %s", task_id)
             return True
-        
+
 
         logger.error("Application task failed: %s", task_id)
         raise Exception(f"Application task failed: {task_id}")

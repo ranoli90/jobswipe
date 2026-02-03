@@ -6,7 +6,7 @@ Provides job deduplication using fuzzy matching techniques.
 
 import logging
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Tuple
 
 from thefuzz import fuzz, process  # noqa: F401

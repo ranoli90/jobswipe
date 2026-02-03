@@ -11,7 +11,7 @@ from backend.services.openai_service import OpenAIService
 
 class TestOpenAIService:
     """Tests for OpenAI integration service"""
-    
+
     def test_is_available_with_ollama(self):
         """Test that service availability is correctly determined with Ollama"""
         # Test with Ollama available
@@ -25,7 +25,7 @@ class TestOpenAIService:
         with patch('backend.services.openai_service.OpenAI') as mock_openai:
             mock_openai.side_effect = Exception("Ollama not available")
             assert OpenAIService.is_available() is False
-            
+
     def test_profile_to_text_conversion(self):
         """Test profile dictionary to text conversion"""
         profile = {
@@ -40,15 +40,15 @@ class TestOpenAIService:
                 {"degree": "B.S. Computer Science", "school": "University of Example"}
             ]
         }
-        
+
         text = OpenAIService._profile_to_text(profile)
-        
+
         assert "John Doe" in text
         assert "Senior Software Engineer" in text
         assert "Python" in text
         assert "Software Engineer" in text
         assert "University of Example" in text
-        
+
     @pytest.mark.asyncio
     @patch('backend.services.openai_service.client')
     @patch('backend.services.openai_service.OpenAIService.is_available', return_value=True)
@@ -65,7 +65,7 @@ class TestOpenAIService:
         assert len(embedding) == 3
         assert embedding == mock_embedding
         mock_client.embeddings.create.assert_called_once()
-            
+
     @pytest.mark.asyncio
     @patch('backend.services.openai_service.client')
     @patch('backend.services.openai_service.OpenAIService.is_available', return_value=True)
@@ -87,27 +87,27 @@ class TestOpenAIService:
         assert len(embedding) == 3
         assert embedding == mock_embedding
         mock_client.embeddings.create.assert_called_once()
-            
+
     @pytest.mark.asyncio
     async def test_calculate_semantic_similarity(self):
         """Test semantic similarity calculation"""
         profile_embedding = [1, 0, 0]
         job_embedding = [1, 0, 0]
-        
+
         similarity = await OpenAIService.calculate_semantic_similarity(
             profile_embedding, job_embedding
         )
-        
+
         assert similarity == 1.0
-        
+
         # Test opposite vectors
         job_embedding = [-1, 0, 0]
         similarity = await OpenAIService.calculate_semantic_similarity(
             profile_embedding, job_embedding
         )
-        
+
         assert similarity == 0.0
-        
+
     @pytest.mark.asyncio
     @patch('backend.services.openai_service.client')
     @patch('backend.services.openai_service.OpenAIService.is_available', return_value=True)
@@ -152,13 +152,13 @@ class TestOpenAIService:
             "recommendations": ["Learn React basics"]
         }
         """
-        
+
         parsed = OpenAIService._parse_match_analysis(raw_response)
-        
+
         assert parsed["score"] == 0.85
         assert "Python" in parsed["matched_skills"]
         assert "React" in parsed["missing_skills"]
-        
+
     @pytest.mark.asyncio
     @patch('backend.services.openai_service.OpenAIService.is_available', return_value=False)
     async def test_ollama_unavailable_fallback(self, mock_is_available):

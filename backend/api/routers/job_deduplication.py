@@ -5,16 +5,13 @@ Provides endpoints for managing job deduplication operations.
 """
 
 import logging
-import os
 from typing import Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 
-from backend.api.routers.auth import get_current_user
 from backend.config import settings
-from backend.db.models import User
 from backend.services.job_deduplication import (JobDeduplicationService,
                                                 find_duplicates_in_db,
                                                 remove_duplicates)

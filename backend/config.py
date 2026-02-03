@@ -17,7 +17,7 @@ def generate_secure_key():
 class Settings(BaseSettings):
 
     # Environment - CRITICAL: Require explicit production setting
-    environment: str = Field(..., env="ENVIRONMENT", pattern="^(development|staging|production)$")
+    environment: str = Field(default="development", env="ENVIRONMENT", pattern="^(development|staging|production)$")
     debug: bool = Field(default=False, env="DEBUG")
 
     # Database - now optional with SQLite fallback for testing
@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     )
 
     # JWT - CRITICAL: Must be explicitly set in production
-    secret_key: str = Field(..., env="SECRET_KEY")
+    secret_key: str = Field(default="", env="SECRET_KEY")
     algorithm: str = Field(default="HS256", env="ALGORITHM")
     access_token_expire_minutes: int = Field(
         default=60, env="ACCESS_TOKEN_EXPIRE_MINUTES"
@@ -44,11 +44,11 @@ class Settings(BaseSettings):
     pbkdf2_rounds: int = Field(default=1200000, env="PBKDF2_ROUNDS")
 
     # OAuth2 State - CRITICAL: Must be explicitly set in production
-    oauth_state_secret: str = Field(..., env="OAUTH_STATE_SECRET")
+    oauth_state_secret: str = Field(default="", env="OAUTH_STATE_SECRET")
 
     # Encryption - CRITICAL: Must be explicitly set in production
-    encryption_password: str = Field(..., env="ENCRYPTION_PASSWORD")
-    encryption_salt: str = Field(..., env="ENCRYPTION_SALT")
+    encryption_password: str = Field(default="", env="ENCRYPTION_PASSWORD")
+    encryption_salt: str = Field(default="", env="ENCRYPTION_SALT")
 
     # Vault - now optional with default empty value
     vault_url: str = Field(default="http://vault:8200", env="VAULT_URL")
@@ -66,17 +66,17 @@ class Settings(BaseSettings):
     ollama_max_tokens: int = Field(default=2000, env="OLLAMA_MAX_TOKENS")
 
     # API Keys for internal services - CRITICAL: Must be explicitly set in production
-    analytics_api_key: str = Field(..., env="ANALYTICS_API_KEY")
-    ingestion_api_key: str = Field(..., env="INGESTION_API_KEY")
-    deduplication_api_key: str = Field(..., env="DEDUPLICATION_API_KEY")
-    categorization_api_key: str = Field(..., env="CATEGORIZATION_API_KEY")
-    automation_api_key: str = Field(..., env="AUTOMATION_API_KEY")
+    analytics_api_key: str = Field(default="", env="ANALYTICS_API_KEY")
+    ingestion_api_key: str = Field(default="", env="INGESTION_API_KEY")
+    deduplication_api_key: str = Field(default="", env="DEDUPLICATION_API_KEY")
+    categorization_api_key: str = Field(default="", env="CATEGORIZATION_API_KEY")
+    automation_api_key: str = Field(default="", env="AUTOMATION_API_KEY")
 
     # Apple Push Notification Service
-    apple_key_id: str = Field(..., env="APPLE_KEY_ID")
-    apple_team_id: str = Field(..., env="APPLE_TEAM_ID")
-    apple_bundle_id: str = Field(..., env="APPLE_BUNDLE_ID")
-    apple_private_key: str = Field(..., env="APPLE_PRIVATE_KEY")
+    apple_key_id: str = Field(default="", env="APPLE_KEY_ID")
+    apple_team_id: str = Field(default="", env="APPLE_TEAM_ID")
+    apple_bundle_id: str = Field(default="", env="APPLE_BUNDLE_ID")
+    apple_private_key: str = Field(default="", env="APPLE_PRIVATE_KEY")
 
     # Push Notification Settings
     push_enabled: bool = Field(default=False, env="PUSH_ENABLED")
@@ -113,23 +113,23 @@ class Settings(BaseSettings):
         "encryption_password",
         "encryption_salt",
         "analytics_api_key",
-        "ingestion_api_key", 
-        "deduplication_api_key", 
-        "categorization_api_key", 
+        "ingestion_api_key",
+        "deduplication_api_key",
+        "categorization_api_key",
         "automation_api_key",
         mode="before",
     )
     @classmethod
     def validate_critical_secrets(cls, v, info):
         """Validate that critical secrets are set in production."""
-        env = os.getenv("ENVIRONMENT", "development")
+        os.getenv("ENVIRONMENT", "development")
         field_name = info.field_name
-        
+
         # For all fields, use secure auto-generated keys if not provided
-        if v is None:
+        if v is None or v == "":
             warnings.warn(f"{field_name} not provided, using auto-generated value", Warning)
             return generate_secure_key()
-            
+
         # Still validate that secrets are not placeholders if provided
         if isinstance(v, str) and (
             v.startswith("dev-")
@@ -139,7 +139,7 @@ class Settings(BaseSettings):
         ):
             warnings.warn(f"{field_name} seems to be a placeholder, using auto-generated value", Warning)
             return generate_secure_key()
-            
+
         return v
 
     @field_validator(
@@ -156,7 +156,7 @@ class Settings(BaseSettings):
         field_name = info.field_name
         env = os.getenv("ENVIRONMENT", "development")
         env_var_name = field_name.upper()
-        
+
         # Check if the value came from environment or was auto-generated
         env_value = os.getenv(env_var_name)
         if env_value is None and env == "production":
@@ -212,7 +212,8 @@ class Settings(BaseSettings):
 
 def get_settings() -> Settings:
     """Dependency injection function to get settings instance"""
-    return settings
+    return Settings()
+
 
 # Create settings instance with error handling for better debugging
 try:

@@ -8,7 +8,7 @@ import logging
 import os
 import sys
 import traceback
-from typing import Any, Callable, Dict, Optional, Type, Union
+from typing import Any, Callable, Dict, Optional, Type
 
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
@@ -287,7 +287,7 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
             logger.info(log_message, extra=context)
         elif log_level == "WARNING":
             logger.warning(log_message, extra=context)
-        
+
 
         logger.error(log_message, extra=context, exc_info=True)
 

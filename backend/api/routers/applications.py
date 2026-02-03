@@ -8,7 +8,7 @@ import logging
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
 from backend.api.routers.auth import get_current_user
@@ -35,8 +35,7 @@ class ApplicationTaskResponse(BaseModel):
     created_at: str
     updated_at: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ApplicationAuditLogResponse(BaseModel):
@@ -48,8 +47,7 @@ class ApplicationAuditLogResponse(BaseModel):
     artifacts: dict
     timestamp: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @classmethod
     def from_orm(cls, audit_log):

@@ -5,10 +5,10 @@ Celery tasks for database maintenance and cleanup operations.
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from backend.db.database import get_db
-from backend.db.models import UserJobInteraction
+from backend.db.models import UserJobInteraction, RefreshToken, OAuth2State, UserSession as Session
 from backend.workers.celery_app import celery_app
 
 logger = logging.getLogger(__name__)

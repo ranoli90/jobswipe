@@ -6,7 +6,6 @@ Uses Redis to track recently seen request signatures.
 """
 
 import hashlib
-import hmac
 import time
 from typing import Callable, Optional
 
@@ -138,7 +137,7 @@ class RequestDeduplicationMiddleware(BaseHTTPMiddleware):
             except Exception:
                 # Redis error - proceed with request
                 pass
-        
+
 
         # Fallback to local cache
         current_time = time.time()

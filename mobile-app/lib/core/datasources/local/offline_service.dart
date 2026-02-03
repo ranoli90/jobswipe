@@ -23,12 +23,12 @@ class OfflineService {
   }
   
   void _initConnectivity() {
-    _connectivity.checkConnectivity().then((result) {
-      _connectionStatusController.add(_mapConnectivityStatus(result));
+    _connectivity.checkConnectivity().then((results) {
+      _connectionStatusController.add(_mapConnectivityStatus(results));
     });
     
-    _connectivity.onConnectivityChanged.listen((result) {
-      final connectionStatus = _mapConnectivityStatus(result);
+    _connectivity.onConnectivityChanged.listen((results) {
+      final connectionStatus = _mapConnectivityStatus(results);
       _connectionStatusController.add(connectionStatus);
       
       // Auto-sync when coming back online
@@ -38,10 +38,11 @@ class OfflineService {
     });
   }
   
-  ConnectionStatus _mapConnectivityStatus(ConnectivityResult result) {
-    if (result == ConnectivityResult.mobile || 
-        result == ConnectivityResult.wifi ||
-        result == ConnectivityResult.ethernet) {
+  ConnectionStatus _mapConnectivityStatus(List<ConnectivityResult> results) {
+    if (results.contains(ConnectivityResult.mobile) ||
+        results.contains(ConnectivityResult.wifi) ||
+        results.contains(ConnectivityResult.ethernet) ||
+        results.contains(ConnectivityResult.vpn)) {
       return ConnectionStatus.online;
     }
     return ConnectionStatus.offline;
@@ -49,8 +50,8 @@ class OfflineService {
   
   /// Check if device is online
   Future<bool> isOnline() async {
-    final result = await _connectivity.checkConnectivity();
-    return _mapConnectivityStatus(result) == ConnectionStatus.online;
+    final results = await _connectivity.checkConnectivity();
+    return _mapConnectivityStatus(results) == ConnectionStatus.online;
   }
   
   /// Check if device is offline

@@ -20,7 +20,7 @@ def test_load_config():
         config = load_config()
         assert config["backup"]["base_dir"] == "/var/backups/postgres"
         assert config["database"]["port"] == 5432
-        assert config["encryption"]["enabled"] == True
+        assert config["encryption"]["enabled"] is True
         
         print("✓ Default configuration loaded successfully")
         

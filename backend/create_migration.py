@@ -11,9 +11,8 @@ import logging
 import os
 import re
 import sys
-from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 # Add backend directory to path
 sys.path.insert(0, os.path.dirname(__file__))

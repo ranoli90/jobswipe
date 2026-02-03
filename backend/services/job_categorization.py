@@ -284,7 +284,7 @@ def get_category_distribution() -> Dict[str, int]:
         for job in categorized_jobs:
             if job["category"] in distribution:
                 distribution[job["category"]] += 1
-            
+
 
             distribution["other"] += 1
 

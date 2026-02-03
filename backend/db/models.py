@@ -81,8 +81,8 @@ class CandidateProfile(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(
-        UUID(as_uuid=True), 
-        ForeignKey("users.id", ondelete="CASCADE"), 
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False
     )
     full_name = Column(EncryptedString)
@@ -174,7 +174,7 @@ class UserJobInteraction(Base):
         UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True
     )
     job_id = Column(
-        UUID(as_uuid=True), ForeignKey("jobs.id", ondelete="CASCADE"), 
+        UUID(as_uuid=True), ForeignKey("jobs.id", ondelete="CASCADE"),
         nullable=False, index=True
     )
     action = Column(String, nullable=False)
@@ -197,11 +197,11 @@ class ApplicationTask(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(
-        UUID(as_uuid=True), ForeignKey(USERS_TABLE), 
+        UUID(as_uuid=True), ForeignKey(USERS_TABLE),
         nullable=False, index=True
     )
     job_id = Column(
-        UUID(as_uuid=True), ForeignKey("jobs.id", ondelete="CASCADE"), 
+        UUID(as_uuid=True), ForeignKey("jobs.id", ondelete="CASCADE"),
         nullable=False, index=True
     )
     status = Column(String, default="queued", index=True)
@@ -275,11 +275,11 @@ class Notification(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(
-        UUID(as_uuid=True), ForeignKey("users.id"), 
+        UUID(as_uuid=True), ForeignKey("users.id"),
         nullable=False, index=True
     )
     task_id = Column(
-        UUID(as_uuid=True), ForeignKey("application_tasks.id", ondelete="SET NULL"), 
+        UUID(as_uuid=True), ForeignKey("application_tasks.id", ondelete="SET NULL"),
         nullable=True
     )
     type = Column(String, nullable=False)
@@ -304,7 +304,7 @@ class UserNotificationPreferences(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), 
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False, unique=True
     )
 
@@ -349,7 +349,7 @@ class DeviceToken(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), 
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False
     )
     device_id = Column(String, nullable=False)  # Unique device identifier
@@ -425,7 +425,7 @@ class ApiKeyUsageLog(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     api_key_id = Column(
-        UUID(as_uuid=True), ForeignKey("api_keys.id"), 
+        UUID(as_uuid=True), ForeignKey("api_keys.id"),
         nullable=False, index=True
     )
     endpoint = Column(String, nullable=False)

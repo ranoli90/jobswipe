@@ -13,8 +13,6 @@ from typing import Optional
 import redis.asyncio as redis_async
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
-from slowapi import Limiter
-from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 from backend.config import settings
@@ -190,13 +188,12 @@ async def add_rate_limit_headers(response: Response, rate_limit_info: dict):
         response.headers["Retry-After"] = str(int(rate_limit_info["retry_after"]))
 
 
-class DynamicRateLimitMiddleware:
+from starlette.middleware.base import BaseHTTPMiddleware
+
+class DynamicRateLimitMiddleware(BaseHTTPMiddleware):
     """FastAPI middleware for dynamic rate limiting"""
 
-    def __init__(self, app):
-        self.app = app
-
-    async def __call__(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next):
         # Check rate limit
         rate_limit_info = await dynamic_rate_limiter.is_rate_limited(request)
 

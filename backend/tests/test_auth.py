@@ -4,7 +4,6 @@ Authentication Tests
 Tests for authentication endpoints.
 """
 
-import pytest
 from fastapi.testclient import TestClient
 
 
@@ -53,7 +52,7 @@ def test_login(client: TestClient, test_data):
     )
     print("Register response status:", register_response.status_code)
     print("Register response body:", register_response.json())
-    
+
     # Then login
     response = client.post(
         "/api/v1/auth/login",

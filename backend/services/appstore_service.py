@@ -226,7 +226,7 @@ if __name__ == "__main__":
     logging.info("Success: %s", result["success"])
     if result["error"]:
         logging.error("Error: %s", result["error"])
-    
+
 
     logging.info("Changed: %s", result.get("changed"))
     app_info = result.get("appInfo")

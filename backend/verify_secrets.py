@@ -40,19 +40,19 @@ FORBIDDEN_VALUES = [
 def check_secret(name: str, description: str) -> tuple[bool, str]:
     """Check if a secret is properly set."""
     value = os.getenv(name)
-    
+
     if not value:
         return False, f"{name} is not set"
-    
+
     # Check for forbidden placeholder values
     for forbidden in FORBIDDEN_VALUES:
         if forbidden.lower() in value.lower():
             return False, f"{name} contains forbidden placeholder value: {forbidden}"
-    
+
     # Check minimum length (secrets should be reasonably long)
     if len(value) < 16:
         return False, f"{name} is too short (minimum 16 characters)"
-    
+
     return True, f"{name} is properly set"
 
 
@@ -60,19 +60,19 @@ def verify_secrets():
     """Verify all required secrets."""
     print("🔐 Production Secrets Verification")
     print("=" * 50)
-    
+
     all_passed = True
-    
+
     for name, description in REQUIRED_SECRETS.items():
         passed, message = check_secret(name, description)
         status = "✅" if passed else "❌"
         print(f"{status} {message}")
-        
+
         if not passed:
             all_passed = False
-    
+
     print("=" * 50)
-    
+
     if all_passed:
         print("✅ All secrets are properly configured!")
         return 0

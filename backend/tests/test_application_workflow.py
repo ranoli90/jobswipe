@@ -4,15 +4,9 @@ Integration Tests for Job Application Workflow
 Tests the complete application flow from job search to application submission.
 """
 
-import asyncio
-from datetime import datetime, timedelta
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 
 # Import test fixtures - use pytest fixtures directly
 # from tests.conftest import client, mock_db_session

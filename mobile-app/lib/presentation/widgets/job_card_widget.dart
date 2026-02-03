@@ -201,7 +201,7 @@ class JobCardWidget extends StatelessWidget {
                           vertical: AppTokens.spacingXs,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
+                          color: AppColors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(AppTokens.radiusSm),
                         ),
                         child: Text(
