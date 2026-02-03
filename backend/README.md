@@ -1,5 +1,7 @@
 # JobSwipe Backend API
 
+Last deployed: 2026-02-03
+
 The JobSwipe backend is a comprehensive FastAPI-based API server that powers the JobSwipe job search application. It provides AI-powered job matching, automated application systems, user management, and analytics services.
 
 ## Features
