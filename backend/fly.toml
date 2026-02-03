@@ -9,9 +9,9 @@ primary_region = 'iad'
 [build]
   dockerfile = "Dockerfile"
   
-  [deploy]
-    # Run migrations before starting machines (simplified to avoid timeout)
-    release_command = "python /app/backend/migrate_db.py"
+  # [deploy]
+    # Migrations temporarily disabled to allow deployment
+    # release_command = "python /app/backend/migrate_db.py"
 
 [env]
   ENVIRONMENT = 'production'
