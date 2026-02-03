@@ -106,7 +106,7 @@ class TestApplicationService:
         mock_db.query.return_value.filter.return_value.first.side_effect = [mock_task, mock_job, mock_profile]
 
         # Mock storage download
-        with patch('backend.services.application_service.download_file', return_value=b"resume content") as mock_download:
+        with patch('backend.services.application_service.download_file', return_value=b"resume content"):
             # Mock tempfile
             with patch('backend.services.application_service.tempfile.NamedTemporaryFile') as mock_tempfile:
                 mock_temp_file = MagicMock()

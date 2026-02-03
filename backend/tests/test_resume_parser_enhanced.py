@@ -2,7 +2,6 @@
 Tests for the enhanced resume parser service.
 """
 
-import json
 import os
 import sys
 

@@ -6,7 +6,6 @@ Tests for backup manager, dynamic rate limiting, and metrics collection.
 
 import os
 import sys
-import json
 import pytest
 from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch, mock_open
@@ -29,11 +28,11 @@ import backend.metrics as metrics
 def test_load_config_from_file(mock_file, mock_exists):
     """Test loading configuration from file"""
     from backup.backup_manager import load_config
-    
+
     mock_exists.return_value = True
-    
+
     config = load_config('/etc/backup/config.json')
-    
+
     assert config["backup"]["base_dir"] == "/test/backups"
     assert config["database"]["host"] == "localhost"  # Default value
     assert config["schedule"]["full_backup"] == "0 2 * * 0"  # Default value
@@ -42,28 +41,28 @@ def test_load_config_from_file(mock_file, mock_exists):
 def test_load_config_default():
     """Test loading default configuration when file not exists"""
     from backup.backup_manager import load_config
-    
+
     config = load_config('/nonexistent/config.json')
-    
+
     assert config["backup"]["base_dir"] == "/var/backups/postgres"
     assert config["database"]["port"] == 5432
-    assert config["encryption"]["enabled"] == True
+    assert config["encryption"]["enabled"]
 
 
 @patch('backup.backup_manager.subprocess.run')
 def test_run_command_success(mock_subprocess):
     """Test running a successful command"""
     from backup.backup_manager import run_command
-    
+
     mock_result = MagicMock()
     mock_result.returncode = 0
     mock_result.stdout = b'Success'
     mock_result.stderr = b''
     mock_subprocess.return_value = mock_result
-    
+
     result = run_command(['echo', 'test'])
-    
-    assert result["success"] == True
+
+    assert result["success"]
     assert result["return_code"] == 0
     assert 'Success' in result["stdout"]
 
@@ -72,16 +71,16 @@ def test_run_command_success(mock_subprocess):
 def test_run_command_failure(mock_subprocess):
     """Test running a failing command"""
     from backup.backup_manager import run_command
-    
+
     mock_result = MagicMock()
     mock_result.returncode = 1
     mock_result.stdout = b'Output'
     mock_result.stderr = b'Error message'
     mock_subprocess.return_value = mock_result
-    
+
     result = run_command(['false'])
-    
-    assert result["success"] == False
+
+    assert not result["success"]
     assert result["return_code"] == 1
     assert 'Error message' in result["stderr"]
 
@@ -90,10 +89,10 @@ def test_run_command_failure(mock_subprocess):
 def test_send_notification_success(mock_smtp):
     """Test sending email notification successfully"""
     from backup.backup_manager import send_notification
-    
+
     mock_smtp_instance = MagicMock()
     mock_smtp.return_value.__enter__.return_value = mock_smtp_instance
-    
+
     config = {
         "notifications": {
             "smtp_server": "smtp.example.com",
@@ -103,9 +102,9 @@ def test_send_notification_success(mock_smtp):
             "subject_prefix": "[JobSwipe Backup]"
         }
     }
-    
+
     send_notification(config, "Test Subject", "Test Message")
-    
+
     assert mock_smtp.called
     mock_smtp_instance.send_message.assert_called_once()
 
@@ -114,9 +113,9 @@ def test_send_notification_success(mock_smtp):
 def test_send_notification_failure(mock_smtp):
     """Test handling email notification failure"""
     from backup.backup_manager import send_notification
-    
+
     mock_smtp.side_effect = Exception("Connection error")
-    
+
     config = {
         "notifications": {
             "smtp_server": "smtp.example.com",
@@ -126,7 +125,7 @@ def test_send_notification_failure(mock_smtp):
             "subject_prefix": "[JobSwipe Backup]"
         }
     }
-    
+
     # Should not raise exception
     send_notification(config, "Test Subject", "Test Message")
 
@@ -137,7 +136,7 @@ def test_send_notification_failure(mock_smtp):
 def test_backup_dir_cleanup(mock_run_cmd, mock_datetime, mock_load_config):
     """Test backup directory cleanup logic"""
     from backup.backup_manager import cleanup_backup_dirs
-    
+
     config = {
         "backup": {
             "base_dir": "/test/backups",
@@ -146,11 +145,11 @@ def test_backup_dir_cleanup(mock_run_cmd, mock_datetime, mock_load_config):
         }
     }
     mock_load_config.return_value = config
-    
+
     # Mock current time
     current_time = datetime(2024, 1, 10, 12, 0, 0)
     mock_datetime.now.return_value = current_time
-    
+
     # Mock directory listing
     mock_run_cmd.side_effect = [
         # First call: list base directory
@@ -158,9 +157,9 @@ def test_backup_dir_cleanup(mock_run_cmd, mock_datetime, mock_load_config):
         # Subsequent calls: remove old files
         {"success": True}
     ]
-    
+
     cleanup_backup_dirs()
-    
+
     # Should have called ls and rm commands
     assert mock_run_cmd.called
     assert any("rm" in str(call) and "20240101" in str(call) for call in mock_run_cmd.call_args_list)
@@ -205,9 +204,9 @@ def mock_request():
 async def test_get_user_tier_anonymous(rate_limiter, mock_request):
     """Test getting user tier for anonymous user (no API key)"""
     mock_request.headers = {}
-    
+
     tier = await rate_limiter.get_user_tier(mock_request)
-    
+
     assert tier == "anonymous"
 
 
@@ -215,12 +214,12 @@ async def test_get_user_tier_anonymous(rate_limiter, mock_request):
 async def test_get_user_tier_free(rate_limiter, mock_request):
     """Test getting user tier from API key (free tier)"""
     mock_request.headers = {"X-API-Key": "test-api-key"}
-    
+
     with patch('backend.api.middleware.dynamic_rate_limit.get_api_key_tier') as mock_get_tier:
         mock_get_tier.return_value = "free"
-        
+
         tier = await rate_limiter.get_user_tier(mock_request)
-        
+
         assert tier == "free"
         mock_get_tier.assert_called_once_with("test-api-key")
 
@@ -239,10 +238,10 @@ async def test_check_rate_limit_not_exceeded(rate_limiter, mock_request, mock_re
     """Test checking rate limit when not exceeded"""
     mock_redis_client.get.return_value = None
     mock_redis_client.incr.return_value = 50
-    
+
     result = await rate_limiter.check_rate_limit(mock_request, "192.168.1.1")
-    
-    assert result["allowed"] == True
+
+    assert result["allowed"]
     assert result["remaining"] == 50
     assert result["reset"] > 0
     mock_redis_client.incr.assert_called_once()
@@ -252,10 +251,10 @@ async def test_check_rate_limit_not_exceeded(rate_limiter, mock_request, mock_re
 async def test_check_rate_limit_exceeded(rate_limiter, mock_request, mock_redis_client):
     """Test checking rate limit when exceeded"""
     mock_redis_client.incr.return_value = 101  # Free tier limit is 100
-    
+
     result = await rate_limiter.check_rate_limit(mock_request, "192.168.1.1")
-    
-    assert result["allowed"] == False
+
+    assert not result["allowed"]
     assert result["remaining"] == 0
     assert result["reset"] > 0
 
@@ -264,10 +263,10 @@ async def test_check_rate_limit_exceeded(rate_limiter, mock_request, mock_redis_
 async def test_check_rate_limit_redis_unavailable(rate_limiter, mock_request):
     """Test rate limiting when Redis is unavailable"""
     rate_limiter.redis = None
-    
+
     result = await rate_limiter.check_rate_limit(mock_request, "192.168.1.1")
-    
-    assert result["allowed"] == True
+
+    assert result["allowed"]
 
 
 # ================================
@@ -278,7 +277,7 @@ async def test_check_rate_limit_redis_unavailable(rate_limiter, mock_request):
 def test_metrics_collector_initialization(mock_get_db):
     """Test MetricsCollector initialization"""
     collector = MetricsCollector()
-    
+
     assert collector is not None
     assert hasattr(collector, 'settings')
     assert hasattr(collector, 'logger')
@@ -288,9 +287,9 @@ def test_metrics_collector_initialization(mock_get_db):
 def test_collect_system_metrics(mock_get_db):
     """Test collecting system metrics"""
     collector = MetricsCollector()
-    
+
     metrics = collector.collect_system_metrics()
-    
+
     assert 'cpu_percent' in metrics
     assert 'memory_percent' in metrics
     assert 'disk_percent' in metrics
@@ -304,9 +303,9 @@ def test_collect_system_metrics(mock_get_db):
 def test_collect_database_metrics(mock_get_db):
     """Test collecting database metrics"""
     collector = MetricsCollector()
-    
+
     db_metrics = collector.collect_database_metrics()
-    
+
     assert 'active_connections' in db_metrics
     assert 'slow_queries' in db_metrics
     assert 'total_transactions' in db_metrics
@@ -316,9 +315,9 @@ def test_collect_database_metrics(mock_get_db):
 def test_collect_api_metrics(mock_get_db):
     """Test collecting API metrics from Prometheus client registry"""
     collector = MetricsCollector()
-    
+
     api_metrics = collector.collect_api_metrics()
-    
+
     assert 'api_requests_total' in api_metrics
     assert 'api_request_duration' in api_metrics
     assert 'api_error_rate' in api_metrics
@@ -331,10 +330,10 @@ def test_collect_memory_usage(mock_memory, mock_get_db):
     mock_memory.return_value.percent = 45.2
     mock_memory.return_value.available = 4294967296
     mock_memory.return_value.used = 3221225472
-    
+
     collector = MetricsCollector()
     metrics = collector.collect_system_metrics()
-    
+
     assert metrics['memory_percent'] == 45.2
     assert metrics['memory_available'] == 4294967296
     assert metrics['memory_used'] == 3221225472
@@ -345,10 +344,10 @@ def test_collect_memory_usage(mock_memory, mock_get_db):
 def test_collect_cpu_usage(mock_cpu, mock_get_db):
     """Test collecting CPU usage metrics"""
     mock_cpu.return_value = 30.5
-    
+
     collector = MetricsCollector()
     metrics = collector.collect_system_metrics()
-    
+
     assert metrics['cpu_percent'] == 30.5
 
 
@@ -356,9 +355,9 @@ def test_collect_cpu_usage(mock_cpu, mock_get_db):
 def test_calculate_throughput_metrics(mock_get_db):
     """Test calculating API throughput metrics"""
     collector = MetricsCollector()
-    
+
     throughput = collector.calculate_throughput_metrics()
-    
+
     assert 'requests_per_second' in throughput
     assert 'requests_per_minute' in throughput
     assert 'requests_per_hour' in throughput
@@ -383,10 +382,10 @@ def test_metrics_registration():
         'database_connections_active',
         'redis_memory_used'
     ]
-    
+
     # Check if metrics are registered
     from prometheus_client import REGISTRY
-    
+
     for metric_name in required_metrics:
         assert any(metric_name in collector.name for collector in REGISTRY._collector_to_names.keys())
 
@@ -395,10 +394,10 @@ def test_api_requests_total_metric():
     """Test api_requests_total counter metric"""
     # Save initial value
     initial_value = metrics.api_requests_total._value.get()
-    
+
     # Increment counter
     metrics.api_requests_total.labels(method='GET', endpoint='/jobs', status_code=200).inc()
-    
+
     # Verify increment
     assert metrics.api_requests_total._value.get() == initial_value + 1
 
@@ -408,7 +407,7 @@ def test_api_request_duration_metric():
     # Observe duration
     duration = 0.5
     metrics.api_request_duration.labels(method='GET', endpoint='/jobs').observe(duration)
-    
+
     # Verify histogram has data (we can't easily get the actual value from Histogram)
     # but we can check it has the expected labels
     assert hasattr(metrics.api_request_duration, '_labelnames')
@@ -420,7 +419,7 @@ def test_jobs_processed_per_day_gauge():
     """Test jobs_processed_per_day gauge metric"""
     # Set gauge value
     metrics.jobs_processed_per_day.set(150)
-    
+
     # Verify value
     assert metrics.jobs_processed_per_day._value.get() == 150
 
@@ -429,7 +428,7 @@ def test_application_success_rate_gauge():
     """Test application_success_rate gauge metric"""
     # Set gauge value
     metrics.application_success_rate.set(0.15)
-    
+
     # Verify value
     assert metrics.application_success_rate._value.get() == 0.15
 
@@ -444,23 +443,23 @@ def test_application_success_rate_gauge():
 def test_full_backup_workflow(mock_run_cmd, mock_smtp):
     """Test the full backup workflow integration"""
     from backup.backup_manager import run_full_backup, load_config
-    
+
     # Configure mocks
     mock_run_cmd.return_value = {"success": True}
     mock_smtp_instance = MagicMock()
     mock_smtp.return_value.__enter__.return_value = mock_smtp_instance
-    
+
     config = load_config()
-    
+
     # Run full backup
     result = run_full_backup(config)
-    
-    assert result["success"] == True
+
+    assert result["success"]
     assert "backup_file" in result
     assert "size" in result
     assert "duration" in result
     assert "timestamp" in result
-    
+
     # Verify email notification
     mock_smtp.assert_called_once()
     mock_smtp_instance.send_message.assert_called_once()
@@ -474,18 +473,18 @@ async def test_dynamic_rate_limit_integration(mock_get_tier, rate_limiter, mock_
     mock_get_tier.return_value = "premium"
     mock_request.headers = {"X-API-Key": "premium-api-key"}
     mock_redis_client.incr.return_value = 499  # Below premium tier limit of 500
-    
+
     result = await rate_limiter.check_rate_limit(mock_request, "192.168.1.1")
-    
-    assert result["allowed"] == True
+
+    assert result["allowed"]
     assert result["remaining"] == 1
-    
+
     # Now test exceeding the limit
     mock_redis_client.incr.return_value = 501
-    
+
     result = await rate_limiter.check_rate_limit(mock_request, "192.168.1.1")
-    
-    assert result["allowed"] == False
+
+    assert not result["allowed"]
     assert result["remaining"] == 0
 
 
@@ -494,20 +493,20 @@ async def test_dynamic_rate_limit_integration(mock_get_tier, rate_limiter, mock_
 def test_metrics_collection_integration(mock_get_db, rate_limiter, mock_redis_client):
     """Test metrics collection pipeline integration"""
     collector = MetricsCollector()
-    
+
     # Collect different types of metrics
     system_metrics = collector.collect_system_metrics()
     database_metrics = collector.collect_database_metrics()
     api_metrics = collector.collect_api_metrics()
     business_metrics = collector.collect_business_metrics()
-    
+
     # Verify all metrics are collected properly
     assert all(isinstance(x, dict) for x in [system_metrics, database_metrics, api_metrics, business_metrics])
     assert len(system_metrics) > 0
     assert len(database_metrics) > 0
     assert len(api_metrics) > 0
     assert len(business_metrics) > 0
-    
+
     # Verify critical business metrics are present
     assert 'jobs_processed_per_day' in business_metrics
     assert 'applications_sent_per_day' in business_metrics

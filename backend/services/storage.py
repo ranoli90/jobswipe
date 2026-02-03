@@ -24,7 +24,7 @@ class StorageService:
         self.cloudflare_r2_access_key_id = os.getenv("CLOUDFLARE_R2_ACCESS_KEY_ID")
         self.cloudflare_r2_secret_access_key = os.getenv("CLOUDFLARE_R2_SECRET_ACCESS_KEY")
         self.cloudflare_r2_bucket = os.getenv("CLOUDFLARE_R2_BUCKET", "jobswipe-storage")
-        
+
         # Only validate configuration when client is initialized
         # This allows the service to be imported without requiring all variables to be set immediately
 
@@ -44,7 +44,7 @@ class StorageService:
                     raise ValueError(
                         "CLOUDFLARE_R2_SECRET_ACCESS_KEY environment variable is required for storage operations"
                     )
-                    
+
                 endpoint = f"https://{self.cloudflare_r2_account_id}.r2.cloudflarestorage.com"
                 self.client = Minio(
                     endpoint,

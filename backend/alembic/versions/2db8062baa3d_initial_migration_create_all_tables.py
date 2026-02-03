@@ -1,7 +1,7 @@
 """Initial migration - create all tables
 
 Revision ID: 2db8062baa3d
-Revises: 
+Revises:
 Create Date: 2026-01-30 05:22:44.239133+00:00
 
 """

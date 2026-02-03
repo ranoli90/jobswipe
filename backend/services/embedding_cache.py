@@ -7,8 +7,6 @@ Provides caching layer for job embeddings to reduce compute costs and latency.
 import hashlib
 import json
 import logging
-import os
-from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 import redis.asyncio as redis
@@ -128,7 +126,7 @@ class EmbeddingCache:
             if cached:
                 self.hits += 1
                 return json.loads(cached)
-            
+
             self.misses += 1
             return None
         except Exception as e:
@@ -249,7 +247,7 @@ class EmbeddingCache:
                 if results[i]:
                     self.hits += 1
                     embeddings[text] = json.loads(results[i])
-                
+
 
                 self.misses += 1
                 embeddings[text] = None

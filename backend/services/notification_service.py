@@ -10,7 +10,6 @@ import os
 from datetime import datetime, time, timedelta
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy.orm import Session
 
 from backend.db.database import get_db
 from backend.db.models import (DeviceToken, Notification, NotificationTemplate,
@@ -148,7 +147,7 @@ class NotificationService:
                 # Fall back to basic notification without template
                 rendered_title = self._get_notification_title(notification_type)
                 rendered_message = message
-            
+
 
             # Render template with metadata
             if template:
@@ -344,14 +343,14 @@ class NotificationService:
 
     async def send_email_verification(self, user_id: str, verification_token: str):
         """Send email verification notification to user
-        
+
         Args:
             user_id: User ID to send verification email to
             verification_token: Verification token to include in the email
         """
         metadata = {"verification_token": verification_token}
         message = "Please verify your email address to complete your registration"
-        
+
         await self.send_notification(
             user_id=user_id,
             task_id=None,
@@ -362,14 +361,14 @@ class NotificationService:
 
     async def send_password_reset(self, user_id: str, reset_token: str):
         """Send password reset notification to user
-        
+
         Args:
             user_id: User ID to send reset email to
             reset_token: Reset token to include in the email
         """
         metadata = {"reset_token": reset_token}
         message = "You requested a password reset. Please click the link below to reset your password"
-        
+
         await self.send_notification(
             user_id=user_id,
             task_id=None,
@@ -451,7 +450,7 @@ class NotificationService:
             verification_token = metadata.get("verification_token", "")
             from backend.config import settings
             verification_url = settings.frontend_url + f"/verify-email?token={verification_token}"
-            
+
             html_template = f"""
             <!DOCTYPE html>
             <html>
@@ -490,7 +489,7 @@ class NotificationService:
             reset_token = metadata.get("reset_token", "")
             from backend.config import settings
             reset_url = settings.frontend_url + f"/reset-password?token={reset_token}"
-            
+
             html_template = f"""
             <!DOCTYPE html>
             <html>
@@ -784,7 +783,7 @@ class NotificationService:
                 logger.debug("Device token unregistered for user %s, device %s" % (user_id, device_id)
                 )
                 return True
-            
+
 
             logger.warning("Device token not found for user %s, device %s", user_id, device_id)
             return False

@@ -4,7 +4,6 @@ import logging
 import re
 from typing import Any, Callable, Dict
 
-import magic
 from fastapi import HTTPException, Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
@@ -15,10 +14,10 @@ security_logger = logging.getLogger("security")
 
 class InputSanitizationMiddleware(BaseHTTPMiddleware):
     """Middleware to sanitize user inputs to prevent injection attacks"""
-    
+
     # Default maximum file size: 10MB
     DEFAULT_MAX_FILE_SIZE = 10 * 1024 * 1024
-    
+
     # Default allowed MIME types for file uploads
     DEFAULT_ALLOWED_MIME_TYPES = [
         "image/jpeg",
@@ -30,7 +29,7 @@ class InputSanitizationMiddleware(BaseHTTPMiddleware):
         "application/msword",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     ]
-    
+
     # Dangerous HTML tags to remove
     DANGEROUS_HTML_TAGS = ["script", "iframe", "object", "embed"]
 

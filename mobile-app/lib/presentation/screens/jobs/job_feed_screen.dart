@@ -20,10 +20,7 @@ class JobFeedScreen extends StatefulWidget {
 class _JobFeedScreenState extends State<JobFeedScreen> {
   final CardSwiperController _cardController = CardSwiperController();
   final ScrollController _scrollController = ScrollController();
-  int _currentIndex = 0;
   Timer? _loadMoreTimer;
-  double _swipeProgressX = 0.0;
-  double _swipeProgressY = 0.0;
 
   @override
   void initState() {
@@ -102,10 +99,6 @@ class _JobFeedScreenState extends State<JobFeedScreen> {
   }
 
   FutureOr<bool> _onSwipe(int previousIndex, int? currentIndex, CardSwiperDirection direction) {
-    setState(() {
-      _currentIndex = currentIndex ?? 0;
-    });
-
     // Handle swipe actions
     if (direction == CardSwiperDirection.left) {
       _onSwipeLeft(previousIndex);
@@ -234,18 +227,6 @@ class _JobFeedScreenState extends State<JobFeedScreen> {
               controller: _cardController,
               cardsCount: state.jobs.length,
               onSwipe: _onSwipe,
-              onSwipeDirectionChange: (horizontalDirection, verticalDirection) {
-                setState(() {
-                  _swipeProgressX = horizontalDirection == CardSwiperDirection.left 
-                      ? -0.5 
-                      : horizontalDirection == CardSwiperDirection.right 
-                          ? 0.5 
-                          : 0.0;
-                  _swipeProgressY = verticalDirection == CardSwiperDirection.top 
-                      ? -0.5 
-                      : 0.0;
-                });
-              },
               numberOfCardsDisplayed: 2,
               backCardOffset: const Offset(40, 40),
               padding: const EdgeInsets.symmetric(

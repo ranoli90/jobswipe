@@ -5,7 +5,7 @@ Celery tasks for handling job data ingestion and processing.
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from backend.db.database import get_db
 from backend.db.models import Job
@@ -116,7 +116,7 @@ def process_job_embedding(self, job_id: str):
         # Generate embedding
         if EmbeddingService.is_available():
             description = job.description or ""
-            
+
             # Run async function in event loop
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
@@ -135,7 +135,7 @@ def process_job_embedding(self, job_id: str):
                 return {"status": "success", "job_id": job_id}
             finally:
                 loop.close()
-        
+
 
         logger.warning("Embedding service not available")
         return {"status": "skipped", "reason": "Service unavailable"}

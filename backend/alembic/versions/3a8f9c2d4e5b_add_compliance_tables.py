@@ -20,7 +20,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema - add compliance tables for GDPR/CCPA."""
-    
+
     # User Consent table - tracks user consent history
     op.create_table(
         'user_consents',
@@ -39,7 +39,7 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_user_consents_consent_type'), 'user_consents', ['consent_type'], unique=False)
     op.create_index(op.f('ix_user_consents_user_id'), 'user_consents', ['user_id'], unique=False)
-    
+
     # Data Export Request table - tracks GDPR Article 20 requests
     op.create_table(
         'data_export_requests',
@@ -60,7 +60,7 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_data_export_requests_status'), 'data_export_requests', ['status'], unique=False)
     op.create_index(op.f('ix_data_export_requests_user_id'), 'data_export_requests', ['user_id'], unique=False)
-    
+
     # Data Deletion Request table - tracks GDPR Article 17 / CCPA deletion requests
     op.create_table(
         'data_deletion_requests',
@@ -79,7 +79,7 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_data_deletion_requests_status'), 'data_deletion_requests', ['status'], unique=False)
     op.create_index(op.f('ix_data_deletion_requests_user_id'), 'data_deletion_requests', ['user_id'], unique=False)
-    
+
     # Compliance Audit Log table - tracks all compliance-related actions
     op.create_table(
         'compliance_audit_logs',
@@ -95,7 +95,7 @@ def upgrade() -> None:
     op.create_index(op.f('ix_compliance_audit_logs_action'), 'compliance_audit_logs', ['action'], unique=False)
     op.create_index(op.f('ix_compliance_audit_logs_created_at'), 'compliance_audit_logs', ['created_at'], unique=False)
     op.create_index(op.f('ix_compliance_audit_logs_user_id'), 'compliance_audit_logs', ['user_id'], unique=False)
-    
+
     # Cookie Consent table - tracks cookie preferences for GDPR
     op.create_table(
         'cookie_consents',
@@ -120,28 +120,28 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Downgrade schema - remove compliance tables."""
-    
+
     # Drop cookie_consents table
     op.drop_index(op.f('ix_cookie_consents_user_id'), table_name='cookie_consents')
     op.drop_index(op.f('ix_cookie_consents_session_id'), table_name='cookie_consents')
     op.drop_table('cookie_consents')
-    
+
     # Drop compliance_audit_logs table
     op.drop_index(op.f('ix_compliance_audit_logs_user_id'), table_name='compliance_audit_logs')
     op.drop_index(op.f('ix_compliance_audit_logs_created_at'), table_name='compliance_audit_logs')
     op.drop_index(op.f('ix_compliance_audit_logs_action'), table_name='compliance_audit_logs')
     op.drop_table('compliance_audit_logs')
-    
+
     # Drop data_deletion_requests table
     op.drop_index(op.f('ix_data_deletion_requests_user_id'), table_name='data_deletion_requests')
     op.drop_index(op.f('ix_data_deletion_requests_status'), table_name='data_deletion_requests')
     op.drop_table('data_deletion_requests')
-    
+
     # Drop data_export_requests table
     op.drop_index(op.f('ix_data_export_requests_user_id'), table_name='data_export_requests')
     op.drop_index(op.f('ix_data_export_requests_status'), table_name='data_export_requests')
     op.drop_table('data_export_requests')
-    
+
     # Drop user_consents table
     op.drop_index(op.f('ix_user_consents_user_id'), table_name='user_consents')
     op.drop_index(op.f('ix_user_consents_consent_type'), table_name='user_consents')

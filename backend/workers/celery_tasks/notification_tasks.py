@@ -5,10 +5,10 @@ Celery tasks for handling email and push notifications.
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from backend.db.database import get_db
-from backend.db.models import Notification, UserNotificationPreferences, User
+from backend.db.models import Notification, User, NotificationPreference
 from backend.workers.celery_app import celery_app
 
 logger = logging.getLogger(__name__)

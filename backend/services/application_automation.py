@@ -4,11 +4,8 @@ Application Automation Service
 Handles automated job applications and resume submissions.
 """
 
-import asyncio
 import logging
 import os
-import random
-import string
 from datetime import datetime
 from typing import Dict, List, Optional
 
@@ -19,7 +16,6 @@ from backend.db.models import ApplicationTask, CandidateProfile, Job, User
 from backend.services.captcha_detector import (CaptchaDetector,
                                                 HumanInTheLoopSystem)
 from backend.services.domain_service import domain_service
-from backend.services.resume_parser_enhanced import parse_resume_enhanced
 
 logger = logging.getLogger(__name__)
 

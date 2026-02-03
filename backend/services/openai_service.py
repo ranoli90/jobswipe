@@ -6,8 +6,7 @@ Provides access to OpenAI API for job matching and semantic analysis.
 import logging
 import os
 import re
-from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from openai import OpenAI
 
@@ -287,7 +286,7 @@ class OpenAIService:
             if json_start != -1 and json_end != -1:
                 json_str = analysis[json_start:json_end]
                 return json.loads(json_str)
-            
+
 
             raise ValueError("No JSON found in response")
 

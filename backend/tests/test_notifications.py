@@ -11,20 +11,14 @@ Tests cover:
 - Error handling and retries
 """
 
-import asyncio
-from datetime import datetime, time, timedelta
-from typing import Optional
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from datetime import datetime, time
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 
 # Import models and services
 from backend.db.models import (
     DeviceToken,
-    Notification,
     NotificationTemplate,
     User,
     UserNotificationPreferences,
@@ -522,8 +516,8 @@ class TestNotificationService:
 
         # Mock that we're within quiet hours
         current_time = time(23, 0, 0)  # 11 PM
-        start_time = time(22, 0, 0)  # 10 PM
-        end_time = time(8, 0, 0)  # 8 AM
+        time(22, 0, 0)  # 10 PM
+        time(8, 0, 0)  # 8 AM
 
         with patch.object(
             notification_service, "_get_user_preferences", new_callable=AsyncMock

@@ -6,7 +6,7 @@ Handles job ingestion from Greenhouse public boards API.
 
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 import httpx
@@ -69,7 +69,7 @@ async def fetch_greenhouse_board(board_token: str) -> List[GreenhouseJob]:
         logger.error("HTTP error fetching Greenhouse board %s: %s - %s" % (board_token, e.response.status_code, e.response.text)
         )
         raise
-    except Exception as e:
+    except Exception:
         logger.error("Error fetching Greenhouse board %s: %s", ('board_token', 'str(e)'))
         raise
 
@@ -146,13 +146,13 @@ def update_or_create_job(greenhouse_job: GreenhouseJob, db) -> Job:
         db.add(existing_job)
         logger.info("Updated Greenhouse job: %s (%s)", normalized_job["title"], normalized_job["external_id"])
         return existing_job
-    
+
 
     # Create new job
     new_job = Job(**normalized_job)
     db.add(new_job)
     logger.info("Created new Greenhouse job: %s (%s)", normalized_job["title"], normalized_job["external_id"])
-        return new_job
+    return new_job
 
 
 async def sync_greenhouse_board(
@@ -204,7 +204,7 @@ async def sync_greenhouse_board(
         )
         return synced_jobs
 
-    except Exception as e:
+    except Exception:
         db.rollback()
         logger.error("Error syncing Greenhouse board %s: %s", ('board_token', 'str(e)'))
         raise

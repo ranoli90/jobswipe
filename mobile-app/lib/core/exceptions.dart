@@ -13,8 +13,7 @@ class AppException implements Exception {
 
 /// Authentication exceptions
 class AuthException extends AppException {
-  AuthException(String message, {String? code, dynamic originalError})
-      : super(message, code: code, originalError: originalError);
+  AuthException(super.message, {super.code, super.originalError});
 }
 
 class UnauthorizedException extends AuthException {
@@ -29,8 +28,7 @@ class TokenExpiredException extends AuthException {
 
 /// Network exceptions
 class NetworkException extends AppException {
-  NetworkException(String message, {String? code, dynamic originalError})
-      : super(message, code: code, originalError: originalError);
+  NetworkException(super.message, {super.code, super.originalError});
 }
 
 class NoInternetException extends NetworkException {
@@ -47,61 +45,58 @@ class TimeoutException extends NetworkException {
 class ApiException extends AppException {
   final int? statusCode;
 
-  ApiException(String message, {this.statusCode, String? code, dynamic originalError})
-      : super(message, code: code, originalError: originalError);
+  ApiException(super.message, {this.statusCode, super.code, super.originalError});
 }
 
 class BadRequestException extends ApiException {
-  BadRequestException(String message, {dynamic originalError})
-      : super(message, statusCode: 400, code: 'BAD_REQUEST', originalError: originalError);
+  BadRequestException(super.message, {super.originalError})
+      : super(statusCode: 400, code: 'BAD_REQUEST');
 }
 
 class ForbiddenException extends ApiException {
-  ForbiddenException(String message, {dynamic originalError})
-      : super(message, statusCode: 403, code: 'FORBIDDEN', originalError: originalError);
+  ForbiddenException(super.message, {super.originalError})
+      : super(statusCode: 403, code: 'FORBIDDEN');
 }
 
 class NotFoundException extends ApiException {
-  NotFoundException(String message, {dynamic originalError})
-      : super(message, statusCode: 404, code: 'NOT_FOUND', originalError: originalError);
+  NotFoundException(super.message, {super.originalError})
+      : super(statusCode: 404, code: 'NOT_FOUND');
 }
 
 class RateLimitException extends ApiException {
-  RateLimitException(String message, {dynamic originalError})
-      : super(message, statusCode: 429, code: 'RATE_LIMIT', originalError: originalError);
+  RateLimitException(super.message, {super.originalError})
+      : super(statusCode: 429, code: 'RATE_LIMIT');
 }
 
 class ServerException extends ApiException {
-  ServerException(String message, {dynamic originalError})
-      : super(message, statusCode: 500, code: 'SERVER_ERROR', originalError: originalError);
+  ServerException(super.message, {super.originalError})
+      : super(statusCode: 500, code: 'SERVER_ERROR');
 }
 
 /// Validation exceptions
 class ValidationException extends AppException {
   final Map<String, List<String>>? errors;
 
-  ValidationException(String message, {this.errors, dynamic originalError})
-      : super(message, code: 'VALIDATION_ERROR', originalError: originalError);
+  ValidationException(super.message, {this.errors, super.originalError})
+      : super(code: 'VALIDATION_ERROR');
 }
 
 /// Data exceptions
 class DataException extends AppException {
-  DataException(String message, {String? code, dynamic originalError})
-      : super(message, code: code, originalError: originalError);
+  DataException(super.message, {super.code, super.originalError});
 }
 
 class ParsingException extends DataException {
-  ParsingException(String message, {dynamic originalError})
-      : super(message, code: 'PARSING_ERROR', originalError: originalError);
+  ParsingException(super.message, {super.originalError})
+      : super(code: 'PARSING_ERROR');
 }
 
 /// File exceptions
 class FileException extends AppException {
-  FileException(String message, {String? code, dynamic originalError})
-      : super(message, code: code, originalError: originalError);
+  FileException(super.message, {super.code, super.originalError});
 }
 
 class FileUploadException extends FileException {
-  FileUploadException(String message, {dynamic originalError})
-      : super(message, code: 'UPLOAD_ERROR', originalError: originalError);
+  FileUploadException(super.message, {super.originalError})
+      : super(code: 'UPLOAD_ERROR');
 }

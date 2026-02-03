@@ -17,7 +17,7 @@ from backend.api.middleware.security_headers import SecurityHeadersMiddleware
 
 async def test_security_headers_middleware():
     """Test the SecurityHeadersMiddleware directly"""
-    
+
     # Create mock app that returns a simple response
     async def mock_app(scope, receive, send):
         if scope["type"] == "http":
@@ -32,7 +32,7 @@ async def test_security_headers_middleware():
                 "type": "http.response.body",
                 "body": b'{"message": "test"}',
             })
-    
+
     # Create test scope
     scope = {
         "type": "http",
@@ -42,30 +42,30 @@ async def test_security_headers_middleware():
         "query_string": b"",
         "raw_path": b"/health",
     }
-    
+
     # Create test receive and send
     receive = MagicMock()
-    
+
     captured_response = None
     async def send(message):
         nonlocal captured_response
         captured_response = message
-    
+
     # Create and test middleware
     middleware = SecurityHeadersMiddleware(mock_app)
     await middleware(scope, receive, send)
-    
+
     # Verify security headers are present
     if captured_response:
         print("Testing SecurityHeadersMiddleware...")
         print(f"Response type: {captured_response['type']}")
-        
+
         if "headers" in captured_response:
             headers = {k.decode('utf-8'): v.decode('utf-8') for k, v in captured_response['headers']}
             print("\nHeaders received:")
             for name, value in headers.items():
                 print(f"  {name}: {value}")
-            
+
             # Check required headers
             required_headers = [
                 "content-security-policy",
@@ -74,7 +74,7 @@ async def test_security_headers_middleware():
                 "x-content-type-options",
                 "referrer-policy",
             ]
-            
+
             print("\nChecking required security headers:")
             all_passed = True
             for header in required_headers:
@@ -83,7 +83,7 @@ async def test_security_headers_middleware():
                 else:
                     print(f"✗ {header}")
                     all_passed = False
-            
+
             print()
             if all_passed:
                 print("✅ All security headers are correctly set!")

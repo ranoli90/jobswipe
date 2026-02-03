@@ -2,7 +2,6 @@
 Tests for the job ingestion service with free, open-source job sources.
 """
 
-import asyncio
 import os
 import sys
 

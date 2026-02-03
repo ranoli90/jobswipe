@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../core/di/service_locator.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../bloc/auth/auth_bloc.dart';
 import '../../bloc/profile/profile_bloc.dart';
-import '../../../models/profile.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -63,10 +61,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _addSkill(String skill) {
     // Skills are stored in Profile, not User - skip for now
     _skillsController.clear();
-  }
-
-  void _removeSkill(String skill) {
-    // Skills are stored in Profile, not User - skip for now
   }
 
   Future<void> _handleUploadResume() async {
@@ -217,7 +211,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           children: [
                             CircleAvatar(
                               radius: 50,
-                              backgroundColor: AppColors.primary.withOpacity(0.1),
+                              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                               child: Text(
                                 (user.fullName?.isNotEmpty == true ? user.fullName! : user.email ?? 'U')
                                     .split(' ')
@@ -482,46 +476,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         fillColor: !enabled ? AppColors.background : null,
       ),
       validator: validator,
-    );
-  }
-
-  Widget _buildExperienceCard(dynamic exp) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppTokens.spacingMd),
-      padding: const EdgeInsets.all(AppTokens.spacingMd),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            exp['title'] ?? 'Position',
-            style: AppTypography.titleMedium.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            exp['company'] ?? 'Company',
-            style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
-            ),
-          ),
-          if (exp['start_date'] != null)
-            Padding(
-              padding: const EdgeInsets.only(top: AppTokens.spacingSm),
-              child: Text(
-                '${exp['start_date']} - ${exp['end_date'] ?? 'Present'}',
-                style: AppTypography.bodySmall.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ),
-        ],
-      ),
     );
   }
 

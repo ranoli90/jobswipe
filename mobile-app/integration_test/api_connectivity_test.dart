@@ -4,7 +4,7 @@ import 'package:jobswipe/main.dart' as app;
 import 'package:jobswipe/core/di/service_locator.dart' as di;
 import 'package:jobswipe/core/datasources/remote/api_client.dart';
 import 'package:jobswipe/core/datasources/remote/api_endpoints.dart';
-import 'package:jobswipe/core/data/auth_repository.dart';
+import 'package:jobswipe/core/repositories/auth_repository.dart';
 import 'package:get_it/get_it.dart';
 
 void main() {

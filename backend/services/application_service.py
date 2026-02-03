@@ -7,11 +7,10 @@ Handles job application task management and automation.
 import logging
 import os
 import uuid
-from datetime import datetime
 from typing import Optional
 
 from backend.db.database import SessionLocal
-from backend.db.models import (ApplicationAuditLog, ApplicationTask,
+from backend.db.models import (ApplicationTask,
                                CandidateProfile, Job, User)
 from backend.workers.application_agent.agents.greenhouse import (
     ApplicationLogger, GreenhouseAgent, LeverAgent)
@@ -88,7 +87,7 @@ async def run_application_task(task_id: str, db=None):
         Boolean indicating success
     """
     resume_path = None
-    
+
     # Manage session lifecycle if not provided
     session_provided = db is not None
     if not session_provided:
@@ -152,7 +151,7 @@ async def run_application_task(task_id: str, db=None):
         # Get user email from user model
         user = db.query(User).filter(User.id == task.user_id).first()
         user_email = user.email if user else "test@example.com"
-        
+
         if job.source == "greenhouse":
             success, error = await GreenhouseAgent.apply(
                 job.apply_url,

@@ -4,8 +4,6 @@ Tests concurrent database operations under high load
 """
 
 import asyncio
-import concurrent.futures
-import threading
 import time
 from unittest.mock import MagicMock, patch
 
@@ -160,7 +158,7 @@ class TestDatabaseConnectionPoolStress:
                     conn3 = engine.connect()
                     connections.append(conn3)
                     # If we get here, the pool allowed overflow or has different behavior
-                except Exception as e:
+                except Exception:
                     # Expected when pool is exhausted
                     duration = time.time() - start_time
                     assert duration < 2  # Should fail quickly with short timeout
@@ -222,7 +220,7 @@ class TestDatabaseConnectionPoolStress:
                 if call_count <= 2:
                     # First two connections fail
                     raise psycopg2.OperationalError("Connection failed")
-                
+
 
                 # Subsequent connections succeed
                 mock_connection = MagicMock()
@@ -375,12 +373,11 @@ class TestDatabaseConnectionPoolStress:
             )
 
             async def concurrent_profile_update(user_id: int):
-                from unittest.mock import AsyncMock
 
                 from api.routers.profile import update_profile
 
                 # Mock request and user
-                mock_request = MagicMock()
+                MagicMock()
                 mock_user = MagicMock()
                 mock_user.id = f"user_{user_id}"
 
@@ -391,7 +388,7 @@ class TestDatabaseConnectionPoolStress:
 
                 try:
                     # This would normally update the profile
-                    result = await update_profile(update_data, mock_user, mock_session)
+                    await update_profile(update_data, mock_user, mock_session)
                     return True
                 except Exception:
                     return False
@@ -428,7 +425,6 @@ class TestDatabaseConnectionPoolStress:
                 conn.close()  # Return to pool
 
             # Check that connections are returned to pool
-            pool = engine.pool
             # Pool should manage connections properly
 
             # Dispose engine

@@ -73,7 +73,7 @@ class SwipeOverlay extends StatelessWidget {
       case SwipeDirection.left:
         return LinearGradient(
           colors: [
-            AppColors.error.withOpacity(0.3 * progress),
+            AppColors.error.withValues(alpha: 0.3 * progress),
             Colors.transparent,
           ],
           begin: Alignment.centerLeft,
@@ -83,7 +83,7 @@ class SwipeOverlay extends StatelessWidget {
         return LinearGradient(
           colors: [
             Colors.transparent,
-            AppColors.success.withOpacity(0.3 * progress),
+            AppColors.success.withValues(alpha: 0.3 * progress),
           ],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
@@ -92,7 +92,7 @@ class SwipeOverlay extends StatelessWidget {
         return LinearGradient(
           colors: [
             Colors.transparent,
-            AppColors.primary.withOpacity(0.3 * progress),
+            AppColors.primary.withValues(alpha: 0.3 * progress),
           ],
           begin: Alignment.bottomCenter,
           end: Alignment.topCenter,
@@ -114,11 +114,11 @@ class SwipeOverlay extends StatelessWidget {
   Color _getBackgroundColor() {
     switch (direction) {
       case SwipeDirection.left:
-        return AppColors.error.withOpacity(0.2);
+        return AppColors.error.withValues(alpha: 0.2);
       case SwipeDirection.right:
-        return AppColors.success.withOpacity(0.2);
+        return AppColors.success.withValues(alpha: 0.2);
       case SwipeDirection.up:
-        return AppColors.primary.withOpacity(0.2);
+        return AppColors.primary.withValues(alpha: 0.2);
     }
   }
 
@@ -296,7 +296,7 @@ class SwipeActionButtons extends StatelessWidget {
           shape: BoxShape.circle,
           boxShadow: AppTokens.shadowMd,
           border: Border.all(
-            color: color.withOpacity(0.3),
+            color: color.withValues(alpha: 0.3),
             width: 2,
           ),
         ),

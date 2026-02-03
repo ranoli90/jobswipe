@@ -5,7 +5,6 @@ Handles automated job applications to Greenhouse ATS.
 """
 
 import logging
-import os
 
 from playwright.async_api import async_playwright
 

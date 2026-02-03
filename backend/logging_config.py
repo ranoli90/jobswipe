@@ -10,11 +10,9 @@ Provides centralized logging with:
 - Separate loggers for different components (api, workers, services)
 """
 
-import json
 import logging
 import logging.config
 import os
-import sys
 import uuid
 from datetime import datetime
 from typing import Any, Dict, Optional
@@ -24,11 +22,11 @@ from pythonjsonlogger import jsonlogger
 
 class CorrelationIdFilter(logging.Filter):
     """Filter to add correlation ID to log records"""
-    
+
     def __init__(self, name: str = ""):
         super().__init__(name)
         self._correlation_id = None
-    
+
     def filter(self, record: logging.LogRecord) -> bool:
         # Add correlation ID if available
         if hasattr(record, "correlation_id"):
@@ -37,25 +35,25 @@ class CorrelationIdFilter(logging.Filter):
             record.correlation_id = getattr(
                 CorrelationIdFilter, "_thread_correlation_id", "unknown"
             )
-        
+
         # Add service name
         record.service = getattr(record, "service", "jobswipe")
-        
+
         # Add environment
         record.environment = os.getenv("ENVIRONMENT", "development")
-        
+
         return True
-    
+
     @classmethod
     def set_correlation_id(cls, correlation_id: str):
         """Set correlation ID for current thread"""
         cls._thread_correlation_id = correlation_id
-    
+
     @classmethod
     def get_correlation_id(cls) -> str:
         """Get correlation ID for current thread"""
         return getattr(cls, "_thread_correlation_id", "unknown")
-    
+
     @classmethod
     def clear_correlation_id(cls):
         """Clear correlation ID for current thread"""
@@ -65,35 +63,35 @@ class CorrelationIdFilter(logging.Filter):
 
 class CustomJsonFormatter(jsonlogger.JsonFormatter):
     """Custom JSON formatter with additional fields"""
-    
+
     def add_fields(self, log_record: Dict[str, Any], record: logging.LogRecord, message_dict: Dict[str, Any]):
         super().add_fields(log_record, record, message_dict)
-        
+
         # Add timestamp in ISO format
         log_record["timestamp"] = datetime.utcnow().isoformat() + "Z"
-        
+
         # Add log level
         log_record["level"] = record.levelname
-        
+
         # Add logger name
         log_record["logger"] = record.name
-        
+
         # Add correlation ID
         log_record["correlation_id"] = getattr(record, "correlation_id", "unknown")
-        
+
         # Add service name
         log_record["service"] = getattr(record, "service", "jobswipe")
-        
+
         # Add environment
         log_record["environment"] = getattr(record, "environment", "development")
-        
+
         # Add source location
         log_record["source"] = {
             "file": record.pathname,
             "line": record.lineno,
             "function": record.funcName,
         }
-        
+
         # Remove default fields that are redundant
         if "asctime" in log_record:
             del log_record["asctime"]
@@ -101,19 +99,19 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
 
 class DatadogFormatter(CustomJsonFormatter):
     """JSON formatter optimized for Datadog ingestion"""
-    
+
     def add_fields(self, log_record: Dict[str, Any], record: logging.LogRecord, message_dict: Dict[str, Any]):
         super().add_fields(log_record, record, message_dict)
-        
+
         # Datadog-specific fields
         log_record["dd.service"] = log_record.get("service", "jobswipe")
         log_record["dd.env"] = log_record.get("environment", "development")
         log_record["dd.version"] = os.getenv("APP_VERSION", "1.0.0")
-        
+
         # Map standard fields to Datadog format
         log_record["status"] = log_record.get("level", "INFO").lower()
         log_record["message"] = log_record.get("message", "")
-        
+
         # Add trace correlation if available
         trace_id = os.getenv("DD_TRACE_ID")
         span_id = os.getenv("DD_SPAN_ID")
@@ -125,20 +123,20 @@ class DatadogFormatter(CustomJsonFormatter):
 
 class ELKFormatter(CustomJsonFormatter):
     """JSON formatter optimized for ELK stack ingestion"""
-    
+
     def add_fields(self, log_record: Dict[str, Any], record: logging.LogRecord, message_dict: Dict[str, Any]):
         super().add_fields(log_record, record, message_dict)
-        
+
         # ELK-specific fields
         log_record["@timestamp"] = log_record.get("timestamp")
         log_record["@version"] = "1"
-        
+
         # ECS (Elastic Common Schema) fields
         log_record["ecs.version"] = "1.12.0"
         log_record["event.dataset"] = log_record.get("service", "jobswipe")
         log_record["service.name"] = log_record.get("service", "jobswipe")
         log_record["service.environment"] = log_record.get("environment", "development")
-        
+
         # Log level mapping
         log_record["log.level"] = log_record.get("level", "INFO")
         log_record["log.logger"] = log_record.get("logger", "root")
@@ -147,24 +145,24 @@ class ELKFormatter(CustomJsonFormatter):
 def get_log_level() -> str:
     """Get log level from environment"""
     env = os.getenv("ENVIRONMENT", "development")
-    
+
     # Default log levels per environment
     default_levels = {
         "development": "DEBUG",
         "staging": "INFO",
         "production": "WARNING",
     }
-    
+
     return os.getenv("LOG_LEVEL", default_levels.get(env, "INFO"))
 
 
 def get_logging_config() -> Dict[str, Any]:
     """Get logging configuration based on environment"""
-    
+
     env = os.getenv("ENVIRONMENT", "development")
     log_level = get_log_level()
     log_format = os.getenv("LOG_FORMAT", "json")  # json, text, datadog, elk
-    
+
     # Base configuration
     config = {
         "version": 1,
@@ -293,7 +291,7 @@ def get_logging_config() -> Dict[str, Any]:
             },
         },
     }
-    
+
     # Add ELK-specific handlers if enabled
     if os.getenv("ELK_ENABLED", "false").lower() == "true":
         config["handlers"]["logstash"] = {
@@ -303,12 +301,12 @@ def get_logging_config() -> Dict[str, Any]:
             "formatter": "elk",
             "filters": ["correlation_id"],
         }
-        
+
         # Add logstash handler to all loggers
         for logger_name in config["loggers"]:
             if "logstash" not in config["loggers"][logger_name]["handlers"]:
                 config["loggers"][logger_name]["handlers"].append("logstash")
-    
+
     # Add Datadog-specific handlers if enabled
     if os.getenv("DATADOG_ENABLED", "false").lower() == "true":
         config["handlers"]["datadog"] = {
@@ -318,11 +316,11 @@ def get_logging_config() -> Dict[str, Any]:
             "stream": "ext://sys.stdout",
             "filters": ["correlation_id"],
         }
-        
+
         # Use datadog formatter for console in production
         if env == "production":
             config["handlers"]["console"]["formatter"] = "datadog"
-    
+
     return config
 
 
@@ -333,21 +331,21 @@ def setup_logging():
     log_dir = os.path.dirname(log_file)
     if log_dir and not os.path.exists(log_dir):
         os.makedirs(log_dir, exist_ok=True)
-    
+
     # Ensure security log directory exists
     security_log_dir = os.path.dirname("logs/security.log")
     if security_log_dir and not os.path.exists(security_log_dir):
         os.makedirs(security_log_dir, exist_ok=True)
-    
+
     # Ensure error log directory exists
     error_log_dir = os.path.dirname("logs/error.log")
     if error_log_dir and not os.path.exists(error_log_dir):
         os.makedirs(error_log_dir, exist_ok=True)
-    
+
     # Apply configuration
     config = get_logging_config()
     logging.config.dictConfig(config)
-    
+
     # Log startup
     logger = logging.getLogger("api")
     logger.info(
@@ -386,16 +384,16 @@ def clear_correlation_id():
 
 class LogContext:
     """Context manager for correlation ID"""
-    
+
     def __init__(self, correlation_id: Optional[str] = None):
         self.correlation_id = correlation_id or str(uuid.uuid4())
         self.previous_id = None
-    
+
     def __enter__(self):
         self.previous_id = CorrelationIdFilter.get_correlation_id()
         CorrelationIdFilter.set_correlation_id(self.correlation_id)
         return self.correlation_id
-    
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.previous_id != "unknown":
             CorrelationIdFilter.set_correlation_id(self.previous_id)

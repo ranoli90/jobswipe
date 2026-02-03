@@ -4,7 +4,6 @@ Jobs Router Tests
 Tests for jobs endpoints.
 """
 
-import pytest
 from fastapi.testclient import TestClient
 
 

@@ -17,7 +17,7 @@ from jose import jwt
 
 from backend.config import settings
 from backend.db.database import async_session
-from backend.db.models import DeviceToken, Notification, User
+from backend.db.models import DeviceToken
 from backend.services.notification_service import NotificationService
 
 logger = logging.getLogger(__name__)
@@ -143,7 +143,7 @@ class APNsClient:
         try:
             # Calculate token expiration (max 1 hour)
             now = datetime.now(timezone.utc)
-            expiry = now + timedelta(hours=1)
+            now + timedelta(hours=1)
 
             # Create JWT payload for APNs
             payload = {
@@ -299,7 +299,7 @@ class PushNotificationService:
                 if isinstance(result, Exception):
                     logger.error("Failed to send to %s: %s", ('user_id', 'result'))
                     results[user_id] = []
-                
+
 
                 results[user_id] = result
 
@@ -353,7 +353,7 @@ class PushNotificationService:
                         last_used=datetime.now(timezone.utc),
                     )
                 )
-            
+
 
             # Create new token
             device = DeviceToken(

@@ -78,7 +78,7 @@ class ApiKeyService:
         # Look up by prefix first (fast index lookup)
         api_key = (
             self.db.query(ApiKey)
-            .filter(ApiKey.key_prefix == prefix, ApiKey.is_active == True)
+            .filter(ApiKey.key_prefix == prefix, ApiKey.is_active)
             .first()
         )
 
@@ -141,7 +141,7 @@ class ApiKeyService:
             raise ValueError(
                 f"Invalid service_type. Must be one of: {VALID_SERVICE_TYPES}"
             )
-            
+
         # Generate new key
         display_key, key_hash = self.generate_key()
         prefix = display_key[: self.KEY_PREFIX_LENGTH]
@@ -254,7 +254,7 @@ class ApiKeyService:
             query = query.filter(ApiKey.service_type == service_type)
 
         if active_only:
-            query = query.filter(ApiKey.is_active == True)
+            query = query.filter(ApiKey.is_active)
 
         return query.order_by(ApiKey.created_at.desc()).all()
 

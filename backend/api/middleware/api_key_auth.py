@@ -4,8 +4,11 @@ API Key Authentication Middleware
 Validates API keys for internal service requests.
 """
 
+import logging
 import time
 from typing import Callable, Optional
+
+logger = logging.getLogger(__name__)
 
 from fastapi import HTTPException, Request, status
 from fastapi.responses import JSONResponse
@@ -175,7 +178,7 @@ class ApiKeyAuthMiddleware(BaseHTTPMiddleware):
                     user_agent=user_agent,
                     error_type=error_type,
                 )
-            except Exception as e:
+            except Exception:
                 # Don't fail the request if logging fails
                 pass
 

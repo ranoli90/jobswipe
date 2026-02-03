@@ -8,26 +8,14 @@ for the monitoring dashboard.
 import logging
 import time
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import psutil
-from prometheus_client import Gauge, Histogram, Counter
+from prometheus_client import Gauge
 
 from backend.config import Settings, get_settings
 from backend.db.database import get_db
-from backend.db.models import Job, ApplicationTask, User
-from backend.metrics import (
-    api_requests_total,
-    api_request_duration,
-    applications_submitted_total,
-    jobs_ingested_total,
-    job_matching_requests_total,
-    users_registered_total,
-    auth_login_attempts_total,
-    celery_tasks_total,
-    database_connections_active,
-    redis_memory_used,
-)
+from backend.db.models import Application, Job, User
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 

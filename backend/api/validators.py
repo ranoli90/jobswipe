@@ -5,7 +5,6 @@ Common Pydantic validators for input sanitization and validation
 import html
 import logging
 import re
-from typing import Any
 
 from pydantic import validator
 

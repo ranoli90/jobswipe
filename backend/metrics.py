@@ -837,7 +837,7 @@ class MetricsMiddleware:
 
         # Increment request queue length when request arrives
         request_queue_length.inc()
-        
+
         start_time = time.time()
         method = scope["method"]
         path = scope["path"]

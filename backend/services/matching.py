@@ -4,13 +4,10 @@ Job Matching Service
 Handles job recommendations and matching using hybrid BM25 + embeddings + rule-based approach.
 """
 
-import json
 import logging
-import math
 import time
-from collections import Counter, defaultdict
-from functools import lru_cache
-from typing import Dict, List, Optional, Tuple
+from collections import Counter
+from typing import Dict, List, Optional
 
 import uuid
 

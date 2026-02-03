@@ -10,7 +10,7 @@ This service handles CAPTCHA detection and resolution using various methods:
 import base64
 import logging
 import os
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 import requests
 

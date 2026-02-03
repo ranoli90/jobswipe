@@ -36,4 +36,12 @@ class CacheService {
   Future<void> clear() async {
     await _prefs.clear();
   }
+
+  Future<void> setOnboardingCompleted(bool completed) async {
+    await _prefs.setBool('onboarding_completed', completed);
+  }
+
+  bool getOnboardingCompleted() {
+    return _prefs.getBool('onboarding_completed') ?? false;
+  }
 }

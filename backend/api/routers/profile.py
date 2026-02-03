@@ -5,14 +5,12 @@ Handles candidate profile management including resume upload and parsing.
 """
 
 import logging
-import os
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
-from backend.api.middleware.file_validation import validate_resume_file
 from backend.api.routers.auth import get_current_user
 from backend.api.validators import (name_validator, phone_validator,
                                     string_validator)
@@ -24,6 +22,36 @@ from backend.services.storage import upload_file
 router = APIRouter()
 
 logger = logging.getLogger(__name__)
+
+# Allowed file extensions and max size for resume uploads
+ALLOWED_EXTENSIONS = {".pdf", ".doc", ".docx"}
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+
+
+async def validate_file_upload(file: UploadFile) -> None:
+    """Validate file upload for resume."""
+    if not file.filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No filename provided"
+        )
+
+    # Check file extension
+    ext = "." + file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid file type. Allowed: {', '.join(ALLOWED_EXTENSIONS)}"
+        )
+
+    # Check file size (read and reset)
+    content = await file.read()
+    await file.seek(0)
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"File too large. Maximum size: {MAX_FILE_SIZE // (1024 * 1024)}MB"
+        )
 
 
 class CandidateProfilePreferences(BaseModel):
@@ -68,8 +96,7 @@ class CandidateProfileResponse(BaseModel):
     parsed_at: Optional[str]
     preferences: Optional[CandidateProfilePreferences] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @classmethod
     def from_orm(cls, profile):
@@ -144,7 +171,7 @@ async def upload_resume(
 
         return CandidateProfileResponse.from_orm(profile)
 
-    except Exception as e:
+    except Exception:
         logger.error("Error uploading resume for user %s: %s", ('current_user.id', 'str(e)'))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

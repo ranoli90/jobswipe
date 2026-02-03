@@ -339,7 +339,7 @@ class EmbeddingQueue:
                 "Requeued embedding task for retry: %s (attempt %s)", task_id, retry_count + 1
             )
             return True
-        
+
 
         # Mark as failed
         task.status = TaskStatus.FAILED
@@ -439,7 +439,7 @@ class EmbeddingQueue:
 
                 if task:
                     await self._process_task(task, embedding_service)
-                
+
 
                 # No tasks available, wait
                 await asyncio.sleep(0.1)

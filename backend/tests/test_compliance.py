@@ -12,7 +12,7 @@ Unit and integration tests for GDPR and CCPA compliance features including:
 import json
 import uuid
 from datetime import datetime, timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
@@ -22,13 +22,8 @@ from backend.db.models import (
     User,
     CandidateProfile,
     UserJobInteraction,
-    ApplicationTask,
-    Notification,
-    UserConsent,
     DataExportRequest,
-    DataDeletionRequest,
     ComplianceAuditLog,
-    CookieConsent,
 )
 from backend.services.compliance_service import (
     ComplianceService,
@@ -37,7 +32,6 @@ from backend.services.compliance_service import (
     ExportStatus,
     DeletionStatus,
     ComplianceAction,
-    get_compliance_service,
 )
 
 
@@ -101,7 +95,7 @@ def test_user_with_profile(db_session: Session, test_user: User) -> User:
 def test_user_with_interactions(db_session: Session, test_user: User) -> User:
     """Create a test user with job interactions"""
     from backend.db.models import Job
-    
+
     # Create a test job
     job = Job(
         id=uuid.uuid4(),
@@ -113,7 +107,7 @@ def test_user_with_interactions(db_session: Session, test_user: User) -> User:
     )
     db_session.add(job)
     db_session.commit()
-    
+
     # Create interactions
     interaction = UserJobInteraction(
         id=uuid.uuid4(),
@@ -125,7 +119,7 @@ def test_user_with_interactions(db_session: Session, test_user: User) -> User:
     )
     db_session.add(interaction)
     db_session.commit()
-    
+
     return test_user
 
 
@@ -133,7 +127,7 @@ def test_user_with_interactions(db_session: Session, test_user: User) -> User:
 
 class TestDataExport:
     """Tests for data export functionality (GDPR Article 20)"""
-    
+
     def test_request_data_export_creates_request(
         self,
         compliance_service: ComplianceService,
@@ -145,13 +139,13 @@ class TestDataExport:
             format="json",
             ip_address="127.0.0.1",
         )
-        
+
         assert export_request is not None
         assert export_request.user_id == test_user.id
         assert export_request.status == ExportStatus.PENDING
         assert export_request.format == "json"
         assert export_request.ip_address == "127.0.0.1"
-    
+
     def test_request_data_export_returns_existing_pending(
         self,
         compliance_service: ComplianceService,
@@ -163,15 +157,15 @@ class TestDataExport:
             user_id=test_user.id,
             format="json",
         )
-        
+
         # Create second request
         second_request = compliance_service.request_data_export(
             user_id=test_user.id,
             format="json",
         )
-        
+
         assert first_request.id == second_request.id
-    
+
     def test_process_data_export_completes_request(
         self,
         compliance_service: ComplianceService,
@@ -184,18 +178,18 @@ class TestDataExport:
             user_id=test_user_with_profile.id,
             format="json",
         )
-        
+
         # Process the export
         result = compliance_service.process_data_export(export_request.id)
-        
+
         assert result is not None
-        
+
         # Refresh from database
         db_session.refresh(export_request)
         assert export_request.status == ExportStatus.COMPLETED
         assert export_request.completed_at is not None
         assert export_request.export_data is not None
-    
+
     def test_process_data_export_includes_all_data(
         self,
         compliance_service: ComplianceService,
@@ -208,11 +202,11 @@ class TestDataExport:
             user_id=test_user_with_profile.id,
             format="json",
         )
-        
+
         # Process the export
         export_data = compliance_service.process_data_export(export_request.id)
         data = json.loads(export_data)
-        
+
         # Check all expected keys are present
         assert "export_metadata" in data
         assert "user_account" in data
@@ -225,7 +219,7 @@ class TestDataExport:
         assert "notification_preferences" in data
         assert "consent_history" in data
         assert "login_history" in data
-    
+
     def test_get_export_download_returns_data(
         self,
         compliance_service: ComplianceService,
@@ -239,13 +233,13 @@ class TestDataExport:
             format="json",
         )
         compliance_service.process_data_export(export_request.id)
-        
+
         # Get download
         data = compliance_service.get_export_download(export_request.id, test_user.id)
-        
+
         assert data is not None
         assert isinstance(data, str)
-    
+
     def test_get_export_download_returns_none_for_expired(
         self,
         compliance_service: ComplianceService,
@@ -261,10 +255,10 @@ class TestDataExport:
         export_request.expires_at = datetime.utcnow() - timedelta(days=1)
         export_request.status = ExportStatus.COMPLETED
         db_session.commit()
-        
+
         # Get download should return None
         data = compliance_service.get_export_download(export_request.id, test_user.id)
-        
+
         assert data is None
 
 
@@ -272,7 +266,7 @@ class TestDataExport:
 
 class TestDataDeletion:
     """Tests for data deletion functionality (GDPR Article 17 / CCPA)"""
-    
+
     def test_request_data_deletion_creates_request(
         self,
         compliance_service: ComplianceService,
@@ -284,13 +278,13 @@ class TestDataDeletion:
             reason="No longer need service",
             ip_address="127.0.0.1",
         )
-        
+
         assert deletion_request is not None
         assert deletion_request.user_id == test_user.id
         assert deletion_request.status == DeletionStatus.PENDING
         assert deletion_request.reason == "No longer need service"
         assert deletion_request.grace_period_end is not None
-    
+
     def test_request_data_deletion_returns_existing_pending(
         self,
         compliance_service: ComplianceService,
@@ -300,13 +294,13 @@ class TestDataDeletion:
         first_request = compliance_service.request_data_deletion(
             user_id=test_user.id,
         )
-        
+
         second_request = compliance_service.request_data_deletion(
             user_id=test_user.id,
         )
-        
+
         assert first_request.id == second_request.id
-    
+
     def test_process_data_deletion_anonymizes_user(
         self,
         compliance_service: ComplianceService,
@@ -315,23 +309,23 @@ class TestDataDeletion:
     ):
         """Test that deletion anonymizes user data"""
         original_email = test_user_with_profile.email
-        
+
         # Create deletion request
         deletion_request = compliance_service.request_data_deletion(
             user_id=test_user_with_profile.id,
         )
-        
+
         # Process deletion
         success = compliance_service.process_data_deletion(deletion_request.id)
-        
+
         assert success is True
-        
+
         # Refresh user from database
         db_session.refresh(test_user_with_profile)
         assert test_user_with_profile.status == "deleted"
         assert test_user_with_profile.email != original_email
         assert "@deleted.jobswipe" in test_user_with_profile.email
-    
+
     def test_process_data_deletion_anonymizes_profile(
         self,
         compliance_service: ComplianceService,
@@ -343,19 +337,19 @@ class TestDataDeletion:
         deletion_request = compliance_service.request_data_deletion(
             user_id=test_user_with_profile.id,
         )
-        
+
         # Process deletion
         compliance_service.process_data_deletion(deletion_request.id)
-        
+
         # Refresh profile from database
         db_session.refresh(test_user_with_profile.profile)
         profile = test_user_with_profile.profile
-        
+
         assert profile.full_name == "Deleted User"
         assert profile.phone is None
         assert profile.work_experience is None
         assert profile.education is None
-    
+
     def test_cancel_deletion_request_cancels_pending(
         self,
         compliance_service: ComplianceService,
@@ -367,15 +361,15 @@ class TestDataDeletion:
         deletion_request = compliance_service.request_data_deletion(
             user_id=test_user.id,
         )
-        
+
         # Cancel the request
         success = compliance_service.cancel_deletion_request(
             deletion_request_id=deletion_request.id,
             user_id=test_user.id,
         )
-        
+
         assert success is True
-        
+
         # Refresh from database
         db_session.refresh(deletion_request)
         assert deletion_request.status == DeletionStatus.COMPLETED
@@ -385,7 +379,7 @@ class TestDataDeletion:
 
 class TestConsentManagement:
     """Tests for consent management functionality"""
-    
+
     def test_get_user_consents_returns_all_types(
         self,
         compliance_service: ComplianceService,
@@ -393,11 +387,11 @@ class TestConsentManagement:
     ):
         """Test that get_user_consents returns all consent types"""
         consents = compliance_service.get_user_consents(test_user.id)
-        
+
         # Should include all consent types
         for consent_type in ConsentType:
             assert consent_type.value in consents
-    
+
     def test_update_consent_creates_record(
         self,
         compliance_service: ComplianceService,
@@ -411,13 +405,13 @@ class TestConsentManagement:
             granted=True,
             ip_address="127.0.0.1",
         )
-        
+
         assert consent is not None
         assert consent.user_id == test_user.id
         assert consent.consent_type == ConsentType.MARKETING_EMAILS.value
         assert consent.status == ConsentStatus.GRANTED
         assert consent.granted_at is not None
-    
+
     def test_update_consent_revokes_consent(
         self,
         compliance_service: ComplianceService,
@@ -431,17 +425,17 @@ class TestConsentManagement:
             consent_type=ConsentType.ANALYTICS_COOKIES,
             granted=True,
         )
-        
+
         # Revoke consent
         consent = compliance_service.update_consent(
             user_id=test_user.id,
             consent_type=ConsentType.ANALYTICS_COOKIES,
             granted=False,
         )
-        
+
         assert consent.status == ConsentStatus.REVOKED
         assert consent.revoked_at is not None
-    
+
     def test_has_consent_returns_true_when_granted(
         self,
         compliance_service: ComplianceService,
@@ -454,15 +448,15 @@ class TestConsentManagement:
             consent_type=ConsentType.MARKETING_EMAILS,
             granted=True,
         )
-        
+
         # Check consent
         has_consent = compliance_service.has_consent(
             user_id=test_user.id,
             consent_type=ConsentType.MARKETING_EMAILS,
         )
-        
+
         assert has_consent is True
-    
+
     def test_has_consent_returns_false_when_revoked(
         self,
         compliance_service: ComplianceService,
@@ -480,15 +474,15 @@ class TestConsentManagement:
             consent_type=ConsentType.MARKETING_EMAILS,
             granted=False,
         )
-        
+
         # Check consent
         has_consent = compliance_service.has_consent(
             user_id=test_user.id,
             consent_type=ConsentType.MARKETING_EMAILS,
         )
-        
+
         assert has_consent is False
-    
+
     def test_has_consent_returns_false_when_no_record(
         self,
         compliance_service: ComplianceService,
@@ -499,7 +493,7 @@ class TestConsentManagement:
             user_id=test_user.id,
             consent_type=ConsentType.THIRD_PARTY_SHARING,
         )
-        
+
         assert has_consent is False
 
 
@@ -507,7 +501,7 @@ class TestConsentManagement:
 
 class TestAuditLogging:
     """Tests for compliance audit logging"""
-    
+
     def test_export_request_creates_audit_log(
         self,
         compliance_service: ComplianceService,
@@ -519,13 +513,13 @@ class TestAuditLogging:
             user_id=test_user.id,
             format="json",
         )
-        
+
         # Check audit log
         logs = compliance_service.get_audit_logs(user_id=test_user.id)
-        
+
         assert len(logs) > 0
         assert any(log.action == ComplianceAction.DATA_EXPORT_REQUESTED.value for log in logs)
-    
+
     def test_deletion_request_creates_audit_log(
         self,
         compliance_service: ComplianceService,
@@ -536,12 +530,12 @@ class TestAuditLogging:
         compliance_service.request_data_deletion(
             user_id=test_user.id,
         )
-        
+
         # Check audit log
         logs = compliance_service.get_audit_logs(user_id=test_user.id)
-        
+
         assert any(log.action == ComplianceAction.DATA_DELETION_REQUESTED.value for log in logs)
-    
+
     def test_consent_update_creates_audit_log(
         self,
         compliance_service: ComplianceService,
@@ -554,12 +548,12 @@ class TestAuditLogging:
             consent_type=ConsentType.MARKETING_EMAILS,
             granted=True,
         )
-        
+
         # Check audit log
         logs = compliance_service.get_audit_logs(user_id=test_user.id)
-        
+
         assert any(log.action == ComplianceAction.CONSENT_GRANTED.value for log in logs)
-    
+
     def test_get_audit_logs_filters_by_user(
         self,
         compliance_service: ComplianceService,
@@ -572,11 +566,11 @@ class TestAuditLogging:
             user_id=test_user.id,
             action=ComplianceAction.DATA_EXPORT_REQUESTED,
         )
-        
+
         # Get logs for different user
         different_user_id = uuid.uuid4()
         logs = compliance_service.get_audit_logs(user_id=different_user_id)
-        
+
         assert len(logs) == 0
 
 
@@ -584,7 +578,7 @@ class TestAuditLogging:
 
 class TestDataRetention:
     """Tests for data retention policy enforcement"""
-    
+
     def test_enforce_retention_deletes_expired_exports(
         self,
         compliance_service: ComplianceService,
@@ -604,15 +598,15 @@ class TestDataRetention:
         )
         db_session.add(old_export)
         db_session.commit()
-        
+
         # Enforce retention
-        counts = compliance_service.enforce_retention_policies()
-        
+        compliance_service.enforce_retention_policies()
+
         # Refresh from database
         db_session.refresh(old_export)
         assert old_export.export_data is None
         assert old_export.status == ExportStatus.EXPIRED
-    
+
     def test_enforce_retention_deletes_old_audit_logs(
         self,
         compliance_service: ComplianceService,
@@ -629,13 +623,13 @@ class TestDataRetention:
         )
         db_session.add(old_log)
         db_session.commit()
-        
+
         # Enforce retention
         counts = compliance_service.enforce_retention_policies()
-        
+
         # Check that old log was deleted
         assert counts["audit_logs"] > 0
-    
+
     def test_enforce_retention_deletes_old_login_attempts(
         self,
         compliance_service: ComplianceService,
@@ -644,7 +638,7 @@ class TestDataRetention:
     ):
         """Test that retention enforcement deletes old failed login attempts"""
         from backend.db.models import FailedLoginAttempt
-        
+
         # Create an old login attempt
         old_attempt = FailedLoginAttempt(
             id=uuid.uuid4(),
@@ -655,10 +649,10 @@ class TestDataRetention:
         )
         db_session.add(old_attempt)
         db_session.commit()
-        
+
         # Enforce retention
         counts = compliance_service.enforce_retention_policies()
-        
+
         # Check that old attempt was deleted
         assert counts["failed_login_attempts"] > 0
 
@@ -667,51 +661,51 @@ class TestDataRetention:
 
 class TestComplianceAPI:
     """Integration tests for compliance API endpoints"""
-    
+
     def test_get_privacy_policy_info(self, client: TestClient):
         """Test GET /compliance/privacy-policy endpoint"""
         response = client.get("/api/v1/compliance/privacy-policy")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "version" in data
         assert "legal_bases" in data
         assert "user_rights" in data
-    
+
     def test_get_data_retention_info(self, client: TestClient):
         """Test GET /compliance/data-retention endpoint"""
         response = client.get("/api/v1/compliance/data-retention")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "version" in data
         assert "retention_periods" in data
-    
+
     def test_get_consent_status_requires_auth(self, client: TestClient):
         """Test that GET /compliance/consent requires authentication"""
         response = client.get("/api/v1/compliance/consent")
-        
+
         assert response.status_code == 401
-    
+
     def test_update_consent_requires_auth(self, client: TestClient):
         """Test that POST /compliance/consent requires authentication"""
         response = client.post(
             "/api/v1/compliance/consent",
             json={"consent_type": "marketing_emails", "granted": True},
         )
-        
+
         assert response.status_code == 401
-    
+
     def test_request_export_requires_auth(self, client: TestClient):
         """Test that POST /compliance/export/request requires authentication"""
         response = client.post("/api/v1/compliance/export/request")
-        
+
         assert response.status_code == 401
-    
+
     def test_request_deletion_requires_auth(self, client: TestClient):
         """Test that POST /compliance/deletion/request requires authentication"""
         response = client.post("/api/v1/compliance/deletion/request")
-        
+
         assert response.status_code == 401
 
 
@@ -719,14 +713,14 @@ class TestComplianceAPI:
 
 class TestPrivacyInfo:
     """Tests for privacy policy and data retention information"""
-    
+
     def test_get_privacy_policy_info_structure(
         self,
         compliance_service: ComplianceService,
     ):
         """Test that privacy policy info has correct structure"""
         info = compliance_service.get_privacy_policy_info()
-        
+
         assert "version" in info
         assert "last_updated" in info
         assert "contact_email" in info
@@ -736,20 +730,20 @@ class TestPrivacyInfo:
         assert "gdpr" in info["user_rights"]
         assert "ccpa" in info["user_rights"]
         assert "cookies" in info
-    
+
     def test_get_data_retention_info_structure(
         self,
         compliance_service: ComplianceService,
     ):
         """Test that data retention info has correct structure"""
         info = compliance_service.get_data_retention_info()
-        
+
         assert "version" in info
         assert "last_updated" in info
         assert "retention_periods" in info
         assert "automatic_deletion" in info
         assert "deletion_schedule" in info
-        
+
         # Check retention periods
         periods = info["retention_periods"]
         assert "account_data" in periods
@@ -762,55 +756,55 @@ class TestPrivacyInfo:
 
 class TestCookieConsentMiddleware:
     """Tests for cookie consent middleware"""
-    
+
     def test_essential_cookies_always_allowed(self):
         """Test that essential cookies are always allowed"""
         from backend.api.middleware.cookie_consent import CookieConsentMiddleware
-        
+
         middleware = CookieConsentMiddleware(MagicMock())
         consent = {"essential": True, "analytics": False, "marketing": False}
-        
+
         for cookie in middleware.ESSENTIAL_COOKIES:
             if not cookie.endswith("*"):
                 assert middleware._is_cookie_allowed(cookie, consent) is True
-    
+
     def test_analytics_cookies_blocked_without_consent(self):
         """Test that analytics cookies are blocked without consent"""
         from backend.api.middleware.cookie_consent import CookieConsentMiddleware
-        
+
         middleware = CookieConsentMiddleware(MagicMock())
         consent = {"essential": True, "analytics": False, "marketing": False}
-        
+
         for cookie in ["_ga", "_gid"]:
             assert middleware._is_cookie_allowed(cookie, consent) is False
-    
+
     def test_analytics_cookies_allowed_with_consent(self):
         """Test that analytics cookies are allowed with consent"""
         from backend.api.middleware.cookie_consent import CookieConsentMiddleware
-        
+
         middleware = CookieConsentMiddleware(MagicMock())
         consent = {"essential": True, "analytics": True, "marketing": False}
-        
+
         for cookie in ["_ga", "_gid"]:
             assert middleware._is_cookie_allowed(cookie, consent) is True
-    
+
     def test_marketing_cookies_blocked_without_consent(self):
         """Test that marketing cookies are blocked without consent"""
         from backend.api.middleware.cookie_consent import CookieConsentMiddleware
-        
+
         middleware = CookieConsentMiddleware(MagicMock())
         consent = {"essential": True, "analytics": False, "marketing": False}
-        
+
         assert middleware._is_cookie_allowed("_fbp", consent) is False
         assert middleware._is_cookie_allowed("fr", consent) is False
-    
+
     def test_marketing_cookies_allowed_with_consent(self):
         """Test that marketing cookies are allowed with consent"""
         from backend.api.middleware.cookie_consent import CookieConsentMiddleware
-        
+
         middleware = CookieConsentMiddleware(MagicMock())
         consent = {"essential": True, "analytics": False, "marketing": True}
-        
+
         assert middleware._is_cookie_allowed("_fbp", consent) is True
         assert middleware._is_cookie_allowed("fr", consent) is True
 
@@ -819,7 +813,7 @@ class TestCookieConsentMiddleware:
 
 class TestEdgeCases:
     """Tests for edge cases and error handling"""
-    
+
     def test_process_export_for_nonexistent_request(
         self,
         compliance_service: ComplianceService,
@@ -827,7 +821,7 @@ class TestEdgeCases:
         """Test that processing non-existent export returns None"""
         result = compliance_service.process_data_export(uuid.uuid4())
         assert result is None
-    
+
     def test_process_deletion_for_nonexistent_request(
         self,
         compliance_service: ComplianceService,
@@ -835,7 +829,7 @@ class TestEdgeCases:
         """Test that processing non-existent deletion returns False"""
         result = compliance_service.process_data_deletion(uuid.uuid4())
         assert result is False
-    
+
     def test_cancel_deletion_for_nonexistent_request(
         self,
         compliance_service: ComplianceService,
@@ -844,7 +838,7 @@ class TestEdgeCases:
         """Test that cancelling non-existent deletion returns False"""
         result = compliance_service.cancel_deletion_request(uuid.uuid4(), test_user.id)
         assert result is False
-    
+
     def test_collect_data_for_nonexistent_user(
         self,
         compliance_service: ComplianceService,
@@ -852,7 +846,7 @@ class TestEdgeCases:
         """Test that collecting data for non-existent user raises error"""
         with pytest.raises(ValueError):
             compliance_service._collect_user_data(uuid.uuid4())
-    
+
     def test_get_export_download_wrong_user(
         self,
         compliance_service: ComplianceService,
@@ -866,9 +860,9 @@ class TestEdgeCases:
             format="json",
         )
         compliance_service.process_data_export(export_request.id)
-        
+
         # Try to get download with different user ID
         wrong_user_id = uuid.uuid4()
         result = compliance_service.get_export_download(export_request.id, wrong_user_id)
-        
+
         assert result is None

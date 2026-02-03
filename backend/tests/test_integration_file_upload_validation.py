@@ -74,7 +74,7 @@ class TestFileUploadValidationIntegration:
                 mock_get_db.return_value = mock_db
 
                 # Mock profile
-                mock_profile = MagicMock()
+                MagicMock()
                 mock_db.query.return_value.filter.return_value.first.return_value = (
                     None  # No existing profile
                 )
@@ -129,7 +129,7 @@ class TestFileUploadValidationIntegration:
                 mock_db = MagicMock()
                 mock_get_db.return_value = mock_db
 
-                mock_profile = MagicMock()
+                MagicMock()
                 mock_db.query.return_value.filter.return_value.first.return_value = None
 
                 with patch("backend.services.storage.upload_file"):
@@ -247,7 +247,7 @@ class TestFileUploadValidationIntegration:
                 mock_db = MagicMock()
                 mock_get_db.return_value = mock_db
 
-                mock_profile = MagicMock()
+                MagicMock()
                 mock_db.query.return_value.filter.return_value.first.return_value = None
 
                 with patch("backend.services.storage.upload_file"):
@@ -282,7 +282,7 @@ class TestFileUploadValidationIntegration:
                 mock_db = MagicMock()
                 mock_get_db.return_value = mock_db
 
-                mock_profile = MagicMock()
+                MagicMock()
                 mock_db.query.return_value.filter.return_value.first.return_value = None
 
                 # Mock storage failure

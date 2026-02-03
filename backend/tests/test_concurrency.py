@@ -9,13 +9,10 @@ Tests cover:
 - Cache concurrency
 """
 
-import asyncio
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import List
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 
-import httpx
 import pytest
 from fastapi.testclient import TestClient
 
@@ -177,7 +174,6 @@ class TestCacheConcurrency:
     def test_concurrent_cache_reads(self, mock_redis):
         """Test concurrent cache reads don't conflict"""
         num_reads = 50
-        cache_hits = []
 
         def read_from_cache(key: str):
             # Simulate cache read
@@ -463,7 +459,6 @@ class TestResourceCleanup:
         num_iterations = 5
         requests_per_iteration = 20
 
-        initial_memory = 0  # Would track actual memory in production
 
         for iteration in range(num_iterations):
             for _ in range(requests_per_iteration):

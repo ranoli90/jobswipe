@@ -12,16 +12,14 @@ It provides:
 import json
 import logging
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any, Callable, Dict, Optional, Set
 
 from fastapi import FastAPI, Request, Response
-from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from backend.db.database import SessionLocal
 from backend.db.models import CookieConsent
 
 # Configure logging
@@ -39,14 +37,14 @@ class CookieCategory(str, Enum):
 class CookieConsentMiddleware(BaseHTTPMiddleware):
     """
     Middleware for handling cookie consent preferences.
-    
+
     This middleware:
     - Reads cookie consent preferences from request
     - Respects Do Not Track headers
     - Validates cookie consent for analytics/marketing cookies
     - Provides consent information to downstream handlers
     """
-    
+
     # Cookies that are essential and don't require consent
     ESSENTIAL_COOKIES: Set[str] = {
         "session",
@@ -56,7 +54,7 @@ class CookieConsentMiddleware(BaseHTTPMiddleware):
         "cookie_consent",  # The consent cookie itself
         "cookie_consent_id",
     }
-    
+
     # Analytics cookies that require consent
     ANALYTICS_COOKIES: Set[str] = {
         "_ga",
@@ -67,7 +65,7 @@ class CookieConsentMiddleware(BaseHTTPMiddleware):
         "amplitude_*",
         "segment_*",
     }
-    
+
     # Marketing cookies that require consent
     MARKETING_COOKIES: Set[str] = {
         "_fbp",  # Facebook Pixel
@@ -80,7 +78,7 @@ class CookieConsentMiddleware(BaseHTTPMiddleware):
         "IDE",  # DoubleClick
         "NID",
     }
-    
+
     # Preference cookies
     PREFERENCE_COOKIES: Set[str] = {
         "language",
@@ -88,56 +86,56 @@ class CookieConsentMiddleware(BaseHTTPMiddleware):
         "timezone",
         "notification_preferences",
     }
-    
+
     def __init__(self, app: FastAPI):
         super().__init__(app)
         logger.info("CookieConsentMiddleware initialized")
-    
+
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """
         Process the request and handle cookie consent.
-        
+
         Args:
             request: The incoming request
             call_next: The next middleware/handler in the chain
-            
+
         Returns:
             The response from downstream handlers
         """
         # Parse cookie consent from request
         consent = self._parse_consent(request)
-        
+
         # Check for Do Not Track header
         dnt_header = request.headers.get("DNT")
         consent["do_not_track"] = dnt_header == "1"
-        
+
         # If DNT is enabled, disable analytics and marketing
         if consent["do_not_track"]:
             consent["analytics"] = False
             consent["marketing"] = False
             logger.debug("Do Not Track header detected, disabling analytics and marketing")
-        
+
         # Store consent in request state for access by route handlers
         request.state.cookie_consent = consent
-        
+
         # Process the request
         response = await call_next(request)
-        
+
         # Set consent cookie if not present
         response = self._ensure_consent_cookie(request, response, consent)
-        
+
         # Filter cookies in response based on consent
         response = self._filter_cookies(request, response, consent)
-        
+
         return response
-    
+
     def _parse_consent(self, request: Request) -> Dict[str, Any]:
         """
         Parse cookie consent from the request.
-        
+
         Args:
             request: The incoming request
-            
+
         Returns:
             Dictionary with consent preferences
         """
@@ -151,7 +149,7 @@ class CookieConsentMiddleware(BaseHTTPMiddleware):
             "consent_id": None,
             "timestamp": None,
         }
-        
+
         # Try to parse consent cookie
         consent_cookie = request.cookies.get("cookie_consent")
         if consent_cookie:
@@ -160,16 +158,16 @@ class CookieConsentMiddleware(BaseHTTPMiddleware):
                 default_consent.update(parsed)
             except json.JSONDecodeError:
                 logger.warning("Invalid cookie_consent format")
-        
+
         # Get consent ID
         consent_id = request.cookies.get("cookie_consent_id")
         if consent_id:
             default_consent["consent_id"] = consent_id
         else:
             default_consent["consent_id"] = str(uuid.uuid4())
-        
+
         return default_consent
-    
+
     def _ensure_consent_cookie(
         self,
         request: Request,
@@ -178,12 +176,12 @@ class CookieConsentMiddleware(BaseHTTPMiddleware):
     ) -> Response:
         """
         Ensure consent cookies are set in the response.
-        
+
         Args:
             request: The incoming request
             response: The outgoing response
             consent: Current consent preferences
-            
+
         Returns:
             Modified response with consent cookies
         """
@@ -197,7 +195,7 @@ class CookieConsentMiddleware(BaseHTTPMiddleware):
                 secure=True,
                 samesite="lax",
             )
-        
+
         # Update consent cookie if changed
         consent_to_store = {
             "essential": consent["essential"],
@@ -207,7 +205,7 @@ class CookieConsentMiddleware(BaseHTTPMiddleware):
             "do_not_track": consent["do_not_track"],
             "timestamp": datetime.utcnow().isoformat(),
         }
-        
+
         response.set_cookie(
             key="cookie_consent",
             value=json.dumps(consent_to_store),
@@ -216,9 +214,9 @@ class CookieConsentMiddleware(BaseHTTPMiddleware):
             secure=True,
             samesite="lax",
         )
-        
+
         return response
-    
+
     def _filter_cookies(
         self,
         request: Request,
@@ -227,96 +225,96 @@ class CookieConsentMiddleware(BaseHTTPMiddleware):
     ) -> Response:
         """
         Filter cookies in the response based on consent.
-        
+
         Args:
             request: The incoming request
             response: The outgoing response
             consent: Current consent preferences
-            
+
         Returns:
             Modified response with filtered cookies
         """
         # Get all Set-Cookie headers
         set_cookie_headers = response.headers.getlist("set-cookie") if hasattr(response.headers, "getlist") else []
-        
+
         if not set_cookie_headers:
             return response
-        
+
         # Clear existing Set-Cookie headers
         response.raw_headers = [
             (name, value) for name, value in response.raw_headers
             if name.lower() != b"set-cookie"
         ]
-        
+
         # Filter and re-add cookies
         for cookie_header in set_cookie_headers:
             cookie_name = self._extract_cookie_name(cookie_header)
-            
+
             if self._is_cookie_allowed(cookie_name, consent):
                 response.headers.append("set-cookie", cookie_header)
             else:
                 logger.debug(f"Cookie '{cookie_name}' blocked due to consent preferences")
-        
+
         return response
-    
+
     def _extract_cookie_name(self, cookie_header: str) -> str:
         """
         Extract cookie name from Set-Cookie header.
-        
+
         Args:
             cookie_header: The Set-Cookie header value
-            
+
         Returns:
             Cookie name
         """
         if isinstance(cookie_header, bytes):
             cookie_header = cookie_header.decode("utf-8")
-        
+
         # Cookie format: name=value; attributes...
         parts = cookie_header.split(";")
         name_value = parts[0].strip()
-        
+
         if "=" in name_value:
             return name_value.split("=")[0].strip()
-        
+
         return name_value
-    
+
     def _is_cookie_allowed(self, cookie_name: str, consent: Dict[str, Any]) -> bool:
         """
         Check if a cookie is allowed based on consent.
-        
+
         Args:
             cookie_name: Name of the cookie
             consent: Current consent preferences
-            
+
         Returns:
             True if cookie is allowed, False otherwise
         """
         # Essential cookies are always allowed
         if cookie_name in self.ESSENTIAL_COOKIES:
             return True
-        
+
         # Check if it's an essential cookie pattern
         for essential in self.ESSENTIAL_COOKIES:
             if essential.endswith("*") and cookie_name.startswith(essential[:-1]):
                 return True
-        
+
         # Check analytics cookies
         if self._is_analytics_cookie(cookie_name):
             return consent.get("analytics", False)
-        
+
         # Check marketing cookies
         if self._is_marketing_cookie(cookie_name):
             return consent.get("marketing", False)
-        
+
         # Check preference cookies
         if cookie_name in self.PREFERENCE_COOKIES:
             return consent.get("preferences", False)
-        
+
         # Unknown cookies default to blocked if no consent
         logger.debug(f"Unknown cookie '{cookie_name}' - allowing (default)")
         return True
-    
+
     def _is_analytics_cookie(self, cookie_name: str) -> bool:
         """Check if cookie is an analytics cookie"""
         for pattern in self.ANALYTICS_COOKIES:
@@ -326,7 +324,7 @@ class CookieConsentMiddleware(BaseHTTPMiddleware):
             elif cookie_name == pattern:
                 return True
         return False
-    
+
     def _is_marketing_cookie(self, cookie_name: str) -> bool:
         """Check if cookie is a marketing cookie"""
         for pattern in self.MARKETING_COOKIES:
@@ -341,16 +339,16 @@ class CookieConsentMiddleware(BaseHTTPMiddleware):
 class CookieConsentManager:
     """
     Manager for cookie consent operations.
-    
+
     Provides methods for:
     - Updating consent preferences
     - Storing consent in database
     - Retrieving consent configuration
     """
-    
+
     def __init__(self, db: Session = None):
         self.db = db
-    
+
     def update_consent(
         self,
         consent_id: str,
@@ -364,7 +362,7 @@ class CookieConsentManager:
     ) -> Dict[str, Any]:
         """
         Update cookie consent preferences.
-        
+
         Args:
             consent_id: Unique consent identifier
             essential: Essential cookies (always True)
@@ -374,7 +372,7 @@ class CookieConsentManager:
             user_id: Optional user ID for logged-in users
             ip_address: Client IP address
             user_agent: Client user agent
-            
+
         Returns:
             Updated consent preferences
         """
@@ -386,7 +384,7 @@ class CookieConsentManager:
             "preferences": preferences,
             "updated_at": datetime.utcnow().isoformat(),
         }
-        
+
         # Store in database if available
         if self.db:
             try:
@@ -399,7 +397,7 @@ class CookieConsentManager:
                     )
                     .first()
                 )
-                
+
                 if existing:
                     existing.analytics = analytics
                     existing.marketing = marketing
@@ -418,21 +416,21 @@ class CookieConsentManager:
                         user_agent=user_agent,
                     )
                     self.db.add(new_consent)
-                
+
                 self.db.commit()
                 logger.info(f"Cookie consent updated for {consent_id}")
-                
+
             except Exception as e:
                 logger.error(f"Failed to store cookie consent: {e}")
                 if self.db:
                     self.db.rollback()
-        
+
         return consent_data
-    
+
     def get_consent_config(self) -> Dict[str, Any]:
         """
         Get cookie consent configuration for the banner/UI.
-        
+
         Returns:
             Configuration object for cookie consent UI
         """
@@ -472,44 +470,44 @@ class CookieConsentManager:
             "cookie_policy_url": "/api/v1/compliance/data-retention",
             "contact_email": "privacy@jobswipe.com",
         }
-    
+
     def check_consent(self, consent_id: str, category: CookieCategory) -> bool:
         """
         Check if a specific cookie category is consented.
-        
+
         Args:
             consent_id: Consent identifier
             category: Cookie category to check
-            
+
         Returns:
             True if consented, False otherwise
         """
         if category == CookieCategory.ESSENTIAL:
             return True
-        
+
         if not self.db:
             return False
-        
+
         try:
             consent = (
                 self.db.query(CookieConsent)
                 .filter(CookieConsent.consent_id == consent_id)
                 .first()
             )
-            
+
             if not consent:
                 return False
-            
+
             if category == CookieCategory.ANALYTICS:
                 return consent.analytics
             elif category == CookieCategory.MARKETING:
                 return consent.marketing
             elif category == CookieCategory.PREFERENCES:
                 return consent.preferences
-            
+
         except Exception as e:
             logger.error(f"Failed to check consent: {e}")
-        
+
         return False
 
 
@@ -517,10 +515,10 @@ class CookieConsentManager:
 def get_cookie_consent(request: Request) -> Dict[str, Any]:
     """
     Get cookie consent from request state.
-    
+
     Args:
         request: FastAPI request object
-        
+
     Returns:
         Cookie consent dictionary
     """
@@ -536,7 +534,7 @@ def get_cookie_consent(request: Request) -> Dict[str, Any]:
 def add_cookie_consent_middleware(app: FastAPI) -> None:
     """
     Add cookie consent middleware to FastAPI application.
-    
+
     Args:
         app: FastAPI application instance
     """

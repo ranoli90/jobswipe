@@ -8,13 +8,13 @@ import hashlib
 import logging
 import random
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from datetime import datetime
+from dataclasses import dataclass
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 
 from backend.db.database import async_session
-from backend.db.models import ABTest, FeatureFlag, User
+from backend.db.models import ABTest, FeatureFlag
 
 logger = logging.getLogger(__name__)
 
@@ -129,7 +129,7 @@ class FeatureFlagService:
                     return user_id in flag_data["users"]
 
                 return False
-        except Exception as e:
+        except Exception:
             logger.error("Failed to check feature flag %s: %s", ('flag_name', 'e'))
 
         return False
@@ -179,7 +179,7 @@ class FeatureFlagService:
                             updated_at=datetime.now(timezone.utc),
                         )
                     )
-                
+
 
                 flag = FeatureFlag(
                     name=flag_name,
@@ -190,7 +190,7 @@ class FeatureFlagService:
                 session.add(flag)
 
             await session.commit()
-        except Exception as e:
+        except Exception:
             logger.error("Failed to set feature flag %s: %s", ('flag_name', 'e'))
 
     @classmethod

@@ -6,7 +6,7 @@ Celery tasks for analytics data collection and reporting.
 
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from backend.db.database import get_db
 from backend.db.models import ApplicationTask, Job, User, UserJobInteraction
@@ -255,7 +255,7 @@ def export_analytics_report(report_type: str = "daily", format: str = "json"):
             metrics = aggregate_engagement_metrics(days=7)
         elif report_type == "monthly":
             metrics = aggregate_engagement_metrics(days=30)
-        
+
 
         raise ValueError(f"Unknown report type: {report_type}")
 
@@ -327,7 +327,7 @@ def calculate_user_engagement_scores():
             # Store score in user metadata (in a real app, this would be a separate field)
             if user.metadata:
                 user.metadata["engagement_score"] = engagement_score
-            
+
 
             user.metadata = {"engagement_score": engagement_score}
 

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class SecureStorageService {
@@ -11,6 +12,7 @@ class SecureStorageService {
       value: value,
       aOptions: _getAndroidOptions(),
       iOptions: _getIOSOptions(),
+      webOptions: _getWebOptions(),
     );
   }
 
@@ -19,6 +21,7 @@ class SecureStorageService {
       key: key,
       aOptions: _getAndroidOptions(),
       iOptions: _getIOSOptions(),
+      webOptions: _getWebOptions(),
     );
   }
 
@@ -27,6 +30,7 @@ class SecureStorageService {
       key: key,
       aOptions: _getAndroidOptions(),
       iOptions: _getIOSOptions(),
+      webOptions: _getWebOptions(),
     );
   }
 
@@ -34,6 +38,7 @@ class SecureStorageService {
     await _storage.deleteAll(
       aOptions: _getAndroidOptions(),
       iOptions: _getIOSOptions(),
+      webOptions: _getWebOptions(),
     );
   }
 
@@ -41,6 +46,7 @@ class SecureStorageService {
     return await _storage.readAll(
       aOptions: _getAndroidOptions(),
       iOptions: _getIOSOptions(),
+      webOptions: _getWebOptions(),
     );
   }
 
@@ -52,5 +58,11 @@ class SecureStorageService {
   // iOS security options
   IOSOptions _getIOSOptions() => const IOSOptions(
         accessibility: KeychainAccessibility.first_unlock,
+      );
+
+  // Web security options
+  WebOptions _getWebOptions() => const WebOptions(
+        dbName: 'jobswipe_secure_storage',
+        publicKey: 'jobswipe_web_key',
       );
 }

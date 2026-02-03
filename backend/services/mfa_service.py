@@ -5,13 +5,11 @@ MFA (Multi-Factor Authentication) Service
 import base64
 import io
 import secrets
-from datetime import datetime, timedelta
-from typing import Any, Dict, Optional
+from datetime import timedelta
 
 import pyotp
 import qrcode
 
-from backend.db.database import get_db
 from backend.db.models import User
 
 

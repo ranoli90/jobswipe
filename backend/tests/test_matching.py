@@ -196,7 +196,7 @@ class TestMatchingService:
         ) as mock_calc_score:
             mock_calc_score.return_value = 0.5
 
-            result = await get_personalized_jobs(
+            await get_personalized_jobs(
                 user_id, cursor="cursor123", db=mock_db
             )
 

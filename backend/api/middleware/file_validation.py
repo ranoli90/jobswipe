@@ -7,7 +7,7 @@ Validates uploaded files for security and type compliance.
 import logging
 import os
 import re
-from typing import Callable, Optional, Set, Tuple
+from typing import Callable, Set, Tuple
 
 # Make libmagic optional
 try:

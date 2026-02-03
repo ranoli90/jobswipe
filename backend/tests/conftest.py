@@ -35,6 +35,17 @@ def mock_external_services():
     ) as mock_kafka_init:
         mock_kafka_init.return_value = None
 
+    # Add Redis mock
+    with patch("redis_sync.from_url") as mock_redis:
+        mock_redis.return_value = MagicMock()
+        mock_redis.return_value.ping.return_value = True
+
+    # Add OpenSearch mock
+    with patch("opensearchpy.OpenSearch") as mock_opensearch:
+        mock_client = MagicMock()
+        mock_client.cat.health.return_value = [{"status": "green"}]
+        mock_opensearch.return_value = mock_client
+
     yield
 
 
@@ -55,7 +66,6 @@ def client():
 
     # Import models module first
     from backend.api.main import app
-    from backend.db import models
     # Clean database before each test
     from backend.db.database import engine
 

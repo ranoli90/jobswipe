@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../core/data/profile_repository.dart';
+import '../../../core/repositories/profile_repository.dart';
 import '../../../models/profile.dart';
 
 // Profile Events

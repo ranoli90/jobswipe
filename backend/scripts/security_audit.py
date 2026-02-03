@@ -21,12 +21,12 @@ import ssl
 import subprocess
 import sys
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 
 class SecurityAudit:
     """Security audit checker for JobSwipe API."""
-    
+
     # Patterns that indicate exposed secrets
     SECRET_PATTERNS = {
         "api_key": re.compile(r"[a-zA-Z0-9_-]*api[_-]?key[a-zA-Z0-9_-]*", re.IGNORECASE),
@@ -36,7 +36,7 @@ class SecurityAudit:
         "private_key": re.compile(r"[a-zA-Z0-9_-]*private[_-]?key[a-zA-Z0-9_-]*", re.IGNORECASE),
         "credential": re.compile(r"[a-zA-Z0-9_-]*credential[a-zA-Z0-9_-]*", re.IGNORECASE),
     }
-    
+
     # Sensitive file patterns
     SENSITIVE_FILES = [
         ".env",
@@ -56,7 +56,7 @@ class SecurityAudit:
         "credentials.json",
         "service-account.json",
     ]
-    
+
     # Required security headers
     REQUIRED_HEADERS = {
         "Content-Security-Policy": {
@@ -96,13 +96,13 @@ class SecurityAudit:
             "description": "Controls cross-origin resource sharing",
         },
     }
-    
+
     def __init__(self):
         self.findings: List[Dict[str, Any]] = []
         self.warnings: List[Dict[str, Any]] = []
         self.info: List[Dict[str, Any]] = []
         self.environment = os.getenv("ENVIRONMENT", "development")
-        
+
     def add_finding(self, category: str, severity: str, message: str, details: Optional[Dict] = None):
         """Add a security finding."""
         finding = {
@@ -118,13 +118,13 @@ class SecurityAudit:
             self.warnings.append(finding)
         else:
             self.info.append(finding)
-            
+
     def check_cors_configuration(self) -> None:
         """Check CORS configuration for security issues."""
         print("Checking CORS configuration...")
-        
+
         cors_origins = os.getenv("CORS_ALLOW_ORIGINS", "")
-        
+
         if not cors_origins:
             self.add_finding(
                 "CORS",
@@ -133,10 +133,10 @@ class SecurityAudit:
                 {"environment": self.environment}
             )
             return
-        
+
         # Parse origins
         origins = [o.strip() for o in cors_origins.split(",")]
-        
+
         # Check for wildcard in production
         if self.environment == "production":
             if "*" in origins:
@@ -146,7 +146,7 @@ class SecurityAudit:
                     "Wildcard CORS origin '*' is not allowed in production",
                     {"origins": origins}
                 )
-            
+
             # Check for localhost in production
             localhost_patterns = ["localhost", "127.0.0.1", "::1", "0.0.0.0"]
             for origin in origins:
@@ -160,7 +160,7 @@ class SecurityAudit:
                             {"origin": origin, "pattern": pattern}
                         )
                         break
-        
+
         # Check for http in production
         if self.environment == "production":
             for origin in origins:
@@ -171,18 +171,18 @@ class SecurityAudit:
                         f"Non-HTTPS origin '{origin}' detected in production",
                         {"origin": origin}
                     )
-        
+
         self.add_finding(
             "CORS",
             "INFO",
             f"CORS configuration checked - {len(origins)} origin(s) configured",
             {"origins": origins, "environment": self.environment}
         )
-    
+
     def check_environment_variables(self) -> None:
         """Check environment variables for exposed secrets."""
         print("Checking environment variables for exposed secrets...")
-        
+
         # Required secrets that should be set
         required_secrets = [
             "SECRET_KEY",
@@ -190,7 +190,7 @@ class SecurityAudit:
             "ENCRYPTION_SALT",
             "OAUTH_STATE_SECRET",
         ]
-        
+
         # API keys that should be set
         api_keys = [
             "ANALYTICS_API_KEY",
@@ -199,7 +199,7 @@ class SecurityAudit:
             "CATEGORIZATION_API_KEY",
             "AUTOMATION_API_KEY",
         ]
-        
+
         # Check required secrets
         for secret in required_secrets:
             value = os.getenv(secret)
@@ -217,7 +217,7 @@ class SecurityAudit:
                     f"Secret '{secret}' appears to be weak or default",
                     {"variable": secret, "hint": "Value length or pattern suggests weak secret"}
                 )
-        
+
         # Check API keys
         for key in api_keys:
             value = os.getenv(key)
@@ -235,7 +235,7 @@ class SecurityAudit:
                     f"Development API key '{key}' used in production",
                     {"variable": key}
                 )
-        
+
         # Check for secrets in environment that might be logged
         env_vars = dict(os.environ)
         for var_name, value in env_vars.items():
@@ -249,7 +249,7 @@ class SecurityAudit:
                         f"Secret variable '{var_name}' has a short value (possible weak secret)",
                         {"variable": var_name, "length": len(value)}
                     )
-    
+
     def _is_weak_secret(self, value: str) -> bool:
         """Check if a secret value appears weak."""
         weak_patterns = [
@@ -263,29 +263,29 @@ class SecurityAudit:
             "your-",
             "example",
         ]
-        
+
         value_lower = value.lower()
-        
+
         # Check length
         if len(value) < 16:
             return True
-        
+
         # Check for weak patterns
         for pattern in weak_patterns:
             if pattern in value_lower:
                 return True
-        
+
         return False
-    
+
     def check_security_headers(self) -> None:
         """Check if security headers middleware is configured."""
         print("Checking security headers configuration...")
-        
+
         # Check if middleware file exists and is importable
         middleware_path = os.path.join(
             os.path.dirname(__file__), "..", "api", "middleware", "security_headers.py"
         )
-        
+
         if not os.path.exists(middleware_path):
             self.add_finding(
                 "HEADERS",
@@ -294,23 +294,23 @@ class SecurityAudit:
                 {"path": middleware_path}
             )
             return
-        
+
         # Try to import and check configuration
         try:
             import sys
             backend_path = os.path.join(os.path.dirname(__file__), "..")
             if backend_path not in sys.path:
                 sys.path.insert(0, backend_path)
-            
+
             from api.middleware.security_headers import SecurityHeadersMiddleware
-            
+
             self.add_finding(
                 "HEADERS",
                 "INFO",
                 "Security headers middleware is available",
                 {}
             )
-            
+
         except ImportError as e:
             self.add_finding(
                 "HEADERS",
@@ -318,17 +318,17 @@ class SecurityAudit:
                 f"Could not import security headers middleware: {e}",
                 {}
             )
-    
+
     def check_tls_configuration(self) -> None:
         """Check TLS/SSL configuration."""
         print("Checking TLS/SSL configuration...")
-        
+
         # Check if running in production without HTTPS enforcement
         if self.environment == "production":
             # Check for TLS-related environment variables
             tls_cert = os.getenv("TLS_CERT_PATH")
             tls_key = os.getenv("TLS_KEY_PATH")
-            
+
             if not tls_cert and not tls_key:
                 # In containerized environments, TLS is often handled by load balancer
                 self.add_finding(
@@ -337,7 +337,7 @@ class SecurityAudit:
                     "TLS certificates not configured in environment - ensure TLS is handled by load balancer/reverse proxy",
                     {"environment": self.environment}
                 )
-        
+
         # Check Python SSL version
         ssl_version = ssl.OPENSSL_VERSION
         self.add_finding(
@@ -346,7 +346,7 @@ class SecurityAudit:
             f"OpenSSL version: {ssl_version}",
             {}
         )
-        
+
         # Check for SSL verification disabling
         if os.getenv("PYTHONHTTPSVERIFY") == "0":
             self.add_finding(
@@ -355,7 +355,7 @@ class SecurityAudit:
                 "Python SSL verification is disabled (PYTHONHTTPSVERIFY=0)",
                 {}
             )
-        
+
         if os.getenv("CURL_CA_BUNDLE") == "":
             self.add_finding(
                 "TLS",
@@ -363,24 +363,24 @@ class SecurityAudit:
                 "cURL CA bundle verification is disabled",
                 {}
             )
-    
+
     def check_sensitive_files(self) -> None:
         """Check for sensitive files that shouldn't be in repository."""
         print("Checking for sensitive files...")
-        
+
         backend_dir = os.path.join(os.path.dirname(__file__), "..")
-        
+
         for pattern in self.SENSITIVE_FILES:
             # Use glob to find files
             import glob
             search_path = os.path.join(backend_dir, "**", pattern)
             matches = glob.glob(search_path, recursive=True)
-            
+
             for match in matches:
                 # Skip files in .git directory
                 if ".git" in match:
                     continue
-                
+
                 # Check if file is in .gitignore
                 if not self._is_in_gitignore(match):
                     self.add_finding(
@@ -389,14 +389,14 @@ class SecurityAudit:
                         f"Sensitive file found and not in .gitignore: {match}",
                         {"file": match, "pattern": pattern}
                     )
-    
+
     def _is_in_gitignore(self, filepath: str) -> bool:
         """Check if a file is covered by .gitignore."""
         gitignore_path = os.path.join(os.path.dirname(__file__), "..", "..", ".gitignore")
-        
+
         if not os.path.exists(gitignore_path):
             return False
-        
+
         try:
             result = subprocess.run(
                 ["git", "check-ignore", "-q", filepath],
@@ -406,13 +406,13 @@ class SecurityAudit:
             return result.returncode == 0
         except Exception:
             return False
-    
+
     def check_database_security(self) -> None:
         """Check database connection security."""
         print("Checking database security...")
-        
+
         database_url = os.getenv("DATABASE_URL", "")
-        
+
         if not database_url:
             self.add_finding(
                 "DATABASE",
@@ -421,7 +421,7 @@ class SecurityAudit:
                 {}
             )
             return
-        
+
         # Check for SSL in database URL
         if "postgresql" in database_url.lower():
             if "sslmode" not in database_url.lower() and self.environment == "production":
@@ -431,7 +431,7 @@ class SecurityAudit:
                     "PostgreSQL connection does not specify SSL mode in production",
                     {"hint": "Add ?sslmode=require or ?sslmode=verify-full to DATABASE_URL"}
                 )
-        
+
         # Check for credentials in URL (basic check)
         if "@" in database_url:
             # URL contains credentials
@@ -441,13 +441,13 @@ class SecurityAudit:
                 "Database URL contains credentials - ensure this is from a secure vault/secrets manager",
                 {}
             )
-    
+
     def check_debug_mode(self) -> None:
         """Check if debug mode is enabled in production."""
         print("Checking debug mode...")
-        
+
         debug = os.getenv("DEBUG", "false").lower() in ("true", "1", "yes", "on")
-        
+
         if debug and self.environment == "production":
             self.add_finding(
                 "DEBUG",
@@ -462,7 +462,7 @@ class SecurityAudit:
                 "DEBUG mode is enabled (acceptable for non-production)",
                 {"environment": self.environment}
             )
-    
+
     def run_all_checks(self) -> None:
         """Run all security checks."""
         print("=" * 80)
@@ -470,7 +470,7 @@ class SecurityAudit:
         print(f"Environment: {self.environment}")
         print("=" * 80)
         print()
-        
+
         self.check_cors_configuration()
         self.check_environment_variables()
         self.check_security_headers()
@@ -478,10 +478,10 @@ class SecurityAudit:
         self.check_sensitive_files()
         self.check_database_security()
         self.check_debug_mode()
-        
+
         print()
         print("=" * 80)
-    
+
     def generate_report(self, output_file: Optional[str] = None) -> Dict[str, Any]:
         """Generate a comprehensive security audit report."""
         report = {
@@ -503,46 +503,46 @@ class SecurityAudit:
             },
             "recommendations": self._generate_recommendations(),
         }
-        
+
         if output_file:
             with open(output_file, "w") as f:
                 json.dump(report, f, indent=2)
             print(f"\nReport saved to: {output_file}")
-        
+
         return report
-    
+
     def _generate_recommendations(self) -> List[str]:
         """Generate security recommendations based on findings."""
         recommendations = []
-        
+
         # Check for critical issues
         critical_count = len([f for f in self.findings if f["severity"] == "CRITICAL"])
         if critical_count > 0:
             recommendations.append(
                 f"URGENT: Address {critical_count} critical security issue(s) immediately"
             )
-        
+
         # CORS recommendations
         cors_issues = [f for f in self.findings if f["category"] == "CORS"]
         if cors_issues:
             recommendations.append(
                 "Review CORS configuration - ensure only trusted origins are allowed in production"
             )
-        
+
         # Secret recommendations
         secret_issues = [f for f in self.findings if f["category"] == "SECRETS"]
         if secret_issues:
             recommendations.append(
                 "Review secret management - use a secure vault or secrets manager in production"
             )
-        
+
         # TLS recommendations
         tls_issues = [f for f in self.findings if f["category"] == "TLS"]
         if tls_issues:
             recommendations.append(
                 "Ensure TLS 1.2+ is enforced for all connections in production"
             )
-        
+
         # General recommendations
         if self.environment == "production":
             recommendations.append(
@@ -551,46 +551,46 @@ class SecurityAudit:
             recommendations.append(
                 "Implement regular security audits and penetration testing"
             )
-        
+
         return recommendations
-    
+
     def print_summary(self) -> None:
         """Print a summary of findings to console."""
         print("\n" + "=" * 80)
         print("SECURITY AUDIT SUMMARY")
         print("=" * 80)
-        
+
         critical_count = len([f for f in self.findings if f["severity"] == "CRITICAL"])
         warning_count = len(self.warnings)
         info_count = len(self.info)
-        
+
         print(f"\nCritical Issues: {critical_count}")
         print(f"Warnings: {warning_count}")
         print(f"Info: {info_count}")
-        
+
         if self.findings:
             print("\n--- CRITICAL FINDINGS ---")
             for finding in self.findings:
                 print(f"[{finding['category']}] {finding['message']}")
-        
+
         if self.warnings:
             print("\n--- WARNINGS ---")
             for warning in self.warnings:
                 print(f"[{warning['category']}] {warning['message']}")
-        
+
         print("\n--- RECOMMENDATIONS ---")
         for rec in self._generate_recommendations():
             print(f"• {rec}")
-        
+
         print("\n" + "=" * 80)
-        
+
         if critical_count > 0:
             print("\n❌ AUDIT FAILED: Critical security issues found!")
         elif warning_count > 0:
             print("\n⚠️  AUDIT PASSED WITH WARNINGS: Review warnings above")
         else:
             print("\n✅ AUDIT PASSED: No critical issues found")
-        
+
         print("=" * 80)
 
 
@@ -608,23 +608,23 @@ def main():
         default="console",
         help="Output format (default: console)"
     )
-    
+
     args = parser.parse_args()
-    
+
     # Run audit
     audit = SecurityAudit()
     audit.run_all_checks()
-    
+
     # Generate report
     if args.format == "json" or args.output:
         report = audit.generate_report(args.output)
         if not args.output:
             print(json.dumps(report, indent=2))
-    
+
     # Print summary
     if args.format == "console":
         audit.print_summary()
-    
+
     # Exit with appropriate code
     critical_count = len([f for f in audit.findings if f["severity"] == "CRITICAL"])
     sys.exit(1 if critical_count > 0 else 0)

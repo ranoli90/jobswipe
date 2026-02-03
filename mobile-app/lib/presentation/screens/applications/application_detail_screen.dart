@@ -6,7 +6,6 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../models/application.dart';
 import '../../bloc/applications/applications_bloc.dart';
-import '../../widgets/bottom_nav_bar.dart';
 
 class ApplicationDetailScreen extends StatefulWidget {
   final String applicationId;
@@ -218,7 +217,7 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
           Text(
             application.companyName ?? 'Unknown Company',
             style: AppTypography.bodyLarge.copyWith(
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
             ),
           ),
           if (application.jobLocation != null) ...[
@@ -228,13 +227,13 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                 Icon(
                   Icons.location_on_outlined,
                   size: 16,
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.white.withValues(alpha: 0.8),
                 ),
                 const SizedBox(width: 4),
                 Text(
                   application.jobLocation!,
                   style: AppTypography.bodyMedium.copyWith(
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                   ),
                 ),
               ],
@@ -272,7 +271,7 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
                   vertical: AppTokens.spacingSm,
                 ),
                 decoration: BoxDecoration(
-                  color: _getStatusColor(application.status).withOpacity(0.1),
+                  color: _getStatusColor(application.status).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppTokens.radiusMd),
                 ),
                 child: Row(
@@ -430,7 +429,7 @@ class _ApplicationDetailScreenState extends State<ApplicationDetailScreen> {
           Text(
             message,
             style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.textSecondary.withOpacity(0.7),
+              color: AppColors.textSecondary.withValues(alpha: 0.7),
             ),
             textAlign: TextAlign.center,
           ),

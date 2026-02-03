@@ -4,7 +4,7 @@ Domain Service - Handles domain rate limiting and configuration
 
 import json
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from backend.db.database import get_db
 from backend.db.models import Domain
@@ -18,7 +18,7 @@ class DomainRateLimiter:
     DEFAULT_RPH = 100
     DEFAULT_RPD = 500
     DEFAULT_CONCURRENCY = 5
-    
+
     # Time window constants in seconds
     MINUTE = 60
     HOUR = 3600
@@ -180,7 +180,7 @@ class DomainRateLimiter:
                 "captcha_type": "none",
                 "last_status": "active",
             }
-        
+
 
         self.domain_limits[domain]["rate_limit_policy"] = rate_limit_policy
 

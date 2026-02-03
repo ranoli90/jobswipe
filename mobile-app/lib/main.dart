@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -12,18 +13,10 @@ import 'presentation/bloc/auth/auth_bloc.dart';
 import 'presentation/bloc/jobs/jobs_bloc.dart';
 import 'presentation/bloc/profile/profile_bloc.dart';
 import 'presentation/bloc/applications/applications_bloc.dart';
-import 'config/app_config.dart';
 
 /// Lightweight splash screen widget with timeout protection
 class SplashScreen extends StatefulWidget {
-  final Widget child;
-  final Duration timeout;
-
-  const SplashScreen({
-    super.key,
-    required this.child,
-    this.timeout = const Duration(seconds: 10),
-  });
+  const SplashScreen({super.key});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -34,11 +27,9 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
     // Auto-navigate after timeout to prevent indefinite white screen
-    Future.delayed(widget.timeout, () {
+    Future.delayed(const Duration(seconds: 10), () {
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => widget.child),
-        );
+        Navigator.of(context).pushReplacementNamed('/login');
       }
     });
   }
@@ -84,6 +75,9 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
   ErrorWidget.builder = (FlutterErrorDetails details) {
+    debugPrint('ErrorWidget: ${details.exceptionAsString()}');
+    debugPrint('Error occurred in ${details.library}');
+    if (kIsWeb) debugPrint('Web context - ${details.context}');
     return Material(
       color: Colors.white,
       child: Center(
@@ -99,19 +93,25 @@ void main() {
     FlutterError.onError = (details) {
       FlutterError.presentError(details);
       debugPrint('FlutterError: ${details.exceptionAsString()}');
+      debugPrint('Stack trace: ${details.stack}');
+      if (kIsWeb) debugPrint('Web environment detected');
     };
 
     Widget appContent;
     try {
       // Load environment variables (gracefully handle missing .env in APK)
-      try {
+      if (!kIsWeb) {
         await dotenv.load(fileName: '.env');
-      } catch (e) {
-        // .env file not bundled in APK - use default config values
-        // This is expected behavior for production builds
-        debugPrint('Note: .env file not found, using default configuration');
+      } else {
+        debugPrint('Skipping .env load in web environment');
       }
+    } catch (e) {
+      // .env file not bundled in APK - use default config values
+      // This is expected behavior for production builds
+      debugPrint('Note: .env file not found, using default configuration');
+    }
 
+    try {
       // Initialize service locator
       await setupLocator();
 
@@ -146,18 +146,18 @@ void main() {
       );
     }
 
-    // Run with splash screen wrapper for timeout protection
+    // Run the app
     runApp(
-      SplashScreen(
-        child: MaterialApp(
-          title: 'JobSwipe',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
-          themeMode: ThemeMode.system,
-          home: appContent,
-        ),
-        timeout: const Duration(seconds: 10),
+      MaterialApp(
+        title: 'JobSwipe',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: ThemeMode.system,
+        home: appContent,
+        navigatorObservers: [
+          LoggingNavigatorObserver(),
+        ],
       ),
     );
   }, (error, stack) {
@@ -177,31 +177,35 @@ class JobSwipeAppContent extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
-      initialRoute: '/login',
+      initialRoute: '/',
       onGenerateRoute: (settings) {
         switch (settings.name) {
+          case '/':
+            return MaterialPageRoute(builder: (_) => const SplashScreen());
           case '/login':
-            return MaterialPageRoute(
-              builder: (_) => const LoginScreen(),
-            );
+            return MaterialPageRoute(builder: (_) => const LoginScreen());
           case '/jobs':
-            return MaterialPageRoute(
-              builder: (_) => const JobFeedScreen(),
-            );
+            return MaterialPageRoute(builder: (_) => const JobFeedScreen());
           case '/profile':
-            return MaterialPageRoute(
-              builder: (_) => const ProfileScreen(),
-            );
+            return MaterialPageRoute(builder: (_) => const ProfileScreen());
           case '/applications':
-            return MaterialPageRoute(
-              builder: (_) => const ApplicationsScreen(),
-            );
+            return MaterialPageRoute(builder: (_) => const ApplicationsScreen());
           default:
-            return MaterialPageRoute(
-              builder: (_) => const LoginScreen(),
-            );
+            return MaterialPageRoute(builder: (_) => const SplashScreen());
         }
       },
     );
+  }
+}
+
+class LoggingNavigatorObserver extends NavigatorObserver {
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    debugPrint('Navigator pushed: ${route.settings.name}');
+  }
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    debugPrint('Navigator popped: ${route.settings.name}');
   }
 }
